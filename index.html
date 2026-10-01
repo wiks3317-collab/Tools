@@ -120,7 +120,11 @@
     max-height:180px;overflow-y:auto;
     border:1px solid var(--paper-line);
   }
-  #statusList li{padding:4px 8px;border-bottom:1px dotted var(--paper-line);}
+  #statusList li{padding:6px 8px;border-bottom:1px dotted var(--paper-line);}
+  .status-label{margin-bottom:4px;}
+  .item-progress-bg{width:100%;height:4px;background:var(--paper-line);}
+  .item-progress-fill{height:100%;width:0%;background:var(--ok);transition:width .15s;}
+  .item-progress-fill.error{background:var(--stamp);}
 
   details.advanced{
     margin-top:16px;
@@ -848,22 +852,43 @@ startBtn.addEventListener('click', async () => {
 
   const statusItems = pendingFiles.map(f => {
     const li = document.createElement('li');
-    li.textContent = f.name + '：等待中';
+    const label = document.createElement('div');
+    label.className = 'status-label';
+    label.textContent = f.name + '：等待中';
+    const barBg = document.createElement('div');
+    barBg.className = 'item-progress-bg';
+    const barFill = document.createElement('div');
+    barFill.className = 'item-progress-fill';
+    barBg.appendChild(barFill);
+    li.appendChild(label);
+    li.appendChild(barBg);
     statusList.appendChild(li);
-    return li;
+    return { label, fill: barFill };
   });
+  function setItemLabel(idx, text){ statusItems[idx].label.textContent = text; }
+  function setItemProgress(idx, pct, isError){
+    statusItems[idx].fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    statusItems[idx].fill.classList.toggle('error', !!isError);
+  }
 
   const psm = document.getElementById('psmSelect').value;
   const whitelist = whitelistInput.value.trim();
   const scale = Number(document.getElementById('scaleSelect').value);
   const grayscale = document.getElementById('grayscaleCheck').checked;
 
+  let currentOcrIndex = -1;
   const needsOcr = pendingFiles.some(f => !f.pdfText);
   let worker = null;
   if (needsOcr){
     progressText.textContent = `正在載入 OCR 引擎與語言資料（${lang}）...`;
     try{
-      worker = await Tesseract.createWorker(lang);
+      worker = await Tesseract.createWorker(lang, 1, {
+        logger: m => {
+          if (m.status === 'recognizing text' && currentOcrIndex >= 0){
+            setItemProgress(currentOcrIndex, Math.round(m.progress * 100));
+          }
+        }
+      });
       const params = { tessedit_pageseg_mode: psm };
       if (whitelist) params.tessedit_char_whitelist = whitelist;
       await worker.setParameters(params);
@@ -884,22 +909,27 @@ startBtn.addEventListener('click', async () => {
   const results = [];
   for (let i = 0; i < pendingFiles.length; i++){
     const f = pendingFiles[i];
-    statusItems[i].textContent = f.name + '：處理圖片中...';
+    setItemLabel(i, f.name + '：處理圖片中...');
+    setItemProgress(i, 5);
     progressText.textContent = `處理中 (${i+1}/${pendingFiles.length})：${f.name}`;
     try{
       let text;
       if (f.pdfText){
-        statusItems[i].textContent = f.name + '：PDF 文字層擷取完成（略過 OCR）';
+        setItemLabel(i, f.name + '：PDF 文字層擷取完成（略過 OCR）');
+        setItemProgress(i, 100);
         text = f.pdfText;
       } else {
         const procBlob = await preprocessImage(f.blob, scale, grayscale);
-        statusItems[i].textContent = f.name + '：辨識中...';
+        setItemLabel(i, f.name + '：辨識中...');
+        currentOcrIndex = i;
         const res = await worker.recognize(procBlob);
+        currentOcrIndex = -1;
+        setItemProgress(i, 100);
         text = res.data.text;
       }
       let finalText = text;
       if (doTranslate){
-        statusItems[i].textContent = f.name + '：翻譯中...';
+        setItemLabel(i, f.name + '：翻譯中...');
         try{
           const translated = await translateText(text, srcIso, tgtIso);
           finalText = text + `\n\n----- 翻譯（${tgtLabel}）-----\n` + translated;
@@ -908,10 +938,12 @@ startBtn.addEventListener('click', async () => {
         }
       }
       results.push({ name: f.name, text: finalText, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
-      statusItems[i].textContent = f.name + '：完成';
+      setItemLabel(i, f.name + '：完成');
+      setItemProgress(i, 100);
     }catch(err){
       results.push({ name: f.name, text: '[辨識失敗：' + err.message + ']', isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
-      statusItems[i].textContent = f.name + '：失敗（' + err.message + '）';
+      setItemLabel(i, f.name + '：失敗（' + err.message + '）');
+      setItemProgress(i, 100, true);
     }
     progressBarFill.style.width = Math.round(((i+1)/pendingFiles.length)*100) + '%';
   }
