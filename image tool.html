@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>小工具集</title>
+<title>圖片處理工具</title>
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="referrer" content="no-referrer">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%F0%9F%96%BC%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
@@ -83,20 +83,32 @@ footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 .tool{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px;color:var(--fg);text-decoration:none}
 .tool:hover,.tool:focus-visible{border-color:var(--pri);outline:none}
 .tool b{font-size:16px}.tool span{color:var(--mut);font-size:13px}.tool small{color:var(--mut);font-size:12px;margin-top:auto;padding-top:6px}
+.opt{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:8px 0}.opt label{display:flex;gap:4px;align-items:center;cursor:pointer}
+input[type=number]{width:90px;font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+input[type=range]{width:140px}.ok{color:var(--pri)}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header><div><h1>小工具集</h1><p class="tagline">請選擇要使用的工具。所有處理都在你的瀏覽器內完成，檔案不會上傳到任何伺服器。</p></div><div class="themes" id="themes">主題：</div></header>
-<nav class="menu">
-<a class="tool" href="txtcompare.html"><b>文件比對工具</b><span>左右對照兩份文字或程式檔，標出新增與刪除的行。</span><small>支援 txt、md、docx 與常見程式碼檔</small></a>
-<a class="tool" href="ocr_tool.html"><b>圖片文字辨識 OCR</b><span>把圖片或 ZIP 內的圖片轉成文字，可選擇性翻譯。</span><small>支援 jpg、png、zip 等</small></a>
-<a class="tool" href="pdf_tool.html"><b>PDF 工具</b><span>PDF 文字辨識與 HTML 報告、合併、拆分、壓縮、解鎖。</span><small>支援 pdf</small></a>
-<a class="tool" href="audio_tool.html"><b>語音／影片轉文字</b><span>會議錄音、影片轉成逐字稿，可輸出 txt 與 srt 字幕。</span><small>支援 mp3、m4a、wav、mp4 等</small></a>
-<a class="tool" href="image_tool.html"><b>圖片處理</b><span>批次縮放、壓縮、轉檔、旋轉，可指定檔案大小上限。</span><small>支援 jpg、png、webp、heic 等</small></a>
-<a class="tool" href="barcode_tool.html"><b>QR Code／條碼</b><span>產生與掃描 QR Code、Data Matrix、PDF417、Aztec 等條碼。</span><small>可調格式、大小、白邊、顏色；支援相機掃描</small></a>
-</nav>
+<header><div><a class="back" href="index.html">← 小工具首頁</a><h1>圖片處理工具</h1><p class="tagline">批次縮放、壓縮、轉檔、旋轉；可指定檔案大小上限</p></div><div class="themes" id="themes">主題：</div></header>
+<p class="privacy">圖片只在你的瀏覽器本機處理，不會上傳。處理後的圖片不含原始 EXIF（拍攝時間、GPS 位置等）。</p>
+<section><h2><span class="num">1</span>加入圖片</h2>
+<div class="drop-zone" id="dz">拖曳圖片到這裡，或點擊選擇（可多選；JPG、PNG、WebP、GIF、BMP、HEIC）<input type="file" id="fin" multiple accept="image/*,.heic,.heif"></div>
+<div id="fileList" class="lst"></div><div class="row"><span class="clear-link" id="clr">清空清單</span></div></section>
+<section><h2><span class="num">2</span>設定</h2>
+<div class="opt">輸出格式：<select id="fmt"><option value="keep">維持原格式</option><option value="jpeg">JPG</option><option value="png">PNG</option><option value="webp">WebP</option></select>
+<label>品質 <input type="range" id="q" min="10" max="100" value="80"><span id="qv">80</span></label></div>
+<div class="opt">縮放：<select id="rs"><option value="none">不縮放</option><option value="long" selected>最長邊不超過</option><option value="w">指定寬度</option><option value="h">指定高度</option><option value="p">百分比</option></select>
+<input type="number" id="rv" value="1920" min="1"><span id="ru">px</span><label><input type="checkbox" id="noup" checked> 不放大小圖</label></div>
+<div class="opt">檔案大小上限：<input type="number" id="tk" value="0" min="0"> KB（0 = 不限；僅 JPG／WebP，必要時會自動降品質、再縮小尺寸）</div>
+<div class="opt">旋轉：<select id="rot"><option value="0">不旋轉</option><option value="90">順時針 90°</option><option value="180">180°</option><option value="270">逆時針 90°</option></select>
+<label><input type="checkbox" id="fh"> 水平翻轉</label><label><input type="checkbox" id="fv"> 垂直翻轉</label>
+<label>透明背景填色（轉 JPG 時） <input type="color" id="bgc" value="#ffffff"></label></div></section>
+<section><h2><span class="num">3</span>處理與下載</h2>
+<div class="row"><button class="pri" id="go" disabled>開始處理</button><button id="dl" style="display:none">下載全部</button><span class="msg" id="msg"></span></div></section>
+<footer>JSZip ＋ heic2any（遇到 HEIC 檔時才載入）</footer>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const THEMES = [['auto','跟隨系統','#ffffff','#171a21'],['light','淺色','#f6f7f9','#2563eb'],['dark','深色','#0f1115','#4c8dff'],
@@ -115,6 +127,73 @@ THEMES.forEach(([id, name, c1, c2]) => {
 });
 applyTheme(document.documentElement.dataset.theme || 'auto');
 
+
+let items=[];
+const fmt=n=>n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(2)+' MB';
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const isHeic=f=>/heic|heif/i.test(f.type)||/\.(heic|heif)$/i.test(f.name);
+function list(){
+  $('fileList').innerHTML=items.map((it,i)=>`<div><span>${esc(it.file.name)}（${fmt(it.file.size)}）${it.out?` → <b class="ok">${fmt(it.out.size)}</b>（${it.w}×${it.h}，${it.out.size<=it.file.size?'-':'+'}${Math.abs(Math.round((1-it.out.size/it.file.size)*100))}%）`:''}${it.err?' <b>失敗：'+esc(it.err)+'</b>':''}</span>${it.out?`<button data-d="${i}">下載</button>`:''}<button data-x="${i}">✕</button></div>`).join('');
+  $('go').disabled=!items.length;$('dl').style.display=items.some(x=>x.out)?'':'none';
+}
+function add(fs){for(const f of fs)if(/^image\//.test(f.type)||isHeic(f)||/\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name))items.push({file:f});list()}
+$('fin').onchange=e=>{add(e.target.files);e.target.value=''};
+const dz=$('dz');dz.onclick=e=>{if(e.target!==$('fin'))$('fin').click()};
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('dragover')};dz.ondragleave=()=>dz.classList.remove('dragover');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('dragover');add(e.dataTransfer.files)};
+['dragover','drop'].forEach(v=>window.addEventListener(v,e=>{if(!dz.contains(e.target))e.preventDefault()}));
+$('clr').onclick=()=>{items=[];list();$('msg').textContent=''};
+$('q').oninput=()=>$('qv').textContent=$('q').value;
+$('rs').onchange=()=>{const m=$('rs').value;$('ru').textContent=m==='p'?'%':'px';$('rv').value=m==='p'?50:1920;$('rv').disabled=m==='none'};
+$('fileList').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.x!=null){items.splice(+b.dataset.x,1);list()}else{const it=items[+b.dataset.d];save(it.out,it.outName)}};
+function save(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1e4)}
+let heicP=null;
+const loadHeic=()=>heicP||(heicP=new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';s.onload=res;s.onerror=()=>rej(Error('HEIC 轉換元件載入失敗，請確認網路'));document.head.appendChild(s)}));
+async function bitmap(f){
+  let src=f;
+  if(isHeic(f)){await loadHeic();src=await heic2any({blob:f,toType:'image/jpeg',quality:.95});if(Array.isArray(src))src=src[0]}
+  try{return await createImageBitmap(src,{imageOrientation:'from-image'})}catch(e){return await createImageBitmap(src)}
+}
+const toBlob=(c,m,q)=>new Promise(r=>c.toBlob(r,m,q));
+async function run(it){
+  const bm=await bitmap(it.file);
+  const f=$('fmt').value,t=it.file.type;
+  const mime=f==='keep'?(t==='image/jpeg'||isHeic(it.file)?'image/jpeg':t==='image/webp'?'image/webp':'image/png'):'image/'+f;
+  const ext={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[mime];
+  let w=bm.width,h=bm.height,k=1;const mode=$('rs').value,v=+$('rv').value||1;
+  if(mode==='long')k=v/Math.max(w,h);else if(mode==='w')k=v/w;else if(mode==='h')k=v/h;else if(mode==='p')k=v/100;
+  if($('noup').checked&&k>1)k=1;
+  const rot=+$('rot').value,c=document.createElement('canvas'),x=c.getContext('2d');
+  function draw(s){
+    const dw=Math.max(1,Math.round(bm.width*k*s)),dh=Math.max(1,Math.round(bm.height*k*s));
+    c.width=rot%180?dh:dw;c.height=rot%180?dw:dh;
+    if(mime==='image/jpeg'){x.fillStyle=$('bgc').value;x.fillRect(0,0,c.width,c.height)}
+    x.save();x.translate(c.width/2,c.height/2);x.rotate(rot*Math.PI/180);x.scale($('fh').checked?-1:1,$('fv').checked?-1:1);
+    x.imageSmoothingQuality='high';x.drawImage(bm,-dw/2,-dh/2,dw,dh);x.restore();
+  }
+  const q0=+$('q').value/100,lim=(+$('tk').value||0)*1024;
+  let s=1,blob;draw(1);blob=await toBlob(c,mime,q0);
+  if(lim&&mime!=='image/png'){
+    for(let n=0;n<8;n++){
+      blob=await toBlob(c,mime,q0);
+      if(blob.size>lim){let lo=.05,hi=q0,best=null;for(let j=0;j<7;j++){const m=(lo+hi)/2,b=await toBlob(c,mime,m);if(b.size<=lim){best=b;lo=m}else hi=m}blob=best||await toBlob(c,mime,.05)}
+      if(blob.size<=lim)break;s*=.85;draw(s);
+    }
+  }
+  it.out=blob;it.w=c.width;it.h=c.height;it.err='';it.outName=it.file.name.replace(/\.[^.]+$/,'')+'_new.'+ext;
+}
+$('go').onclick=async()=>{
+  $('go').disabled=true;let n=0;
+  for(const it of items){$('msg').textContent=`處理中 ${++n}/${items.length}...`;try{await run(it)}catch(e){it.out=null;it.err=e.message}}
+  $('msg').textContent='完成';list();
+};
+$('dl').onclick=async()=>{
+  const ok=items.filter(x=>x.out);
+  if(ok.length===1)return save(ok[0].out,ok[0].outName);
+  const z=new JSZip(),used={};
+  for(const it of ok){let nm=it.outName;if(used[nm]){const p=nm.lastIndexOf('.');nm=nm.slice(0,p)+'_'+used[nm]+nm.slice(p)}used[it.outName]=(used[it.outName]||0)+1;z.file(nm,it.out)}
+  save(await z.generateAsync({type:'blob'}),'images.zip');
+};
 </script>
 </body>
 </html>

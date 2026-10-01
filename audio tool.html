@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>語音／影片轉文字</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%99%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--add:#c8f0cf;--del:#ffd0d0;--emp:#e9ebee;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--add:#cfe8b8;--del:#f4c9b8;--emp:#ebe0c4;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--add:#bfe8c9;--del:#f5cdcd;--emp:#dce8df;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--add:#17604a;--del:#7a2f3f;--emp:#0e2536;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--add:#2c6e49;--del:#7d2f46;--emp:#2b2d3a;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+a{color:var(--pri)}
+.wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.sub,.tagline,.adv-hint,.msg{color:var(--mut);font-size:12px;margin:2px 0 0}
+.msg{font-size:13px;margin-top:8px}
+.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
+.sw.on{outline:2px solid var(--pri);outline-offset:2px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.num{width:20px;height:20px;border-radius:50%;background:var(--gut);color:var(--mut);font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.privacy,.warn{color:var(--mut);font-size:12px;border-left:3px solid var(--pri);padding:6px 10px;margin:8px 0;background:var(--gut)}
+.warn{border-left-color:#e5484d}
+button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+button:hover:not(:disabled),.btn:hover{border-color:var(--pri)}
+button:disabled{opacity:.4;cursor:default}
+.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+input[type=file]{display:none}
+select,input[type=text],input[type=password]{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+input[type=text],input[type=password]{width:100%}
+option{background:var(--card);color:var(--fg)}
+.drop-zone{border:2px dashed var(--bd);border-radius:8px;padding:28px 16px;text-align:center;cursor:pointer;color:var(--mut);transition:border-color .15s,background .15s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--pri);color:var(--fg);background:var(--gut)}
+.drop-zone input{display:none}
+#fileList{margin-top:10px;font-size:13px;color:var(--mut);max-height:140px;overflow-y:auto}
+.file-row{border-bottom:1px dashed var(--bd);padding:2px 0}
+.clear-link{color:var(--pri);cursor:pointer;text-decoration:underline;font-size:12px}
+.field{margin-bottom:12px}
+.radio-group label{display:block;margin:6px 0;cursor:pointer}
+.radio-group input,.translate-toggle input{margin-right:6px}
+.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;margin-top:6px}
+.lang-grid label{cursor:pointer;display:flex;align-items:center;gap:6px}
+.translate-toggle{display:block;margin-bottom:10px;cursor:pointer}
+#translateOptions .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+details.advanced{margin-top:14px;border:1px solid var(--bd);border-radius:6px}
+details.advanced summary{cursor:pointer;padding:8px 12px;font-size:13px;color:var(--mut)}
+.adv-body{padding:4px 14px 12px}
+.adv-field{margin-bottom:12px}
+.adv-field label{display:block;margin-bottom:4px;color:var(--mut)}
+.chip-btn{display:inline-block;font-size:12px;color:var(--pri);border:1px solid var(--pri);border-radius:12px;padding:1px 9px;margin:6px 6px 0 0;cursor:pointer}
+.progress-bar-bg,.item-progress-bg{background:var(--gut);border-radius:4px;overflow:hidden}
+.progress-bar-bg{height:8px}.item-progress-bg{height:4px}
+.progress-bar-fill,.item-progress-fill{height:100%;width:0;background:var(--pri);transition:width .2s}
+.item-progress-fill.error{background:#e5484d}
+#progressArea{margin-top:14px}
+#progressText{margin:8px 0;color:var(--mut);font-size:13px}
+#statusList{list-style:none;padding:0;margin:0;max-height:180px;overflow-y:auto;border:1px solid var(--bd);border-radius:6px;font-size:12.5px}
+#statusList li{padding:6px 8px;border-bottom:1px dashed var(--bd)}
+.status-label{margin-bottom:4px}
+#previewText{white-space:pre-wrap;background:var(--gut);border:1px solid var(--bd);border-radius:6px;padding:10px;max-height:260px;overflow-y:auto;margin-top:12px;color:var(--mut);font:12.5px/1.6 ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+.panel{display:none}.panel.on{display:block}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.lst div{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--bd)}
+.lst span{flex:1;word-break:break-all}
+footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px}
+.tool{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px;color:var(--fg);text-decoration:none}
+.tool:hover,.tool:focus-visible{border-color:var(--pri);outline:none}
+.tool b{font-size:16px}.tool span{color:var(--mut);font-size:13px}.tool small{color:var(--mut);font-size:12px;margin-top:auto;padding-top:6px}
+textarea{display:block;width:100%;height:320px;resize:vertical;border:1px solid var(--bd);border-radius:6px;padding:10px;background:var(--card);color:var(--fg);font:13px/1.8 "Noto Sans TC",system-ui,sans-serif}
+.opt{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.opt label{display:flex;gap:4px;align-items:center;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><a class="back" href="index.html">← 小工具首頁</a><h1>語音／影片轉文字</h1><p class="tagline">會議錄音、影片轉成逐字稿，可輸出 txt 與 srt 字幕</p></div><div class="themes" id="themes">主題：</div></header>
+<p class="privacy">辨識使用 Whisper 模型，在你的瀏覽器本機執行，音訊與影片不會上傳。第一次使用需從網路下載模型（約 80–250 MB），之後會快取在瀏覽器。</p>
+<section><h2><span class="num">1</span>加入音訊或影片</h2>
+<div class="drop-zone" id="dz">拖曳音訊／影片檔到這裡，或點擊選擇檔案<input type="file" id="fin" accept="audio/*,video/*,.m4a,.mp3,.wav,.mp4,.mov,.webm,.ogg,.flac,.aac"></div>
+<div id="fileList"></div>
+<p class="adv-hint">支援 mp3、m4a、wav、mp4、mov、webm 等（以瀏覽器能解碼為準）。整個檔案會讀進記憶體，超過約 1 GB 的影片建議先抽出音訊。</p></section>
+<section><h2><span class="num">2</span>設定</h2>
+<div class="opt">語言：<select id="lang"><option value="">自動偵測</option><option value="chinese" selected>中文</option><option value="english">英文</option><option value="japanese">日文</option><option value="korean">韓文</option><option value="vietnamese">越南文</option><option value="thai">泰文</option><option value="french">法文</option><option value="german">德文</option><option value="spanish">西班牙文</option><option value="russian">俄文</option><option value="indonesian">印尼文</option><option value="portuguese">葡萄牙文</option></select>
+模型：<select id="model"><option value="base">base（較快，約 80 MB）</option><option value="small" selected>small（較準，約 250 MB，CPU 建議）</option><option value="turbo">large-v3-turbo（最準，約 800 MB，僅限 WebGPU）</option></select></div>
+<div class="opt"><label><input type="checkbox" id="gpu" checked> WebGPU 加速（需較新的 Chrome／Edge，失敗時自動改用 CPU）</label><label><input type="checkbox" id="vad" checked> 略過長時間靜音（更快，也減少幻聽）</label><label><input type="checkbox" id="t2" checked> 簡體轉繁體</label></div>
+<p class="adv-hint">有 WebGPU 時速度可快數倍至十幾倍，並可改用最準的 turbo 模型；沒有 WebGPU 則用 CPU，1 小時錄音可能要跑很久。</p></section>
+<section><h2><span class="num">3</span>開始辨識</h2>
+<div class="row"><button class="pri" id="go" disabled>開始辨識</button><button id="stopBtn" style="display:none">停止</button></div>
+<div id="progressArea" style="display:none"><div class="progress-bar-bg"><div class="progress-bar-fill" id="bar"></div></div><div id="progressText"></div></div></section>
+<section id="res" style="display:none"><h2><span class="num">4</span>逐字稿</h2>
+<div class="opt"><label><input type="checkbox" id="ts" checked> 顯示時間戳記</label></div>
+<textarea id="out" spellcheck="false"></textarea>
+<div class="row"><button class="pri" id="dTxt">下載 .txt</button><button id="dSrt">下載 .srt 字幕</button><button id="cp">複製全文</button></div>
+<p class="adv-hint">文字框可直接修改，.txt 與複製以目前內容為準；切換時間戳記或簡繁轉換會重新產生內容。.srt 以辨識結果產生。</p></section>
+<footer>Whisper（OpenAI）＋ Transformers.js ＋ OpenCC</footer>
+</div>
+<script type="text/plain" id="wsrc">
+import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
+let asr = null, key = '';
+self.onmessage = async e => {
+  const m = e.data;
+  try {
+    if (m.type === 'load') {
+      const k = m.model + '|' + m.gpu;
+      if (key !== k) {
+        const o = { progress_callback: p => self.postMessage({ type: 'dl', p }) };
+        if (m.gpu) { o.device = 'webgpu'; o.dtype = m.dtype; }
+        asr = await pipeline('automatic-speech-recognition', m.model, o);
+        key = k;
+      }
+      self.postMessage({ type: 'ready' });
+    } else if (m.type === 'run') {
+      const o = { task: 'transcribe', chunk_length_s: 30, stride_length_s: 5, return_timestamps: true };
+      if (m.lang) o.language = m.lang;
+      const r = await asr(m.audio, o);
+      self.postMessage({ type: 'seg', chunks: r.chunks || [{ text: r.text, timestamp: [0, null] }] });
+    }
+  } catch (err) { self.postMessage({ type: 'err', msg: String((err && err.message) || err) }); }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const THEMES = [['auto','跟隨系統','#ffffff','#171a21'],['light','淺色','#f6f7f9','#2563eb'],['dark','深色','#0f1115','#4c8dff'],
+  ['sepia','護眼米黃','#f1e8d4','#a8652a'],['forest','森林綠','#eaf2ec','#2f855a'],['ocean','深海藍','#0b1e2d','#2bb3d9'],['dracula','紫夜','#282a36','#bd93f9']];
+function applyTheme(t){
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('tools-theme', t); } catch(e){}
+  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+}
+THEMES.forEach(([id, name, c1, c2]) => {
+  const b = document.createElement('button');
+  b.className = 'sw'; b.dataset.t = id; b.title = name;
+  b.style.background = `linear-gradient(135deg,${c1} 50%,${c2} 50%)`;
+  b.onclick = () => applyTheme(id);
+  $('themes').appendChild(b);
+});
+applyTheme(document.documentElement.dataset.theme || 'auto');
+
+
+let file=null,segs=[],worker=null,pend=null,stop=false,conv=null;
+const fmt=n=>n<1048576?(n/1024).toFixed(0)+' KB':(n/1048576).toFixed(0)+' MB';
+const p2=n=>String(n).padStart(2,'0');
+const tm=(s,ms)=>{s=Math.max(0,s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=Math.floor(s%60);return p2(h)+':'+p2(m)+':'+p2(x)+(ms?','+String(Math.floor(s%1*1000)).padStart(3,'0'):'')};
+const setP=(v,t)=>{$('bar').style.width=Math.min(100,v)+'%';$('progressText').textContent=t};
+if(!window.OpenCC){$('t2').checked=false;$('t2').disabled=true}
+if(!navigator.gpu){$('gpu').checked=false;$('gpu').disabled=true;$('model').querySelector('[value=turbo]').disabled=true}
+// 檔案
+function setFile(f){if(!f)return;file=f;$('fileList').textContent=f.name+'（'+fmt(f.size)+'）';$('go').disabled=false}
+$('fin').onchange=e=>{setFile(e.target.files[0]);e.target.value=''};
+const dz=$('dz');
+dz.onclick=e=>{if(e.target!==$('fin'))$('fin').click()};
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('dragover')};
+dz.ondragleave=()=>dz.classList.remove('dragover');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('dragover');setFile([...e.dataTransfer.files].find(f=>/^(audio|video)\//.test(f.type)||/\.(mp3|m4a|wav|mp4|mov|webm|ogg|flac|aac)$/i.test(f.name)))};
+['dragover','drop'].forEach(v=>window.addEventListener(v,e=>{if(!dz.contains(e.target))e.preventDefault()}));
+// Worker
+function mk(){
+  worker=new Worker(URL.createObjectURL(new Blob([$('wsrc').textContent],{type:'text/javascript'})),{type:'module'});
+  worker.onmessage=e=>{const m=e.data;if(m.type==='dl')return onDl(m.p);if(!pend)return;const p=pend;pend=null;m.type==='err'?p.rej(Error(m.msg)):p.res(m)};
+  worker.onerror=e=>{if(pend){const p=pend;pend=null;p.rej(Error(e.message||'辨識引擎載入失敗，請確認網路連線'))}};
+}
+const call=(msg,tr)=>new Promise((res,rej)=>{pend={res,rej};worker.postMessage(msg,tr||[])});
+const dlf={};
+function onDl(p){
+  if(p.status==='progress'&&p.total){dlf[p.file]={l:p.loaded,t:p.total};let l=0,t=0;for(const k in dlf){l+=dlf[k].l;t+=dlf[k].t}setP(l/t*100,'下載模型中 '+fmt(l)+' / '+fmt(t)+'（僅第一次需要）')}
+}
+// 解碼音訊 → 16 kHz 單聲道
+async function decode(f){
+  const AC=window.AudioContext||window.webkitAudioContext,ctx=new AC({sampleRate:16000});let ab;
+  try{ab=await ctx.decodeAudioData(await f.arrayBuffer())}catch(e){throw Error('無法解碼此檔案的音訊（格式不支援或檔案過大）')}finally{ctx.close()}
+  const n=ab.length,out=new Float32Array(n),c=ab.numberOfChannels;
+  for(let k=0;k<c;k++){const d=ab.getChannelData(k);for(let i=0;i<n;i++)out[i]+=d[i]/c}
+  return out;
+}
+// 輸出
+const cv=s=>{if($('t2').checked&&window.OpenCC){conv=conv||OpenCC.Converter({from:'cn',to:'twp'});return conv(s)}return s};
+const lines=()=>segs.map((s,i)=>({a:s.a,b:s.b!=null?s.b:(segs[i+1]?segs[i+1].a:s.a+3),t:cv(s.t)}));
+function render(){$('out').value=lines().map(l=>($('ts').checked?'['+tm(l.a)+'] ':'')+l.t).join('\n');$('res').style.display=segs.length?'block':'none'}
+$('ts').onchange=$('t2').onchange=render;
+function save(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1e4)}
+const base=()=>file?file.name.replace(/\.[^.]+$/,''):'transcript';
+$('dTxt').onclick=()=>save($('out').value,base()+'.txt','text/plain;charset=utf-8');
+$('dSrt').onclick=()=>save(lines().map((l,i)=>(i+1)+'\n'+tm(l.a,1)+' --> '+tm(l.b,1)+'\n'+l.t+'\n').join('\n'),base()+'.srt','text/plain;charset=utf-8');
+$('cp').onclick=async()=>{try{await navigator.clipboard.writeText($('out').value);$('cp').textContent='已複製'}catch(e){$('out').select();document.execCommand('copy')}setTimeout(()=>$('cp').textContent='複製全文',1500)};
+// 執行
+$('stopBtn').onclick=()=>{stop=true;if(pend&&worker){worker.terminate();worker=null;const p=pend;pend=null;p.rej(Error('stop'))}};
+const DT={base:{encoder_model:'fp32',decoder_model_merged:'q4'},small:{encoder_model:'fp32',decoder_model_merged:'q4'},turbo:{encoder_model:'fp16',decoder_model_merged:'q4'}};
+async function load(gpu,mv){
+  if(!worker)mk();
+  const m=gpu?'onnx-community/'+(mv==='turbo'?'whisper-large-v3-turbo':'whisper-'+mv):'Xenova/whisper-'+(mv==='turbo'?'small':mv);
+  await call({type:'load',model:m,gpu,dtype:DT[mv]});
+}
+// 略過長時間靜音：只移除超過 2 秒的安靜片段，保留前後 0.3 秒，並記錄時間對照
+function trim(a){
+  const F=1600,n=Math.floor(a.length/F);if(n<50)return{buf:a,map:null};
+  const r=new Float32Array(n);
+  for(let i=0;i<n;i++){let s=0;for(let j=i*F,e=j+F;j<e;j++)s+=a[j]*a[j];r[i]=Math.sqrt(s/F)}
+  const srt=Float32Array.from(r).sort(),thr=Math.max(.002,srt[Math.floor(n*.95)]*.05);
+  const GAP=20,PAD=3,reg=[];let st=-1,last=-1;
+  for(let i=0;i<n;i++)if(r[i]>=thr){if(st<0)st=i;else if(i-last>GAP){reg.push([st,last]);st=i}last=i}
+  if(st>=0)reg.push([st,last]);
+  if(!reg.length)return{buf:a,map:null};
+  const R=reg.map(([x,y])=>[Math.max(0,x-PAD)*F,Math.min(n,y+1+PAD)*F]);
+  const tot=R.reduce((s,x)=>s+x[1]-x[0],0);
+  if(tot>a.length*.9)return{buf:a,map:null};
+  const buf=new Float32Array(tot),map=[];let p=0;
+  for(const[x,y]of R){buf.set(a.subarray(x,y),p);map.push({o:x/16000,c:p/16000,d:(y-x)/16000});p+=y-x}
+  return{buf,map};
+}
+$('go').onclick=async()=>{
+  const t0=Date.now();stop=false;segs=[];render();$('go').disabled=true;$('stopBtn').style.display='';$('progressArea').style.display='block';
+  try{
+    setP(0,'解碼音訊中...');let a=await decode(file);const full=a.length;let map=null;
+    if($('vad').checked){const r=trim(a);a=r.buf;map=r.map}
+    const total=a.length,SEG=16000*120;
+    if(!total)throw Error('沒有讀到音訊');
+    const mp=t=>{if(!map)return t;for(const r of map)if(t<r.c+r.d)return r.o+Math.max(0,t-r.c);const l=map[map.length-1];return l.o+l.d};
+    const mv=$('model').value;let gpu=$('gpu').checked&&!$('gpu').disabled;
+    setP(0,'載入模型中...');
+    try{await load(gpu,mv)}catch(e){
+      if(!gpu||stop)throw e;
+      if(worker){worker.terminate();worker=null}pend=null;gpu=false;
+      setP(0,'WebGPU 無法使用，改用 CPU 載入模型...');await load(false,mv)}
+    for(let s=0;s<total&&!stop;s+=SEG){
+      setP(s/total*100,'辨識中 '+tm(s/16000)+' / '+tm(total/16000)+(map?'（已略過靜音）':''));
+      const part=a.slice(s,Math.min(total,s+SEG)),r=await call({type:'run',audio:part,lang:$('lang').value},[part.buffer]);
+      for(const c of r.chunks){const t=(c.text||'').trim();if(!t)continue;const t0=c.timestamp[0]||0;segs.push({a:mp(s/16000+t0),b:c.timestamp[1]!=null?mp(s/16000+c.timestamp[1]):null,t})}
+      render();
+    }
+    const el=(Date.now()-t0)/1000;
+    setP(stop?0:100,stop?'已停止，保留已辨識的部分':'完成，共 '+segs.length+' 段，耗時 '+tm(el)+'（約 '+(full/16000/el).toFixed(1)+' 倍速，'+(gpu?'WebGPU':'CPU')+'）');
+  }catch(e){setP(0,e.message==='stop'?'已停止，保留已辨識的部分':'失敗：'+e.message)}
+  $('go').disabled=false;$('stopBtn').style.display='none';
+};
+</script>
+</body>
+</html>
