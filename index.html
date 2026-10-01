@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- 不讓搜尋引擎收錄本站（Google、Bing 等都會遵守） -->
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
 <title>圖片文字辨識工具 OCR</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8E%3C/text%3E%3C/svg%3E">
 <style>
@@ -285,17 +282,18 @@
 <div class="wrap">
   <header>
     <h1>圖片文字辨識工具</h1>
-    <p class="tagline">上傳圖片或 ZIP，OCR 辨識後輸出 .txt 檔</p>
-    <p class="privacy">OCR 辨識完全在你的瀏覽器本機執行，圖片不會上傳到任何伺服器。若另外開啟「翻譯」功能，辨識出的文字才會傳送到第三方翻譯服務（詳見翻譯設定說明）。</p>
+    <p class="tagline">上傳圖片、PDF 或 ZIP，OCR 辨識後輸出文字檔</p>
+    <p class="privacy">OCR 辨識完全在你的瀏覽器本機執行，圖片與 PDF 不會上傳到任何伺服器。若另外開啟「翻譯」功能，辨識出的文字才會傳送到第三方翻譯服務（詳見翻譯設定說明）。</p>
   </header>
 
   <section>
-    <h2><span class="num">1</span>加入圖片或 ZIP 檔案</h2>
+    <h2><span class="num">1</span>加入圖片、PDF 或 ZIP 檔案</h2>
     <div class="drop-zone" id="dropZone">
-      拖曳圖片 / ZIP 檔到這裡，或點擊選擇檔案
-      <input type="file" id="fileInput" multiple accept="image/*,.zip,.jpg,.jpeg,.png,.bmp,.gif,.webp,.tif,.tiff">
+      拖曳圖片 / PDF / ZIP 檔到這裡，或點擊選擇檔案
+      <input type="file" id="fileInput" multiple accept="image/*,.zip,.pdf,.jpg,.jpeg,.png,.bmp,.gif,.webp,.tif,.tiff">
     </div>
     <div id="fileList"></div>
+    <div class="adv-hint" style="margin-top:6px;">PDF 會自動逐頁處理：有文字層的頁面直接擷取文字（不需 OCR，較快較準）；掃描型頁面則自動轉成圖片並用 OCR 辨識。</div>
   </section>
 
   <section>
@@ -322,8 +320,9 @@
     </div>
     <div class="radio-group">
       輸出方式：
-      <label><input type="radio" name="outputMode" value="separate" checked> 每張圖片各自輸出一個 .txt（自動打包成 .zip 下載）</label>
-      <label><input type="radio" name="outputMode" value="merged"> 合併成一份 .txt</label>
+      <label><input type="radio" name="outputMode" value="separate" checked> 每張圖片／每頁 PDF 各自一個 .txt（PDF 頁面會連同頁面圖片一起打包進 .zip）</label>
+      <label><input type="radio" name="outputMode" value="merged"> 合併成一份 .txt（純文字，不含圖片）</label>
+      <label><input type="radio" name="outputMode" value="html"> HTML 報告（文字＋圖片放在同一份檔案，版面最接近原始 PDF，想保留圖片建議選這個）</label>
     </div>
 
     <details class="advanced">
@@ -435,6 +434,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
 <script>
 const IMAGE_EXT = ['jpg','jpeg','png','bmp','gif','webp','tif','tiff'];
 let pendingFiles = []; // {name, blob}
@@ -576,9 +579,64 @@ function isImageName(name){
   return IMAGE_EXT.includes(ext);
 }
 
+// Renders one PDF page to a PNG blob (this is also what gets used as the
+// "preserved image" for that page in zip/HTML output).
+async function renderPdfPageToBlob(page, scale){
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
+}
+
+// Extracts the native text layer of a PDF page (if any), using Y-position
+// jumps between text items as a simple line-break heuristic.
+async function extractPdfPageText(page){
+  const textContent = await page.getTextContent();
+  let lastY = null;
+  let text = '';
+  for (const item of textContent.items){
+    const y = item.transform[5];
+    if (lastY !== null && Math.abs(y - lastY) > 2){
+      text += '\n';
+    } else if (text && !text.endsWith('\n')){
+      text += ' ';
+    }
+    text += item.str;
+    lastY = y;
+  }
+  return text.trim();
+}
+
+// Expands one PDF file into one pendingFiles entry per page. Pages with a
+// real text layer get pdfText set (OCR is skipped for them); pages without
+// one (scanned pages) are left for the normal OCR pipeline to handle.
+async function expandPdf(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const baseName = file.name.replace(/\.pdf$/i, '');
+  const entries = [];
+  for (let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p);
+    const blob = await renderPdfPageToBlob(page, 2);
+    const extracted = await extractPdfPageText(page);
+    const hasText = extracted.replace(/\s/g, '').length > 3;
+    entries.push({
+      name: `${baseName}_p${String(p).padStart(2,'0')}.png`,
+      blob,
+      pdfText: hasText ? extracted : null,
+      isPdfPage: true,
+    });
+  }
+  return entries;
+}
+
 async function handleFiles(fileArray){
   for (const f of fileArray){
-    if (f.name.toLowerCase().endsWith('.zip')){
+    const lowerName = f.name.toLowerCase();
+    if (lowerName.endsWith('.zip')){
       try{
         const zip = await JSZip.loadAsync(f);
         for (const relPath in zip.files){
@@ -590,6 +648,13 @@ async function handleFiles(fileArray){
         }
       }catch(e){
         alert('無法解壓縮 ' + f.name + '：' + e.message);
+      }
+    } else if (lowerName.endsWith('.pdf') || f.type === 'application/pdf'){
+      try{
+        const entries = await expandPdf(f);
+        pendingFiles.push(...entries);
+      }catch(e){
+        alert('無法解析 PDF ' + f.name + '：' + e.message);
       }
     } else if (f.type.startsWith('image/') || isImageName(f.name)){
       pendingFiles.push({name: f.name, blob: f});
@@ -605,7 +670,7 @@ function renderFileList(){
     return;
   }
   fileListEl.innerHTML =
-    `已加入 ${pendingFiles.length} 張圖片　<span class="clear-link" id="clearLink">清除全部</span><br>` +
+    `已加入 ${pendingFiles.length} 個項目（圖片／PDF 頁面）　<span class="clear-link" id="clearLink">清除全部</span><br>` +
     pendingFiles.map(f => `<div class="file-row"><span>${f.name}</span></div>`).join('');
   document.getElementById('clearLink').addEventListener('click', () => {
     pendingFiles = [];
@@ -713,6 +778,47 @@ async function preprocessImage(blob, scale, grayscale){
   return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
 }
 
+function blobToDataURL(blob){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Builds a single self-contained HTML file with each result's image and
+// text shown together — this is the only output mode that keeps images.
+async function buildHtmlReport(results){
+  let sections = '';
+  for (const r of results){
+    let imgTag = '';
+    if (r.imageBlob){
+      const dataUrl = await blobToDataURL(r.imageBlob);
+      imgTag = `<img src="${dataUrl}" alt="${escapeHtml(r.name)}">`;
+    }
+    sections += `<section><h2>${escapeHtml(r.name)}</h2>${imgTag}<pre>${escapeHtml(r.text)}</pre></section><hr>`;
+  }
+  return `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>OCR 辨識報告</title>
+<style>
+  body{font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;max-width:900px;margin:40px auto;padding:0 20px;color:#20241f;line-height:1.6;}
+  h1{border-bottom:2px solid #20241f;padding-bottom:10px;}
+  section{margin:32px 0;}
+  h2{font-size:14px;color:#a13d2e;font-family:"Courier New",monospace;}
+  img{max-width:100%;border:1px solid #ddd;margin:12px 0;display:block;}
+  pre{white-space:pre-wrap;word-break:break-word;background:#f7f7f3;border:1px solid #e4ddc9;padding:14px;font-size:13px;}
+  hr{border:none;border-top:1px dashed #ccc;margin:30px 0;}
+  .meta{color:#5b5f4f;font-size:13px;}
+</style></head><body>
+<h1>OCR 辨識報告</h1>
+<p class="meta">產生時間：${new Date().toLocaleString('zh-TW')}</p>
+${sections}
+</body></html>`;
+}
+
 startBtn.addEventListener('click', async () => {
   if (!pendingFiles.length) return;
   startBtn.disabled = true;
@@ -744,18 +850,22 @@ startBtn.addEventListener('click', async () => {
   const scale = Number(document.getElementById('scaleSelect').value);
   const grayscale = document.getElementById('grayscaleCheck').checked;
 
-  progressText.textContent = `正在載入 OCR 引擎與語言資料（${lang}）...`;
-
-  let worker;
-  try{
-    worker = await Tesseract.createWorker(lang);
-    const params = { tessedit_pageseg_mode: psm };
-    if (whitelist) params.tessedit_char_whitelist = whitelist;
-    await worker.setParameters(params);
-  }catch(e){
-    progressText.textContent = '引擎載入失敗：' + e.message + '（請確認網路連線）';
-    startBtn.disabled = false;
-    return;
+  const needsOcr = pendingFiles.some(f => !f.pdfText);
+  let worker = null;
+  if (needsOcr){
+    progressText.textContent = `正在載入 OCR 引擎與語言資料（${lang}）...`;
+    try{
+      worker = await Tesseract.createWorker(lang);
+      const params = { tessedit_pageseg_mode: psm };
+      if (whitelist) params.tessedit_char_whitelist = whitelist;
+      await worker.setParameters(params);
+    }catch(e){
+      progressText.textContent = '引擎載入失敗：' + e.message + '（請確認網路連線）';
+      startBtn.disabled = false;
+      return;
+    }
+  } else {
+    progressText.textContent = '所有頁面皆偵測到文字層，略過 OCR 引擎載入...';
   }
 
   const doTranslate = translateCheck.checked;
@@ -769,9 +879,16 @@ startBtn.addEventListener('click', async () => {
     statusItems[i].textContent = f.name + '：處理圖片中...';
     progressText.textContent = `處理中 (${i+1}/${pendingFiles.length})：${f.name}`;
     try{
-      const procBlob = await preprocessImage(f.blob, scale, grayscale);
-      statusItems[i].textContent = f.name + '：辨識中...';
-      const { data: { text } } = await worker.recognize(procBlob);
+      let text;
+      if (f.pdfText){
+        statusItems[i].textContent = f.name + '：PDF 文字層擷取完成（略過 OCR）';
+        text = f.pdfText;
+      } else {
+        const procBlob = await preprocessImage(f.blob, scale, grayscale);
+        statusItems[i].textContent = f.name + '：辨識中...';
+        const res = await worker.recognize(procBlob);
+        text = res.data.text;
+      }
       let finalText = text;
       if (doTranslate){
         statusItems[i].textContent = f.name + '：翻譯中...';
@@ -782,17 +899,17 @@ startBtn.addEventListener('click', async () => {
           finalText = text + `\n\n----- 翻譯失敗：${terr.message} -----`;
         }
       }
-      results.push({ name: f.name, text: finalText });
+      results.push({ name: f.name, text: finalText, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
       statusItems[i].textContent = f.name + '：完成';
     }catch(err){
-      results.push({ name: f.name, text: '[辨識失敗：' + err.message + ']' });
+      results.push({ name: f.name, text: '[辨識失敗：' + err.message + ']', isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
       statusItems[i].textContent = f.name + '：失敗（' + err.message + '）';
     }
     progressBarFill.style.width = Math.round(((i+1)/pendingFiles.length)*100) + '%';
   }
 
-  await worker.terminate();
-  progressText.textContent = '辨識完成！';
+  if (worker) await worker.terminate();
+  progressText.textContent = '辨識完成！正在產生輸出檔案...';
 
   if (mode === 'merged'){
     const merged = results.map(r => `===== ${r.name} =====\n${r.text.trim()}\n`).join('\n');
@@ -800,11 +917,17 @@ startBtn.addEventListener('click', async () => {
     resultFilename = 'ocr_merged_result.txt';
     document.getElementById('previewText').textContent =
       merged.length > 3000 ? merged.slice(0,3000) + '\n...(預覽截斷，請下載查看完整內容)' : merged;
+  } else if (mode === 'html'){
+    const html = await buildHtmlReport(results);
+    resultBlob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    resultFilename = 'ocr_report.html';
+    document.getElementById('previewText').textContent = '已產生 HTML 報告（文字＋圖片同一份檔案），下載後用瀏覽器開啟即可查看。';
   } else {
     const zip = new JSZip();
     results.forEach(r => {
       const base = r.name.replace(/\.[^.]+$/, '');
       zip.file(base + '.txt', r.text);
+      if (r.isPdfPage && r.imageBlob) zip.file('images/' + base + '.png', r.imageBlob);
     });
     resultBlob = await zip.generateAsync({ type: 'blob' });
     resultFilename = 'ocr_results.zip';
