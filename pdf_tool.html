@@ -76,6 +76,10 @@ details.advanced summary{cursor:pointer;padding:8px 12px;font-size:13px;color:va
 .tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
 .panel{display:none}.panel.on{display:block}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.dz{position:relative}
+.dz.over{border-color:var(--pri);background:var(--gut)}
+.dz.over::after{content:"放開滑鼠以加入 PDF";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--gut);opacity:.95;border-radius:8px;color:var(--pri);font-weight:700;font-size:15px;pointer-events:none}
+.dzh{color:var(--mut);font-size:12px;margin:6px 0 0}
 .lst div{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--bd)}
 .lst span{flex:1;word-break:break-all}
 footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
@@ -797,6 +801,27 @@ pick('ulIn','ulInfo','ulGo',f=>ul=f);
 $('ulGo').onclick=busy($('ulGo'),$('ulMsg'),async()=>{
   const blob=await rasterToPdf(ul,$('ulPw').value,2,.9,(i,n)=>$('ulMsg').textContent=`處理中 ${i}/${n} 頁...`);
   dl(blob,stem(ul)+'_unlocked.pdf');$('ulMsg').textContent=`完成（${fmt(blob.size)}）`;});
+
+// ---------- 拖曳上傳（合併／拆分／壓縮／解鎖） ----------
+['dragover','drop'].forEach(ev=>window.addEventListener(ev,e=>{if(!e.target.closest||!e.target.closest('.dz'))e.preventDefault()}));
+[['p-merge','mgIn',true],['p-split','spIn',false],['p-comp','cpIn',false],['p-unl','ulIn',false]].forEach(([pid,inId,multi])=>{
+  const sec=document.querySelector('#'+pid+' section'),inp=$(inId);
+  sec.classList.add('dz');
+  const h=document.createElement('p');h.className='dzh';h.textContent=multi?'也可以直接把多個 PDF 拖曳到這個區塊。':'也可以直接把 PDF 拖曳到這個區塊。';
+  sec.insertBefore(h,sec.querySelector('.row,.lst,input[type=text]')||null);
+  let depth=0;
+  sec.addEventListener('dragenter',e=>{e.preventDefault();depth++;sec.classList.add('over')});
+  sec.addEventListener('dragleave',()=>{if(--depth<=0){depth=0;sec.classList.remove('over')}});
+  sec.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy'});
+  sec.addEventListener('drop',e=>{
+    e.preventDefault();depth=0;sec.classList.remove('over');
+    let fs=[...e.dataTransfer.files].filter(f=>/\.pdf$/i.test(f.name)||f.type==='application/pdf');
+    if(!fs.length){alert('請拖曳 PDF 檔案');return}
+    if(!multi)fs=fs.slice(0,1);
+    const dt=new DataTransfer();fs.forEach(f=>dt.items.add(f));
+    inp.files=dt.files;inp.dispatchEvent(new Event('change'));
+  });
+});
 </script>
 </body>
 </html>
