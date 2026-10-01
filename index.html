@@ -366,6 +366,14 @@
         <div class="adv-field">
           <label><input type="checkbox" id="grayscaleCheck" checked style="width:auto;margin-right:6px;"> 辨識前轉灰階並增強對比</label>
         </div>
+
+        <div class="adv-field">
+          <label><input type="checkbox" id="downscaleCheck" checked style="width:auto;margin-right:6px;"> 大型圖片自動縮小再處理（手機拍照常見，可加快辨識速度）</label>
+        </div>
+
+        <div class="adv-field">
+          <label><input type="checkbox" id="parallelCheck" checked style="width:auto;margin-right:6px;"> 多張圖片平行辨識（依電腦核心數同時處理多張，速度更快）</label>
+        </div>
       </div>
     </details>
   </section>
@@ -758,12 +766,19 @@ function loadImageEl(blob){
 
 // Upscale (bicubic-like via canvas) and optionally grayscale + boost contrast.
 // This helps a lot with small/low-res screenshots (e.g. dense tables).
-async function preprocessImage(blob, scale, grayscale){
-  if (scale === 1 && !grayscale) return blob;
+// maxSourceDim (if set) first shrinks oversized photos (e.g. 4000x3000 phone
+// shots) down to a sane working size before the upscale factor is applied —
+// this is purely a speed optimization and barely affects accuracy, since
+// OCR gains nothing from resolution far beyond what's needed to read text.
+async function preprocessImage(blob, scale, grayscale, maxSourceDim){
   const img = await loadImageEl(blob);
+  const longest = Math.max(img.width, img.height);
+  const preScale = (maxSourceDim && longest > maxSourceDim) ? (maxSourceDim / longest) : 1;
+  const finalScale = preScale * scale;
+  if (finalScale === 1 && !grayscale) return blob;
   const canvas = document.createElement('canvas');
-  canvas.width = Math.round(img.width * scale);
-  canvas.height = Math.round(img.height * scale);
+  canvas.width = Math.round(img.width * finalScale);
+  canvas.height = Math.round(img.height * finalScale);
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
@@ -875,81 +890,117 @@ startBtn.addEventListener('click', async () => {
   const whitelist = whitelistInput.value.trim();
   const scale = Number(document.getElementById('scaleSelect').value);
   const grayscale = document.getElementById('grayscaleCheck').checked;
-
-  let currentOcrIndex = -1;
-  const needsOcr = pendingFiles.some(f => !f.pdfText);
-  let worker = null;
-  if (needsOcr){
-    progressText.textContent = `正在載入 OCR 引擎與語言資料（${lang}）...`;
-    try{
-      worker = await Tesseract.createWorker(lang, 1, {
-        logger: m => {
-          if (m.status === 'recognizing text' && currentOcrIndex >= 0){
-            setItemProgress(currentOcrIndex, Math.round(m.progress * 100));
-          }
-        }
-      });
-      const params = { tessedit_pageseg_mode: psm };
-      if (whitelist) params.tessedit_char_whitelist = whitelist;
-      await worker.setParameters(params);
-    }catch(e){
-      progressText.textContent = '引擎載入失敗：' + e.message + '（請確認網路連線）';
-      startBtn.disabled = false;
-      return;
-    }
-  } else {
-    progressText.textContent = '所有頁面皆偵測到文字層，略過 OCR 引擎載入...';
-  }
+  const maxSourceDim = document.getElementById('downscaleCheck').checked ? 2000 : null;
+  const useParallel = document.getElementById('parallelCheck').checked;
 
   const doTranslate = translateCheck.checked;
   const srcIso = document.getElementById('srcLangSelect').value;
   const tgtIso = document.getElementById('tgtLangSelect').value;
   const tgtLabel = document.getElementById('tgtLangSelect').selectedOptions[0].textContent;
 
+  let completedCount = 0;
+  function markItemDone(){
+    completedCount++;
+    progressBarFill.style.width = Math.round((completedCount/pendingFiles.length)*100) + '%';
+    progressText.textContent = `已完成 ${completedCount}/${pendingFiles.length}`;
+  }
+
+  // itemOutcome[i] = { text, error } once that item's OCR (or PDF text
+  // extraction) step is done. PDF pages with a text layer are resolved
+  // immediately below; everything else goes through the OCR worker pool.
+  const itemOutcome = new Array(pendingFiles.length).fill(null);
+
+  pendingFiles.forEach((f, i) => {
+    if (f.pdfText){
+      itemOutcome[i] = { text: f.pdfText, error: null };
+      setItemLabel(i, f.name + '：PDF 文字層擷取完成（略過 OCR）');
+      setItemProgress(i, 100);
+      markItemDone();
+    }
+  });
+
+  const ocrQueue = pendingFiles.map((f, i) => ({ f, i })).filter(x => !x.f.pdfText);
+
+  if (ocrQueue.length){
+    const numWorkers = useParallel
+      ? Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2, ocrQueue.length))
+      : 1;
+    progressText.textContent = numWorkers > 1
+      ? `正在載入 OCR 引擎（${numWorkers} 個平行處理緒）...`
+      : `正在載入 OCR 引擎與語言資料（${lang}）...`;
+
+    let pool = [];
+    try{
+      const params = { tessedit_pageseg_mode: psm };
+      if (whitelist) params.tessedit_char_whitelist = whitelist;
+      for (let w = 0; w < numWorkers; w++){
+        let currentIdx = -1;
+        const worker = await Tesseract.createWorker(lang, 1, {
+          logger: m => {
+            if (m.status === 'recognizing text' && currentIdx >= 0){
+              setItemProgress(currentIdx, Math.round(m.progress * 100));
+            }
+          }
+        });
+        await worker.setParameters(params);
+        pool.push({ worker, setCurrent: idx => { currentIdx = idx; } });
+      }
+    }catch(e){
+      progressText.textContent = '引擎載入失敗：' + e.message + '（請確認網路連線）';
+      startBtn.disabled = false;
+      return;
+    }
+
+    let qPos = 0;
+    async function workerLoop(slot){
+      while (qPos < ocrQueue.length){
+        const { f, i } = ocrQueue[qPos++];
+        slot.setCurrent(i);
+        setItemLabel(i, f.name + '：辨識中...');
+        setItemProgress(i, 5);
+        try{
+          const procBlob = await preprocessImage(f.blob, scale, grayscale, maxSourceDim);
+          const res = await slot.worker.recognize(procBlob);
+          itemOutcome[i] = { text: res.data.text, error: null };
+          setItemProgress(i, 100);
+        }catch(err){
+          itemOutcome[i] = { text: '', error: err.message };
+          setItemProgress(i, 100, true);
+        }
+        slot.setCurrent(-1);
+        markItemDone();
+      }
+    }
+    await Promise.all(pool.map(workerLoop));
+    await Promise.all(pool.map(slot => slot.worker.terminate()));
+  }
+
+  progressText.textContent = '辨識完成！正在產生輸出檔案...';
+
+  // Translation is done sequentially afterward (one item at a time) to stay
+  // gentle on the free translation API, regardless of OCR parallelism above.
   const results = [];
   for (let i = 0; i < pendingFiles.length; i++){
     const f = pendingFiles[i];
-    setItemLabel(i, f.name + '：處理圖片中...');
-    setItemProgress(i, 5);
-    progressText.textContent = `處理中 (${i+1}/${pendingFiles.length})：${f.name}`;
-    try{
-      let text;
-      if (f.pdfText){
-        setItemLabel(i, f.name + '：PDF 文字層擷取完成（略過 OCR）');
-        setItemProgress(i, 100);
-        text = f.pdfText;
-      } else {
-        const procBlob = await preprocessImage(f.blob, scale, grayscale);
-        setItemLabel(i, f.name + '：辨識中...');
-        currentOcrIndex = i;
-        const res = await worker.recognize(procBlob);
-        currentOcrIndex = -1;
-        setItemProgress(i, 100);
-        text = res.data.text;
-      }
-      let finalText = text;
-      if (doTranslate){
-        setItemLabel(i, f.name + '：翻譯中...');
-        try{
-          const translated = await translateText(text, srcIso, tgtIso);
-          finalText = text + `\n\n----- 翻譯（${tgtLabel}）-----\n` + translated;
-        }catch(terr){
-          finalText = text + `\n\n----- 翻譯失敗：${terr.message} -----`;
-        }
-      }
-      results.push({ name: f.name, text: finalText, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
-      setItemLabel(i, f.name + '：完成');
-      setItemProgress(i, 100);
-    }catch(err){
-      results.push({ name: f.name, text: '[辨識失敗：' + err.message + ']', isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
-      setItemLabel(i, f.name + '：失敗（' + err.message + '）');
-      setItemProgress(i, 100, true);
+    const outcome = itemOutcome[i];
+    if (outcome.error){
+      setItemLabel(i, f.name + '：失敗（' + outcome.error + '）');
+      results.push({ name: f.name, text: '[辨識失敗：' + outcome.error + ']', isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
+      continue;
     }
-    progressBarFill.style.width = Math.round(((i+1)/pendingFiles.length)*100) + '%';
+    let finalText = outcome.text;
+    if (doTranslate){
+      setItemLabel(i, f.name + '：翻譯中...');
+      try{
+        const translated = await translateText(outcome.text, srcIso, tgtIso);
+        finalText = outcome.text + `\n\n----- 翻譯（${tgtLabel}）-----\n` + translated;
+      }catch(terr){
+        finalText = outcome.text + `\n\n----- 翻譯失敗：${terr.message} -----`;
+      }
+    }
+    setItemLabel(i, f.name + '：完成');
+    results.push({ name: f.name, text: finalText, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
   }
-
-  if (worker) await worker.terminate();
-  progressText.textContent = '辨識完成！正在產生輸出檔案...';
 
   if (mode === 'merged'){
     const merged = results.map(r => `===== ${r.name} =====\n${r.text.trim()}\n`).join('\n');
