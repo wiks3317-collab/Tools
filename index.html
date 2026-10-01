@@ -1,1046 +1,117 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>圖片文字辨識工具 OCR</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8E%3C/text%3E%3C/svg%3E">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小工具集</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
-  :root{
-    --paper:#faf7f0;
-    --paper-line:#e4ddc9;
-    --ink:#20241f;
-    --ink-soft:#5b5f4f;
-    --stamp:#a13d2e;
-    --stamp-dark:#7e2f22;
-    --ok:#3f6b4a;
-    --card-bg:#ffffff;
-    --font-body:"Georgia","Noto Serif TC",serif;
-    --font-mono:"Courier New", monospace;
-    --font-scale:1;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--paper);
-    color:var(--ink);
-    font-family: var(--font-body);
-    line-height:1.6;
-  }
-  .wrap{max-width:720px;margin:0 auto;padding:40px 24px 80px;zoom:var(--font-scale);}
-  header{border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:28px;}
-  h1{font-size:26px;margin:0 0 6px;letter-spacing:.02em;}
-  .tagline{color:var(--ink-soft);font-size:14px;margin:0;}
-  .privacy{
-    font-family: var(--font-mono);
-    font-size:12.5px;
-    color:var(--ink-soft);
-    border-left:3px solid var(--stamp);
-    padding:8px 12px;
-    margin:16px 0 0;
-    background:rgba(161,61,46,0.05);
-  }
-  section{margin-bottom:32px;}
-  h2{
-    font-size:15px;
-    font-family:var(--font-mono);
-    color:var(--stamp-dark);
-    margin:0 0 12px;
-    display:flex;align-items:baseline;gap:8px;
-  }
-  h2 .num{
-    border:1.5px solid var(--stamp-dark);
-    color:var(--stamp-dark);
-    width:20px;height:20px;
-    display:inline-flex;align-items:center;justify-content:center;
-    font-size:12px;border-radius:50%;
-  }
-  .drop-zone{
-    border:2px dashed var(--ink-soft);
-    padding:32px 16px;
-    text-align:center;
-    cursor:pointer;
-    color:var(--ink-soft);
-    font-size:14px;
-    transition:border-color .15s, color .15s, background .15s;
-    background:var(--card-bg);
-  }
-  .drop-zone:hover, .drop-zone.dragover{
-    border-color:var(--stamp);
-    color:var(--stamp-dark);
-    background:rgba(161,61,46,0.05);
-  }
-  .drop-zone input{display:none;}
-  #fileList{
-    margin-top:12px;
-    font-family:var(--font-mono);
-    font-size:13px;
-    color:var(--ink-soft);
-    max-height:140px;
-    overflow-y:auto;
-  }
-  #fileList .file-row{display:flex;justify-content:space-between;border-bottom:1px dotted var(--paper-line);padding:3px 0;}
-  .clear-link{color:var(--stamp);cursor:pointer;text-decoration:underline;font-size:12px;}
-
-  .field{margin-bottom:14px;font-size:14px;}
-  select{
-    font-family:var(--font-mono);
-    font-size:14px;
-    padding:6px 8px;
-    border:1.5px solid var(--ink);
-    background:var(--paper);
-    color:var(--ink);
-  }
-  .radio-group label{display:block;font-size:14px;margin:6px 0;cursor:pointer;}
-  .radio-group input{margin-right:8px;}
-
-  button{
-    font-family:var(--font-mono);
-    font-size:14px;
-    letter-spacing:.03em;
-    background:var(--stamp);
-    color:#fff;
-    border:none;
-    padding:11px 22px;
-    cursor:pointer;
-    transition:background .15s;
-  }
-  button:hover:not(:disabled){background:var(--stamp-dark);}
-  button:disabled{background:#c8c2ae;cursor:not-allowed;}
-
-  #progressArea{margin-top:20px;}
-  .progress-bar-bg{
-    width:100%;height:8px;background:#e6e0cd;border:1px solid var(--ink);
-  }
-  .progress-bar-fill{height:100%;width:0%;background:var(--ok);transition:width .2s;}
-  #progressText{font-family:var(--font-mono);font-size:13px;margin:8px 0;color:var(--ink-soft);}
-  #statusList{
-    list-style:none;padding:0;margin:0;
-    font-family:var(--font-mono);font-size:12.5px;
-    max-height:180px;overflow-y:auto;
-    border:1px solid var(--paper-line);
-  }
-  #statusList li{padding:6px 8px;border-bottom:1px dotted var(--paper-line);}
-  .status-label{margin-bottom:4px;}
-  .item-progress-bg{width:100%;height:4px;background:var(--paper-line);}
-  .item-progress-fill{height:100%;width:0%;background:var(--ok);transition:width .15s;}
-  .item-progress-fill.error{background:var(--stamp);}
-
-  details.advanced{
-    margin-top:16px;
-    border:1px solid var(--paper-line);
-    background:var(--card-bg);
-    padding:0;
-  }
-  details.advanced summary{
-    cursor:pointer;
-    padding:10px 12px;
-    font-family:var(--font-mono);
-    font-size:13px;
-    color:var(--stamp-dark);
-  }
-  details.advanced .adv-body{padding:4px 14px 16px;}
-  .adv-field{margin-bottom:14px;font-size:13.5px;}
-  .adv-field label{display:block;margin-bottom:4px;color:var(--ink-soft);}
-  .adv-hint{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
-  input[type="text"]{
-    font-family:var(--font-mono);
-    font-size:13px;
-    padding:6px 8px;
-    border:1.5px solid var(--ink);
-    background:var(--paper);
-    color:var(--ink);
-    width:100%;
-  }
-  .chip-btn{
-    display:inline-block;
-    font-family:var(--font-mono);
-    font-size:11.5px;
-    color:var(--stamp-dark);
-    border:1px solid var(--stamp-dark);
-    background:none;
-    padding:3px 8px;
-    margin:6px 6px 0 0;
-    cursor:pointer;
-  }
-  .chip-btn:hover{background:rgba(161,61,46,0.08);}
-
-  .lang-grid{
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:4px 12px;
-    font-size:13.5px;
-    margin-top:6px;
-  }
-  .lang-grid label{cursor:pointer;display:flex;align-items:center;gap:6px;}
-  .lang-grid input{margin:0;}
-  .translate-toggle{font-size:14px;display:block;margin-bottom:10px;cursor:pointer;}
-  .translate-toggle input{margin-right:6px;}
-  #translateOptions .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .warn{
-    font-family:var(--font-mono);
-    font-size:12px;
-    color:var(--stamp-dark);
-    border-left:3px solid var(--stamp);
-    padding:8px 12px;
-    margin:12px 0 0;
-    background:rgba(161,61,46,0.06);
-  }
-
-  #resultArea{border-top:2px solid var(--ink);padding-top:20px;}
-  #previewText{
-    font-family:var(--font-mono);
-    font-size:12.5px;
-    white-space:pre-wrap;
-    background:var(--card-bg);
-    border:1px solid var(--paper-line);
-    padding:12px;
-    max-height:260px;
-    overflow-y:auto;
-    margin-top:14px;
-    color:var(--ink-soft);
-  }
-  footer{margin-top:40px;font-size:12px;color:var(--ink-soft);text-align:center;}
-
-  #appearanceBtn{
-    position:fixed;
-    top:18px;right:18px;
-    width:40px;height:40px;
-    border-radius:50%;
-    background:var(--ink);
-    color:var(--paper);
-    border:none;
-    font-size:18px;
-    cursor:pointer;
-    z-index:50;
-    padding:0;
-    display:flex;align-items:center;justify-content:center;
-  }
-  #appearancePanel{
-    position:fixed;
-    top:66px;right:18px;
-    width:260px;
-    background:var(--card-bg);
-    border:1.5px solid var(--ink);
-    padding:16px;
-    z-index:50;
-    display:none;
-    font-family:var(--font-mono);
-    font-size:12.5px;
-    color:var(--ink);
-    box-shadow:2px 2px 0 rgba(0,0,0,0.15);
-  }
-  #appearancePanel.open{display:block;}
-  #appearancePanel h3{font-size:12.5px;margin:0 0 8px;color:var(--stamp-dark);}
-  .theme-swatches{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
-  .theme-swatch{
-    width:28px;height:28px;
-    border-radius:50%;
-    cursor:pointer;
-    border:2px solid transparent;
-  }
-  .theme-swatch.active{border-color:var(--stamp);}
-  .ap-field{margin-bottom:14px;}
-  .ap-field label{display:block;margin-bottom:4px;color:var(--ink-soft);}
-  .ap-field input[type="color"]{width:44px;height:26px;padding:0;border:1.5px solid var(--ink);background:none;cursor:pointer;}
-  .font-size-btns{display:flex;gap:6px;}
-  .font-size-btns button{padding:5px 10px;font-size:12px;}
-  .font-size-btns button.active{background:var(--stamp-dark);}
-  #appearancePanel select{width:100%;font-size:12.5px;padding:5px;}
-  #resetAppearance{width:100%;margin-top:4px;background:var(--ink-soft);}
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--add:#c8f0cf;--del:#ffd0d0;--emp:#e9ebee;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--add:#cfe8b8;--del:#f4c9b8;--emp:#ebe0c4;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--add:#bfe8c9;--del:#f5cdcd;--emp:#dce8df;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--add:#17604a;--del:#7a2f3f;--emp:#0e2536;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--add:#2c6e49;--del:#7d2f46;--emp:#2b2d3a;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+a{color:var(--pri)}
+.wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.sub,.tagline,.adv-hint,.msg{color:var(--mut);font-size:12px;margin:2px 0 0}
+.msg{font-size:13px;margin-top:8px}
+.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
+.sw.on{outline:2px solid var(--pri);outline-offset:2px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.num{width:20px;height:20px;border-radius:50%;background:var(--gut);color:var(--mut);font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.privacy,.warn{color:var(--mut);font-size:12px;border-left:3px solid var(--pri);padding:6px 10px;margin:8px 0;background:var(--gut)}
+.warn{border-left-color:#e5484d}
+button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+button:hover:not(:disabled),.btn:hover{border-color:var(--pri)}
+button:disabled{opacity:.4;cursor:default}
+.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+input[type=file]{display:none}
+select,input[type=text],input[type=password]{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+input[type=text],input[type=password]{width:100%}
+option{background:var(--card);color:var(--fg)}
+.drop-zone{border:2px dashed var(--bd);border-radius:8px;padding:28px 16px;text-align:center;cursor:pointer;color:var(--mut);transition:border-color .15s,background .15s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--pri);color:var(--fg);background:var(--gut)}
+.drop-zone input{display:none}
+#fileList{margin-top:10px;font-size:13px;color:var(--mut);max-height:140px;overflow-y:auto}
+.file-row{border-bottom:1px dashed var(--bd);padding:2px 0}
+.clear-link{color:var(--pri);cursor:pointer;text-decoration:underline;font-size:12px}
+.field{margin-bottom:12px}
+.radio-group label{display:block;margin:6px 0;cursor:pointer}
+.radio-group input,.translate-toggle input{margin-right:6px}
+.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;margin-top:6px}
+.lang-grid label{cursor:pointer;display:flex;align-items:center;gap:6px}
+.translate-toggle{display:block;margin-bottom:10px;cursor:pointer}
+#translateOptions .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+details.advanced{margin-top:14px;border:1px solid var(--bd);border-radius:6px}
+details.advanced summary{cursor:pointer;padding:8px 12px;font-size:13px;color:var(--mut)}
+.adv-body{padding:4px 14px 12px}
+.adv-field{margin-bottom:12px}
+.adv-field label{display:block;margin-bottom:4px;color:var(--mut)}
+.chip-btn{display:inline-block;font-size:12px;color:var(--pri);border:1px solid var(--pri);border-radius:12px;padding:1px 9px;margin:6px 6px 0 0;cursor:pointer}
+.progress-bar-bg,.item-progress-bg{background:var(--gut);border-radius:4px;overflow:hidden}
+.progress-bar-bg{height:8px}.item-progress-bg{height:4px}
+.progress-bar-fill,.item-progress-fill{height:100%;width:0;background:var(--pri);transition:width .2s}
+.item-progress-fill.error{background:#e5484d}
+#progressArea{margin-top:14px}
+#progressText{margin:8px 0;color:var(--mut);font-size:13px}
+#statusList{list-style:none;padding:0;margin:0;max-height:180px;overflow-y:auto;border:1px solid var(--bd);border-radius:6px;font-size:12.5px}
+#statusList li{padding:6px 8px;border-bottom:1px dashed var(--bd)}
+.status-label{margin-bottom:4px}
+#previewText{white-space:pre-wrap;background:var(--gut);border:1px solid var(--bd);border-radius:6px;padding:10px;max-height:260px;overflow-y:auto;margin-top:12px;color:var(--mut);font:12.5px/1.6 ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+.panel{display:none}.panel.on{display:block}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.lst div{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--bd)}
+.lst span{flex:1;word-break:break-all}
+footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px}
+.tool{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px;color:var(--fg);text-decoration:none}
+.tool:hover,.tool:focus-visible{border-color:var(--pri);outline:none}
+.tool b{font-size:16px}.tool span{color:var(--mut);font-size:13px}.tool small{color:var(--mut);font-size:12px;margin-top:auto;padding-top:6px}
 </style>
 </head>
 <body>
-<button id="appearanceBtn" title="美化設定">🎨</button>
-<div id="appearancePanel">
-  <h3>佈景主題</h3>
-  <div class="theme-swatches" id="themeSwatches"></div>
-
-  <div class="ap-field">
-    <label>自訂主色調</label>
-    <input type="color" id="accentColorPicker">
-  </div>
-  <div class="ap-field">
-    <label>自訂背景色</label>
-    <input type="color" id="bgColorPicker">
-  </div>
-  <div class="ap-field">
-    <label>字體大小</label>
-    <div class="font-size-btns" id="fontSizeBtns">
-      <button type="button" data-scale="0.9">小</button>
-      <button type="button" data-scale="1" class="active">中</button>
-      <button type="button" data-scale="1.15">大</button>
-      <button type="button" data-scale="1.3">特大</button>
-    </div>
-  </div>
-  <div class="ap-field">
-    <label>字型風格</label>
-    <select id="fontStyleSelect">
-      <option value="serif">襯線經典（預設）</option>
-      <option value="sans">現代黑體</option>
-      <option value="mono">打字機風（全等寬）</option>
-    </select>
-  </div>
-  <button type="button" id="resetAppearance">恢復預設外觀</button>
-</div>
 <div class="wrap">
-  <header>
-    <h1>圖片文字辨識工具</h1>
-    <p class="tagline">上傳圖片、PDF 或 ZIP，OCR 辨識後輸出文字檔</p>
-    <p class="privacy">OCR 辨識完全在你的瀏覽器本機執行，圖片與 PDF 不會上傳到任何伺服器。若另外開啟「翻譯」功能，辨識出的文字才會傳送到第三方翻譯服務（詳見翻譯設定說明）。</p>
-  </header>
-
-  <section>
-    <h2><span class="num">1</span>加入圖片、PDF 或 ZIP 檔案</h2>
-    <div class="drop-zone" id="dropZone">
-      拖曳圖片 / PDF / ZIP 檔到這裡，或點擊選擇檔案
-      <input type="file" id="fileInput" multiple accept="image/*,.zip,.pdf,.jpg,.jpeg,.png,.bmp,.gif,.webp,.tif,.tiff">
-    </div>
-    <div id="fileList"></div>
-    <div class="adv-hint" style="margin-top:6px;">PDF 會自動逐頁處理：有文字層的頁面直接擷取文字（不需 OCR，較快較準）；掃描型頁面則自動轉成圖片並用 OCR 辨識。</div>
-  </section>
-
-  <section>
-    <h2><span class="num">2</span>設定辨識選項</h2>
-    <div class="field">
-      辨識語言（可複選，會同時辨識所選語言）：
-      <div class="lang-grid" id="langGrid">
-        <label><input type="checkbox" class="langCheck" value="eng" data-iso="en" checked> 英文</label>
-        <label><input type="checkbox" class="langCheck" value="chi_tra" data-iso="zh-TW" checked> 繁體中文</label>
-        <label><input type="checkbox" class="langCheck" value="chi_sim" data-iso="zh-CN"> 簡體中文</label>
-        <label><input type="checkbox" class="langCheck" value="jpn" data-iso="ja"> 日文</label>
-        <label><input type="checkbox" class="langCheck" value="kor" data-iso="ko"> 韓文</label>
-        <label><input type="checkbox" class="langCheck" value="vie" data-iso="vi"> 越南文</label>
-        <label><input type="checkbox" class="langCheck" value="tha" data-iso="th"> 泰文</label>
-        <label><input type="checkbox" class="langCheck" value="fra" data-iso="fr"> 法文</label>
-        <label><input type="checkbox" class="langCheck" value="deu" data-iso="de"> 德文</label>
-        <label><input type="checkbox" class="langCheck" value="spa" data-iso="es"> 西班牙文</label>
-        <label><input type="checkbox" class="langCheck" value="rus" data-iso="ru"> 俄文</label>
-        <label><input type="checkbox" class="langCheck" value="ara" data-iso="ar"> 阿拉伯文</label>
-        <label><input type="checkbox" class="langCheck" value="ind" data-iso="id"> 印尼文</label>
-        <label><input type="checkbox" class="langCheck" value="por" data-iso="pt"> 葡萄牙文</label>
-      </div>
-      <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">第一次使用某語言時，瀏覽器需下載語言資料檔（約數 MB），請保持網路連線。勾選越多語言，辨識速度會越慢，建議只勾選圖片實際會出現的語言。</div>
-    </div>
-    <div class="radio-group">
-      輸出方式：
-      <label><input type="radio" name="outputMode" value="separate" checked> 每張圖片／每頁 PDF 各自一個 .txt（PDF 頁面會連同頁面圖片一起打包進 .zip）</label>
-      <label><input type="radio" name="outputMode" value="merged"> 合併成一份 .txt（純文字，不含圖片）</label>
-      <label><input type="radio" name="outputMode" value="html"> HTML 報告（文字＋圖片放在同一份檔案，版面最接近原始 PDF，想保留圖片建議選這個）</label>
-    </div>
-
-    <details class="advanced">
-      <summary>進階設定（表格截圖 / ID 碼 / 純數字辨識常錯，建議調整這裡）</summary>
-      <div class="adv-body">
-        <div class="adv-field">
-          <label>版面模式（Page Segmentation Mode）</label>
-          <select id="psmSelect">
-            <option value="3">自動（一般文件、整頁文章）</option>
-            <option value="6" selected>假設為單一文字區塊（推薦：表格截圖、清單）</option>
-            <option value="7">單一文字行（一張圖只有一行字）</option>
-            <option value="11">稀疏文字（文字分散、位置不規則）</option>
-          </select>
-        </div>
-
-        <div class="adv-field">
-          <label>字元白名單（限制只辨識這些字元，可大幅減少數字被誤判成文字）</label>
-          <input type="text" id="whitelistInput" placeholder="留空 = 不限制（使用語言字典，適合一般文章）">
-          <div>
-            <span class="chip-btn" id="presetCode">代碼／ID／數字（英數字+底線）</span>
-            <span class="chip-btn" id="presetNumber">純數字（含小數點）</span>
-            <span class="chip-btn" id="presetDatetime">日期時間格式</span>
-            <span class="chip-btn" id="presetClear">清空</span>
-          </div>
-          <div class="adv-hint">你這次上傳的表格（ID碼＋小數點數字＋時間戳記）建議點「代碼／ID／數字」，並把語言改成「純英文／數字」。</div>
-        </div>
-
-        <div class="adv-field">
-          <label>圖片放大倍率（原圖文字很小、解析度低時有幫助）</label>
-          <select id="scaleSelect">
-            <option value="1">不放大</option>
-            <option value="2" selected>放大 2 倍（推薦）</option>
-            <option value="3">放大 3 倍</option>
-          </select>
-        </div>
-
-        <div class="adv-field">
-          <label><input type="checkbox" id="grayscaleCheck" checked style="width:auto;margin-right:6px;"> 辨識前轉灰階並增強對比</label>
-        </div>
-
-        <div class="adv-field">
-          <label><input type="checkbox" id="downscaleCheck" checked style="width:auto;margin-right:6px;"> 大型圖片自動縮小再處理（手機拍照常見，可加快辨識速度）</label>
-        </div>
-
-        <div class="adv-field">
-          <label><input type="checkbox" id="parallelCheck" checked style="width:auto;margin-right:6px;"> 多張圖片平行辨識（依電腦核心數同時處理多張，速度更快）</label>
-        </div>
-      </div>
-    </details>
-  </section>
-
-  <section>
-    <h2><span class="num">3</span>翻譯設定（選用）</h2>
-    <label class="translate-toggle">
-      <input type="checkbox" id="translateCheck"> 將辨識結果翻譯成其他語言
-    </label>
-    <div id="translateOptions" style="display:none;">
-      <div class="field">
-        原文語言：
-        <select id="srcLangSelect">
-          <option value="en">英文</option>
-          <option value="zh-TW" selected>繁體中文</option>
-          <option value="zh-CN">簡體中文</option>
-          <option value="ja">日文</option>
-          <option value="ko">韓文</option>
-          <option value="vi">越南文</option>
-          <option value="th">泰文</option>
-          <option value="fr">法文</option>
-          <option value="de">德文</option>
-          <option value="es">西班牙文</option>
-          <option value="ru">俄文</option>
-          <option value="ar">阿拉伯文</option>
-          <option value="id">印尼文</option>
-          <option value="pt">葡萄牙文</option>
-        </select>
-        <span>→</span>
-        目標語言：
-        <select id="tgtLangSelect">
-          <option value="en" selected>英文</option>
-          <option value="zh-TW">繁體中文</option>
-          <option value="zh-CN">簡體中文</option>
-          <option value="ja">日文</option>
-          <option value="ko">韓文</option>
-          <option value="vi">越南文</option>
-          <option value="th">泰文</option>
-          <option value="fr">法文</option>
-          <option value="de">德文</option>
-          <option value="es">西班牙文</option>
-          <option value="ru">俄文</option>
-          <option value="ar">阿拉伯文</option>
-          <option value="id">印尼文</option>
-          <option value="pt">葡萄牙文</option>
-        </select>
-      </div>
-      <p class="warn">⚠️ 翻譯會呼叫免費的第三方服務（MyMemory），辨識出的文字內容會傳送到該服務的伺服器進行翻譯，<strong>不再只留在本機瀏覽器</strong>。若圖片內容涉及公司機密或個資，請不要勾選這個功能。免費額度約每日 5000 字，超過額度翻譯會失敗（OCR 結果本身不受影響）。翻譯結果會附加在原文之後，一起輸出到 .txt 檔。</p>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="num">4</span>開始辨識</h2>
-    <button id="startBtn" disabled>開始辨識</button>
-    <div id="progressArea" style="display:none">
-      <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
-      <div id="progressText"></div>
-      <ul id="statusList"></ul>
-    </div>
-  </section>
-
-  <section id="resultArea" style="display:none">
-    <h2><span class="num">5</span>下載結果</h2>
-    <button id="downloadBtn">下載結果</button>
-    <div id="previewText"></div>
-  </section>
-
-  <footer>Tesseract.js（開源 OCR 引擎）＋ JSZip　·　僅供內部作業使用</footer>
+<header><div><h1>小工具集</h1><p class="tagline">請選擇要使用的工具。所有處理都在你的瀏覽器內完成，檔案不會上傳到任何伺服器。</p></div><div class="themes" id="themes">主題：</div></header>
+<nav class="menu">
+<a class="tool" href="txtcompare.html"><b>文件比對工具</b><span>左右對照兩份文字或程式檔，標出新增與刪除的行。</span><small>支援 txt、md、docx 與常見程式碼檔</small></a>
+<a class="tool" href="ocr_tool.html"><b>圖片文字辨識 OCR</b><span>把圖片或 ZIP 內的圖片轉成文字，可選擇性翻譯。</span><small>支援 jpg、png、zip 等</small></a>
+<a class="tool" href="pdf_tool.html"><b>PDF 工具</b><span>PDF 文字辨識與 HTML 報告、合併、拆分、壓縮、解鎖。</span><small>支援 pdf</small></a>
+</nav>
 </div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-</script>
-<script>
-const IMAGE_EXT = ['jpg','jpeg','png','bmp','gif','webp','tif','tiff'];
-let pendingFiles = []; // {name, blob}
-let resultBlob = null;
-let resultFilename = '';
-
-// ---------- Appearance / theming ----------
-const THEME_PRESETS = {
-  paper:  { paper:'#faf7f0', paperLine:'#e4ddc9', ink:'#20241f', inkSoft:'#5b5f4f', stamp:'#a13d2e', stampDark:'#7e2f22', ok:'#3f6b4a', card:'#ffffff' },
-  clean:  { paper:'#ffffff', paperLine:'#e5e5e5', ink:'#1a1a1a', inkSoft:'#6b6b6b', stamp:'#2563eb', stampDark:'#1e40af', ok:'#16a34a', card:'#f7f7f7' },
-  dark:   { paper:'#1c1c1c', paperLine:'#333333', ink:'#ededed', inkSoft:'#a3a3a3', stamp:'#e07856', stampDark:'#c9603f', ok:'#6fbf73', card:'#262626' },
-  blue:   { paper:'#eef3f8', paperLine:'#cddbe8', ink:'#1c2b3a', inkSoft:'#4b6072', stamp:'#2f6f9e', stampDark:'#234f73', ok:'#3f8f6f', card:'#ffffff' },
-  forest: { paper:'#f2f5ee', paperLine:'#d8e0cc', ink:'#23301f', inkSoft:'#586b4c', stamp:'#4c7a3f', stampDark:'#375a2d', ok:'#6a8f3f', card:'#ffffff' },
-};
-const FONT_PRESETS = {
-  serif: { body:'"Georgia","Noto Serif TC",serif', mono:'"Courier New", monospace' },
-  sans:  { body:'"Helvetica Neue","PingFang TC","Noto Sans TC",sans-serif', mono:'"Helvetica Neue","PingFang TC","Noto Sans TC",sans-serif' },
-  mono:  { body:'"Courier New", monospace', mono:'"Courier New", monospace' },
-};
-const root = document.documentElement.style;
-
-function applyThemeVars(t){
-  root.setProperty('--paper', t.paper);
-  root.setProperty('--paper-line', t.paperLine);
-  root.setProperty('--ink', t.ink);
-  root.setProperty('--ink-soft', t.inkSoft);
-  root.setProperty('--stamp', t.stamp);
-  root.setProperty('--stamp-dark', t.stampDark);
-  root.setProperty('--ok', t.ok);
-  root.setProperty('--card-bg', t.card);
+const $=id=>document.getElementById(id);
+const THEMES = [['auto','跟隨系統','#ffffff','#171a21'],['light','淺色','#f6f7f9','#2563eb'],['dark','深色','#0f1115','#4c8dff'],
+  ['sepia','護眼米黃','#f1e8d4','#a8652a'],['forest','森林綠','#eaf2ec','#2f855a'],['ocean','深海藍','#0b1e2d','#2bb3d9'],['dracula','紫夜','#282a36','#bd93f9']];
+function applyTheme(t){
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('tools-theme', t); } catch(e){}
+  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.t === t));
 }
-function applyFontVars(f){
-  root.setProperty('--font-body', f.body);
-  root.setProperty('--font-mono', f.mono);
-}
-function applyScale(s){
-  root.setProperty('--font-scale', s);
-}
-
-function saveAppearance(state){
-  try{ localStorage.setItem('ocrToolAppearance', JSON.stringify(state)); }catch(e){}
-}
-function loadAppearance(){
-  try{ return JSON.parse(localStorage.getItem('ocrToolAppearance') || 'null'); }catch(e){ return null; }
-}
-
-let appearanceState = { theme:'paper', accent:null, bg:null, scale:1, font:'serif' };
-
-function renderAppearance(){
-  const preset = THEME_PRESETS[appearanceState.theme] || THEME_PRESETS.paper;
-  const t = Object.assign({}, preset);
-  if (appearanceState.accent){ t.stamp = appearanceState.accent; t.stampDark = appearanceState.accent; }
-  if (appearanceState.bg){ t.paper = appearanceState.bg; }
-  applyThemeVars(t);
-  applyFontVars(FONT_PRESETS[appearanceState.font] || FONT_PRESETS.serif);
-  applyScale(appearanceState.scale);
-
-  document.querySelectorAll('.theme-swatch').forEach(sw => {
-    sw.classList.toggle('active', sw.dataset.theme === appearanceState.theme);
-  });
-  document.querySelectorAll('.font-size-btns button').forEach(b => {
-    b.classList.toggle('active', Number(b.dataset.scale) === appearanceState.scale);
-  });
-  document.getElementById('fontStyleSelect').value = appearanceState.font;
-  document.getElementById('accentColorPicker').value = appearanceState.accent || preset.stamp;
-  document.getElementById('bgColorPicker').value = appearanceState.bg || preset.paper;
-}
-
-function initAppearancePanel(){
-  const swatchWrap = document.getElementById('themeSwatches');
-  Object.keys(THEME_PRESETS).forEach(key => {
-    const sw = document.createElement('div');
-    sw.className = 'theme-swatch';
-    sw.dataset.theme = key;
-    sw.style.background = THEME_PRESETS[key].paper;
-    sw.style.boxShadow = `inset 0 0 0 8px ${THEME_PRESETS[key].stamp}`;
-    sw.title = key;
-    sw.addEventListener('click', () => {
-      appearanceState.theme = key;
-      appearanceState.accent = null;
-      appearanceState.bg = null;
-      renderAppearance();
-      saveAppearance(appearanceState);
-    });
-    swatchWrap.appendChild(sw);
-  });
-
-  document.getElementById('accentColorPicker').addEventListener('input', e => {
-    appearanceState.accent = e.target.value;
-    renderAppearance();
-    saveAppearance(appearanceState);
-  });
-  document.getElementById('bgColorPicker').addEventListener('input', e => {
-    appearanceState.bg = e.target.value;
-    renderAppearance();
-    saveAppearance(appearanceState);
-  });
-  document.querySelectorAll('.font-size-btns button').forEach(b => {
-    b.addEventListener('click', () => {
-      appearanceState.scale = Number(b.dataset.scale);
-      renderAppearance();
-      saveAppearance(appearanceState);
-    });
-  });
-  document.getElementById('fontStyleSelect').addEventListener('change', e => {
-    appearanceState.font = e.target.value;
-    renderAppearance();
-    saveAppearance(appearanceState);
-  });
-  document.getElementById('resetAppearance').addEventListener('click', () => {
-    appearanceState = { theme:'paper', accent:null, bg:null, scale:1, font:'serif' };
-    renderAppearance();
-    saveAppearance(appearanceState);
-  });
-
-  const appearanceBtn = document.getElementById('appearanceBtn');
-  const appearancePanel = document.getElementById('appearancePanel');
-  appearanceBtn.addEventListener('click', () => appearancePanel.classList.toggle('open'));
-  document.addEventListener('click', e => {
-    if (!appearancePanel.contains(e.target) && e.target !== appearanceBtn){
-      appearancePanel.classList.remove('open');
-    }
-  });
-
-  const saved = loadAppearance();
-  if (saved) appearanceState = Object.assign(appearanceState, saved);
-  renderAppearance();
-}
-initAppearancePanel();
-// ---------- End appearance / theming ----------
-
-const fileInput = document.getElementById('fileInput');
-const dropZone = document.getElementById('dropZone');
-const fileListEl = document.getElementById('fileList');
-const startBtn = document.getElementById('startBtn');
-
-function isImageName(name){
-  const ext = name.split('.').pop().toLowerCase();
-  return IMAGE_EXT.includes(ext);
-}
-
-// Renders one PDF page to a PNG blob (this is also what gets used as the
-// "preserved image" for that page in zip/HTML output).
-async function renderPdfPageToBlob(page, scale){
-  const viewport = page.getViewport({ scale });
-  const canvas = document.createElement('canvas');
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
-  const ctx = canvas.getContext('2d');
-  await page.render({ canvasContext: ctx, viewport }).promise;
-  return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
-}
-
-// Extracts the native text layer of a PDF page (if any), using Y-position
-// jumps between text items as a simple line-break heuristic.
-async function extractPdfPageText(page){
-  const textContent = await page.getTextContent();
-  let lastY = null;
-  let text = '';
-  for (const item of textContent.items){
-    const y = item.transform[5];
-    if (lastY !== null && Math.abs(y - lastY) > 2){
-      text += '\n';
-    } else if (text && !text.endsWith('\n')){
-      text += ' ';
-    }
-    text += item.str;
-    lastY = y;
-  }
-  return text.trim();
-}
-
-// Expands one PDF file into one pendingFiles entry per page. Pages with a
-// real text layer get pdfText set (OCR is skipped for them); pages without
-// one (scanned pages) are left for the normal OCR pipeline to handle.
-async function expandPdf(file){
-  const buf = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-  const baseName = file.name.replace(/\.pdf$/i, '');
-  const entries = [];
-  for (let p = 1; p <= pdf.numPages; p++){
-    const page = await pdf.getPage(p);
-    const blob = await renderPdfPageToBlob(page, 2);
-    const extracted = await extractPdfPageText(page);
-    const hasText = extracted.replace(/\s/g, '').length > 3;
-    entries.push({
-      name: `${baseName}_p${String(p).padStart(2,'0')}.png`,
-      blob,
-      pdfText: hasText ? extracted : null,
-      isPdfPage: true,
-    });
-  }
-  return entries;
-}
-
-async function handleFiles(fileArray){
-  for (const f of fileArray){
-    const lowerName = f.name.toLowerCase();
-    if (lowerName.endsWith('.zip')){
-      try{
-        const zip = await JSZip.loadAsync(f);
-        for (const relPath in zip.files){
-          const entry = zip.files[relPath];
-          if (!entry.dir && isImageName(relPath)){
-            const blob = await entry.async('blob');
-            pendingFiles.push({name: relPath.split('/').pop(), blob});
-          }
-        }
-      }catch(e){
-        alert('無法解壓縮 ' + f.name + '：' + e.message);
-      }
-    } else if (lowerName.endsWith('.pdf') || f.type === 'application/pdf'){
-      try{
-        const entries = await expandPdf(f);
-        pendingFiles.push(...entries);
-      }catch(e){
-        alert('無法解析 PDF ' + f.name + '：' + e.message);
-      }
-    } else if (f.type.startsWith('image/') || isImageName(f.name)){
-      pendingFiles.push({name: f.name, blob: f});
-    }
-  }
-  renderFileList();
-}
-
-function renderFileList(){
-  if (!pendingFiles.length){
-    fileListEl.innerHTML = '';
-    startBtn.disabled = true;
-    return;
-  }
-  fileListEl.innerHTML =
-    `已加入 ${pendingFiles.length} 個項目（圖片／PDF 頁面）　<span class="clear-link" id="clearLink">清除全部</span><br>` +
-    pendingFiles.map(f => `<div class="file-row"><span>${f.name}</span></div>`).join('');
-  document.getElementById('clearLink').addEventListener('click', () => {
-    pendingFiles = [];
-    renderFileList();
-  });
-  startBtn.disabled = false;
-}
-
-fileInput.addEventListener('change', e => { handleFiles(Array.from(e.target.files)); fileInput.value=''; });
-
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('dragover');
-  handleFiles(Array.from(e.dataTransfer.files));
+THEMES.forEach(([id, name, c1, c2]) => {
+  const b = document.createElement('button');
+  b.className = 'sw'; b.dataset.t = id; b.title = name;
+  b.style.background = `linear-gradient(135deg,${c1} 50%,${c2} 50%)`;
+  b.onclick = () => applyTheme(id);
+  $('themes').appendChild(b);
 });
-dropZone.addEventListener('click', (e) => { if (e.target !== fileInput) fileInput.click(); });
+applyTheme(document.documentElement.dataset.theme || 'auto');
 
-const whitelistInput = document.getElementById('whitelistInput');
-document.getElementById('presetCode').addEventListener('click', () => {
-  whitelistInput.value = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_.:-/ ';
-});
-document.getElementById('presetNumber').addEventListener('click', () => {
-  whitelistInput.value = '0123456789.-';
-});
-document.getElementById('presetDatetime').addEventListener('click', () => {
-  whitelistInput.value = '0123456789-: ';
-});
-document.getElementById('presetClear').addEventListener('click', () => {
-  whitelistInput.value = '';
-});
-
-const translateCheck = document.getElementById('translateCheck');
-const translateOptions = document.getElementById('translateOptions');
-translateCheck.addEventListener('change', () => {
-  translateOptions.style.display = translateCheck.checked ? 'block' : 'none';
-});
-
-// Splits text into <=450 char chunks (preferring line breaks) and translates
-// each chunk via the free MyMemory API, then rejoins them in order.
-async function translateText(text, srcIso, tgtIso){
-  const trimmed = text.trim();
-  if (!trimmed) return '';
-  const lines = trimmed.split('\n');
-  const chunks = [];
-  let current = '';
-  for (const line of lines){
-    if ((current + '\n' + line).length > 450){
-      if (current) chunks.push(current);
-      current = line;
-    } else {
-      current = current ? current + '\n' + line : line;
-    }
-  }
-  if (current) chunks.push(current);
-
-  const translatedChunks = [];
-  for (const chunk of chunks){
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${srcIso}|${tgtIso}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('翻譯服務連線失敗');
-    const json = await res.json();
-    if (!json.responseData || typeof json.responseData.translatedText !== 'string'){
-      throw new Error('翻譯服務回應異常（可能已達免費額度上限）');
-    }
-    translatedChunks.push(json.responseData.translatedText);
-    await new Promise(r => setTimeout(r, 250)); // be gentle with the free API
-  }
-  return translatedChunks.join('\n');
-}
-
-function loadImageEl(blob){
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = URL.createObjectURL(blob);
-  });
-}
-
-// Upscale (bicubic-like via canvas) and optionally grayscale + boost contrast.
-// This helps a lot with small/low-res screenshots (e.g. dense tables).
-// maxSourceDim (if set) first shrinks oversized photos (e.g. 4000x3000 phone
-// shots) down to a sane working size before the upscale factor is applied —
-// this is purely a speed optimization and barely affects accuracy, since
-// OCR gains nothing from resolution far beyond what's needed to read text.
-async function preprocessImage(blob, scale, grayscale, maxSourceDim){
-  const img = await loadImageEl(blob);
-  const longest = Math.max(img.width, img.height);
-  const preScale = (maxSourceDim && longest > maxSourceDim) ? (maxSourceDim / longest) : 1;
-  const finalScale = preScale * scale;
-  if (finalScale === 1 && !grayscale) return blob;
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(img.width * finalScale);
-  canvas.height = Math.round(img.height * finalScale);
-  const ctx = canvas.getContext('2d');
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  if (grayscale){
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const d = imageData.data;
-    for (let i = 0; i < d.length; i += 4){
-      const avg = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-      let v = (avg - 128) * 1.35 + 128; // contrast stretch
-      v = Math.max(0, Math.min(255, v));
-      d[i] = d[i+1] = d[i+2] = v;
-    }
-    ctx.putImageData(imageData, 0, 0);
-  }
-  return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
-}
-
-function blobToDataURL(blob){
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-function escapeHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// Builds a single self-contained HTML file with each result's image and
-// text shown together — this is the only output mode that keeps images.
-async function buildHtmlReport(results){
-  let textSections = '';
-  results.forEach((r, idx) => {
-    textSections += `<section><h2>文字 ${idx+1}：${escapeHtml(r.name)}</h2><pre>${escapeHtml(r.text)}</pre></section>`;
-  });
-
-  let imageSections = '';
-  for (let idx = 0; idx < results.length; idx++){
-    const r = results[idx];
-    if (r.imageBlob){
-      const dataUrl = await blobToDataURL(r.imageBlob);
-      imageSections += `<section><h2>圖片 ${idx+1}：${escapeHtml(r.name)}</h2><img src="${dataUrl}" alt="${escapeHtml(r.name)}"></section>`;
-    }
-  }
-
-  return `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>OCR 辨識報告</title>
-<style>
-  body{font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;max-width:900px;margin:40px auto;padding:0 20px;color:#20241f;line-height:1.6;}
-  h1{border-bottom:2px solid #20241f;padding-bottom:10px;}
-  .group-title{font-size:19px;margin:40px 0 4px;padding-top:16px;border-top:2px solid #20241f;}
-  section{margin:24px 0;}
-  h2{font-size:14px;color:#a13d2e;font-family:"Courier New",monospace;}
-  img{max-width:100%;border:1px solid #ddd;margin:12px 0;display:block;}
-  pre{white-space:pre-wrap;word-break:break-word;background:#f7f7f3;border:1px solid #e4ddc9;padding:14px;font-size:13px;}
-  .meta{color:#5b5f4f;font-size:13px;}
-</style></head><body>
-<h1>OCR 辨識報告</h1>
-<p class="meta">產生時間：${new Date().toLocaleString('zh-TW')}</p>
-<h2 class="group-title">文字內容</h2>
-${textSections}
-<h2 class="group-title">頁面圖片</h2>
-${imageSections}
-</body></html>`;
-}
-
-startBtn.addEventListener('click', async () => {
-  if (!pendingFiles.length) return;
-  startBtn.disabled = true;
-
-  const checkedLangs = Array.from(document.querySelectorAll('.langCheck:checked')).map(c => c.value);
-  const lang = checkedLangs.length ? checkedLangs.join('+') : 'eng';
-  const mode = document.querySelector('input[name="outputMode"]:checked').value;
-
-  const progressArea = document.getElementById('progressArea');
-  const progressBarFill = document.getElementById('progressBarFill');
-  const progressText = document.getElementById('progressText');
-  const statusList = document.getElementById('statusList');
-  const resultArea = document.getElementById('resultArea');
-
-  progressArea.style.display = 'block';
-  resultArea.style.display = 'none';
-  statusList.innerHTML = '';
-  progressBarFill.style.width = '0%';
-
-  const statusItems = pendingFiles.map(f => {
-    const li = document.createElement('li');
-    const label = document.createElement('div');
-    label.className = 'status-label';
-    label.textContent = f.name + '：等待中';
-    const barBg = document.createElement('div');
-    barBg.className = 'item-progress-bg';
-    const barFill = document.createElement('div');
-    barFill.className = 'item-progress-fill';
-    barBg.appendChild(barFill);
-    li.appendChild(label);
-    li.appendChild(barBg);
-    statusList.appendChild(li);
-    return { label, fill: barFill };
-  });
-  function setItemLabel(idx, text){ statusItems[idx].label.textContent = text; }
-  function setItemProgress(idx, pct, isError){
-    statusItems[idx].fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
-    statusItems[idx].fill.classList.toggle('error', !!isError);
-  }
-
-  const psm = document.getElementById('psmSelect').value;
-  const whitelist = whitelistInput.value.trim();
-  const scale = Number(document.getElementById('scaleSelect').value);
-  const grayscale = document.getElementById('grayscaleCheck').checked;
-  const maxSourceDim = document.getElementById('downscaleCheck').checked ? 2000 : null;
-  const useParallel = document.getElementById('parallelCheck').checked;
-
-  const doTranslate = translateCheck.checked;
-  const srcIso = document.getElementById('srcLangSelect').value;
-  const tgtIso = document.getElementById('tgtLangSelect').value;
-  const tgtLabel = document.getElementById('tgtLangSelect').selectedOptions[0].textContent;
-
-  let completedCount = 0;
-  function markItemDone(){
-    completedCount++;
-    progressBarFill.style.width = Math.round((completedCount/pendingFiles.length)*100) + '%';
-    progressText.textContent = `已完成 ${completedCount}/${pendingFiles.length}`;
-  }
-
-  // itemOutcome[i] = { text, error } once that item's OCR (or PDF text
-  // extraction) step is done. PDF pages with a text layer are resolved
-  // immediately below; everything else goes through the OCR worker pool.
-  const itemOutcome = new Array(pendingFiles.length).fill(null);
-
-  pendingFiles.forEach((f, i) => {
-    if (f.pdfText){
-      itemOutcome[i] = { text: f.pdfText, error: null };
-      setItemLabel(i, f.name + '：PDF 文字層擷取完成（略過 OCR）');
-      setItemProgress(i, 100);
-      markItemDone();
-    }
-  });
-
-  const ocrQueue = pendingFiles.map((f, i) => ({ f, i })).filter(x => !x.f.pdfText);
-
-  if (ocrQueue.length){
-    const numWorkers = useParallel
-      ? Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2, ocrQueue.length))
-      : 1;
-    progressText.textContent = numWorkers > 1
-      ? `正在載入 OCR 引擎（${numWorkers} 個平行處理緒）...`
-      : `正在載入 OCR 引擎與語言資料（${lang}）...`;
-
-    let pool = [];
-    try{
-      const params = { tessedit_pageseg_mode: psm };
-      if (whitelist) params.tessedit_char_whitelist = whitelist;
-      for (let w = 0; w < numWorkers; w++){
-        let currentIdx = -1;
-        const worker = await Tesseract.createWorker(lang, 1, {
-          logger: m => {
-            if (m.status === 'recognizing text' && currentIdx >= 0){
-              setItemProgress(currentIdx, Math.round(m.progress * 100));
-            }
-          }
-        });
-        await worker.setParameters(params);
-        pool.push({ worker, setCurrent: idx => { currentIdx = idx; } });
-      }
-    }catch(e){
-      progressText.textContent = '引擎載入失敗：' + e.message + '（請確認網路連線）';
-      startBtn.disabled = false;
-      return;
-    }
-
-    let qPos = 0;
-    async function workerLoop(slot){
-      while (qPos < ocrQueue.length){
-        const { f, i } = ocrQueue[qPos++];
-        slot.setCurrent(i);
-        setItemLabel(i, f.name + '：辨識中...');
-        setItemProgress(i, 5);
-        try{
-          const procBlob = await preprocessImage(f.blob, scale, grayscale, maxSourceDim);
-          const res = await slot.worker.recognize(procBlob);
-          itemOutcome[i] = { text: res.data.text, error: null };
-          setItemProgress(i, 100);
-        }catch(err){
-          itemOutcome[i] = { text: '', error: err.message };
-          setItemProgress(i, 100, true);
-        }
-        slot.setCurrent(-1);
-        markItemDone();
-      }
-    }
-    await Promise.all(pool.map(workerLoop));
-    await Promise.all(pool.map(slot => slot.worker.terminate()));
-  }
-
-  progressText.textContent = '辨識完成！正在產生輸出檔案...';
-
-  // Translation is done sequentially afterward (one item at a time) to stay
-  // gentle on the free translation API, regardless of OCR parallelism above.
-  const results = [];
-  for (let i = 0; i < pendingFiles.length; i++){
-    const f = pendingFiles[i];
-    const outcome = itemOutcome[i];
-    if (outcome.error){
-      setItemLabel(i, f.name + '：失敗（' + outcome.error + '）');
-      results.push({ name: f.name, text: '[辨識失敗：' + outcome.error + ']', isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
-      continue;
-    }
-    let finalText = outcome.text;
-    if (doTranslate){
-      setItemLabel(i, f.name + '：翻譯中...');
-      try{
-        const translated = await translateText(outcome.text, srcIso, tgtIso);
-        finalText = outcome.text + `\n\n----- 翻譯（${tgtLabel}）-----\n` + translated;
-      }catch(terr){
-        finalText = outcome.text + `\n\n----- 翻譯失敗：${terr.message} -----`;
-      }
-    }
-    setItemLabel(i, f.name + '：完成');
-    results.push({ name: f.name, text: finalText, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
-  }
-
-  if (mode === 'merged'){
-    const merged = results.map(r => `===== ${r.name} =====\n${r.text.trim()}\n`).join('\n');
-    resultBlob = new Blob([merged], { type: 'text/plain;charset=utf-8' });
-    resultFilename = 'ocr_merged_result.txt';
-    document.getElementById('previewText').textContent =
-      merged.length > 3000 ? merged.slice(0,3000) + '\n...(預覽截斷，請下載查看完整內容)' : merged;
-  } else if (mode === 'html'){
-    const html = await buildHtmlReport(results);
-    resultBlob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    resultFilename = 'ocr_report.html';
-    document.getElementById('previewText').textContent = '已產生 HTML 報告（文字＋圖片同一份檔案），下載後用瀏覽器開啟即可查看。';
-  } else {
-    const zip = new JSZip();
-    results.forEach(r => {
-      const base = r.name.replace(/\.[^.]+$/, '');
-      zip.file(base + '.txt', r.text);
-      if (r.isPdfPage && r.imageBlob) zip.file('images/' + base + '.png', r.imageBlob);
-    });
-    resultBlob = await zip.generateAsync({ type: 'blob' });
-    resultFilename = 'ocr_results.zip';
-    document.getElementById('previewText').textContent =
-      results.map(r => `【${r.name}】\n${r.text.slice(0,200)}${r.text.length>200 ? '...' : ''}`).join('\n\n');
-  }
-
-  resultArea.style.display = 'block';
-  startBtn.disabled = false;
-});
-
-document.getElementById('downloadBtn').addEventListener('click', () => {
-  if (!resultBlob) return;
-  const url = URL.createObjectURL(resultBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = resultFilename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
 </script>
 </body>
 </html>

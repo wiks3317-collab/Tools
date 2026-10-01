@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文件比對工具</title>
+<!-- 禁止搜尋引擎收錄 -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- 網頁 icon（內嵌 SVG：左右兩份文件，紅色=刪除、綠色=新增） -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='3' y='8' width='27' height='48' rx='5' fill='%23fff' stroke='%23475569' stroke-width='3'/%3E%3Crect x='34' y='8' width='27' height='48' rx='5' fill='%23fff' stroke='%23475569' stroke-width='3'/%3E%3Crect x='8' y='17' width='17' height='7' rx='2' fill='%23f87171'/%3E%3Crect x='8' y='30' width='17' height='5' rx='2' fill='%23cbd5e1'/%3E%3Crect x='8' y='41' width='11' height='5' rx='2' fill='%23cbd5e1'/%3E%3Crect x='39' y='17' width='17' height='5' rx='2' fill='%23cbd5e1'/%3E%3Crect x='39' y='28' width='17' height='7' rx='2' fill='%234ade80'/%3E%3Crect x='39' y='41' width='11' height='5' rx='2' fill='%23cbd5e1'/%3E%3C/svg%3E">
+<script>try{const t=(localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme'));if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--add:#c8f0cf;--del:#ffd0d0;--emp:#e9ebee;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--add:#cfe8b8;--del:#f4c9b8;--emp:#ebe0c4;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--add:#bfe8c9;--del:#f5cdcd;--emp:#dce8df;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--add:#17604a;--del:#7a2f3f;--emp:#0e2536;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--add:#2c6e49;--del:#7d2f46;--emp:#2b2d3a;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+header{padding:14px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.sub,.note{color:var(--mut);font-size:12px}
+.note{margin-top:8px}
+.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
+.sw.on{outline:2px solid var(--pri);outline-offset:2px}
+main{padding:10px 20px 30px;max-width:1600px;margin:0 auto}
+.fold{margin:6px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:800px){.grid{grid-template-columns:1fr}}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:8px;overflow:hidden;min-width:0}
+.hd{display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.fn{color:var(--mut);font-size:12px;flex:1;min-width:60px;word-break:break-all}
+.pth,.box select{display:block;width:100%;border:0;border-bottom:1px solid var(--bd);padding:7px 10px;color:var(--fg);outline:none;font:12px ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace}
+.pth{background:transparent}
+.box select{background:var(--gut);font-size:13px;cursor:pointer}
+.box select[hidden]{display:none}
+option{background:var(--card);color:var(--fg)}
+textarea{display:block;width:100%;height:220px;min-height:100px;border:0;padding:8px 10px;resize:vertical;background:transparent;color:var(--fg);
+font:13px/20px ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace;white-space:pre;overflow:auto;outline:none}
+button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+button:hover,.btn:hover{border-color:var(--pri)}
+button:disabled{opacity:.4;cursor:default}
+.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;gap:10px;align-items:center;margin:8px 0;padding:8px 0;flex-wrap:wrap}
+.nav{display:flex;gap:6px;align-items:center}
+#cnt{min-width:64px;text-align:center;font-size:13px;color:var(--mut)}
+label.chk{display:flex;gap:4px;align-items:center;color:var(--mut);font-size:13px}
+#stat{margin-left:auto;font-size:13px}
+.ga{background:var(--add);padding:1px 8px;border-radius:4px}.gd{background:var(--del);padding:1px 8px;border-radius:4px}
+.pane{height:max(320px,calc(100vh - 200px));min-height:120px;resize:vertical;overflow:auto;position:relative;font:13px/20px ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace}
+.sizer{position:relative;min-width:100%}
+.win{position:absolute;left:0;right:0;top:0}
+.r{display:flex;height:20px}
+.n{position:sticky;left:0;flex:none;width:52px;padding-right:8px;text-align:right;color:var(--mut);background:var(--gut);user-select:none}
+.t{white-space:pre;padding-left:8px;flex:1}
+.r.add{background:var(--add)}.r.del{background:var(--del)}
+.r.e{background:repeating-linear-gradient(135deg,var(--emp),var(--emp) 6px,transparent 6px,transparent 12px)}
+.r.cur .n{box-shadow:inset 4px 0 0 var(--pri);color:var(--fg);font-weight:600}
+#res{display:none;scroll-margin-top:64px}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div><a class="back" href="index.html">← 小工具首頁</a><h1>文件比對工具</h1>
+  <div class="sub">A = 舊檔案、B = 新檔案。所有比對皆在你的瀏覽器內完成，檔案不會上傳到任何伺服器。</div></div>
+  <div class="themes" id="themes">主題：</div>
+</header>
+<main>
+  <div class="fold"><button id="tog">▲ 收合檔案區</button></div>
+  <div id="inbody">
+    <div class="grid" id="inputs"></div>
+    <div class="note">※ 瀏覽器基於安全限制，無法取得檔案的完整本機路徑；單檔上傳只會帶入檔名。若檔名重複，請用「選擇資料夾」（會帶入含資料夾的相對路徑，如 proj/src/a.js），或直接在路徑欄手動輸入。</div>
+  </div>
+
+  <div class="bar">
+    <button class="pri" id="go">開始比對</button>
+    <button id="swap">對調 A/B</button>
+    <button id="clr">清除</button>
+    <label class="chk"><input type="checkbox" id="ws"> 忽略行尾空白</label>
+    <label class="chk"><input type="checkbox" id="ic"> 忽略大小寫</label>
+    <span class="nav">
+      <button id="prev" disabled title="快捷鍵：P">▲ 上一個差異</button>
+      <span id="cnt">0 / 0</span>
+      <button id="next" disabled title="快捷鍵：N">下一個差異 ▼</button>
+    </span>
+    <span id="stat"></span>
+  </div>
+
+  <div class="grid" id="res">
+    <div class="box"><div class="hd"><b>A（舊檔案）</b><span class="fn" id="rpA"></span></div><div class="pane" id="pA"></div></div>
+    <div class="box"><div class="hd"><b>B（新檔案）</b><span class="fn" id="rpB"></span></div><div class="pane" id="pB"></div></div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const EXT = 'txt,md,js,c,docx,h,cpp,py,java,ts,html,css,json,xml,yml,yaml,csv,sh,sql,log,ini,php,go,rs,rb,kt,swift,cs'.split(',');
+const F = {A:null, B:null};
+
+// ---- 主題 ----
+const THEMES = [['auto','跟隨系統','#ffffff','#171a21'],['light','淺色','#f6f7f9','#2563eb'],['dark','深色','#0f1115','#4c8dff'],
+  ['sepia','護眼米黃','#f1e8d4','#a8652a'],['forest','森林綠','#eaf2ec','#2f855a'],['ocean','深海藍','#0b1e2d','#2bb3d9'],['dracula','紫夜','#282a36','#bd93f9']];
+function applyTheme(t){
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('tools-theme', t); } catch(e){}
+  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+}
+THEMES.forEach(([id, name, c1, c2]) => {
+  const b = document.createElement('button');
+  b.className = 'sw'; b.dataset.t = id; b.title = name;
+  b.style.background = `linear-gradient(135deg,${c1} 50%,${c2} 50%)`;
+  b.onclick = () => applyTheme(id);
+  $('themes').appendChild(b);
+});
+applyTheme(document.documentElement.dataset.theme || 'auto');
+
+// ---- 建立輸入區 ----
+$('inputs').innerHTML = ['A','B'].map(k => {
+  const w = k === 'A' ? '舊' : '新';
+  return `<div class="box"><div class="hd"><b>${k}（${w}檔案）</b><span style="flex:1"></span>
+    <label class="btn">上傳檔案<input type="file" id="f${k}"></label>
+    <label class="btn">選擇資料夾<input type="file" id="d${k}" webkitdirectory multiple></label></div>
+    <input class="pth" id="path${k}" placeholder="檔案路徑（上傳後自動帶入，可手動修改）">
+    <select id="sel${k}" hidden></select>
+    <textarea id="t${k}" spellcheck="false" placeholder="貼上${w}檔案文字，或使用上方按鈕上傳"></textarea></div>`;
+}).join('');
+
+// ---- 收摺檔案區 ----
+function setFold(f){
+  $('inbody').hidden = f;
+  $('tog').textContent = f ? '▼ 展開檔案區' : '▲ 收合檔案區';
+}
+$('tog').onclick = () => setFold(!$('inbody').hidden);
+
+// ---- 左右兩框同步調整高度 ----
+function syncResize(a, b, cb){
+  const ro = new ResizeObserver(es => {
+    for (const e of es){
+      const h = e.target.offsetHeight; if (h < 60) continue;   // 隱藏中不處理
+      const o = e.target === a ? b : a;
+      if (Math.abs(o.offsetHeight - h) > 1) o.style.height = h + 'px';
+    }
+    if (cb) cb();
+  });
+  ro.observe(a); ro.observe(b);
+}
+syncResize($('tA'), $('tB'));
+
+// ---- 讀檔 ----
+async function readFile(file){
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'doc') throw new Error('不支援舊版 .doc，請先另存為 .docx');
+  if (ext === 'docx'){
+    if (!window.mammoth) throw new Error('Word 解析套件載入失敗，請確認網路連線');
+    return (await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()})).value;
+  }
+  return await file.text();
+}
+async function load(k, file){
+  try { $('t'+k).value = await readFile(file); $('path'+k).value = file.webkitRelativePath || file.name; }
+  catch(err){ alert(err.message); }
+}
+function setFolder(k, list){
+  F[k] = list; const s = $('sel'+k);
+  if (!list){ s.hidden = true; s.innerHTML = ''; return; }
+  s.innerHTML = `<option value="">— 從資料夾選擇檔案（共 ${list.length} 個）—</option>` +
+    list.map((f,i) => `<option value="${i}">${esc(f.webkitRelativePath)}</option>`).join('');
+  s.hidden = false;
+}
+['A','B'].forEach(k => {
+  $('f'+k).accept = EXT.map(e => '.'+e).join(',');
+  $('f'+k).addEventListener('change', e => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (f){ setFolder(k, null); load(k, f); }
+  });
+  $('d'+k).addEventListener('change', e => {
+    const list = [...e.target.files].filter(f => !/(^|\/)(\.git|node_modules)\//.test(f.webkitRelativePath) &&
+      EXT.includes(f.name.split('.').pop().toLowerCase()))
+      .sort((a,b) => a.webkitRelativePath.localeCompare(b.webkitRelativePath));
+    e.target.value = '';
+    if (list.length) setFolder(k, list); else alert('此資料夾中沒有支援的檔案類型');
+  });
+  $('sel'+k).addEventListener('change', e => { const f = F[k] && F[k][e.target.value]; if (f) load(k, f); });
+});
+
+// ---- 差異演算法（行級 LCS） ----
+function diffLines(a, b, ka, kb){
+  let s = 0;
+  while (s < a.length && s < b.length && ka[s] === kb[s]) s++;
+  let ea = a.length, eb = b.length;
+  while (ea > s && eb > s && ka[ea-1] === kb[eb-1]) { ea--; eb--; }
+  const ops = [];
+  for (let i = 0; i < s; i++) ops.push(['=', i, i]);
+  const n = ea - s, m = eb - s, W = m + 1;
+  if (n * m > 16e6){
+    for (let i = s; i < ea; i++) ops.push(['-', i, -1]);
+    for (let j = s; j < eb; j++) ops.push(['+', -1, j]);
+    ops.big = true;
+  } else {
+    const L = new Uint32Array((n+1) * W);
+    for (let i = n-1; i >= 0; i--)
+      for (let j = m-1; j >= 0; j--)
+        L[i*W+j] = ka[s+i] === kb[s+j] ? L[(i+1)*W+j+1] + 1 : Math.max(L[(i+1)*W+j], L[i*W+j+1]);
+    let i = 0, j = 0;
+    while (i < n && j < m){
+      if (ka[s+i] === kb[s+j]) { ops.push(['=', s+i, s+j]); i++; j++; }
+      else if (L[(i+1)*W+j] >= L[i*W+j+1]) { ops.push(['-', s+i, -1]); i++; }
+      else { ops.push(['+', -1, s+j]); j++; }
+    }
+    while (i < n) ops.push(['-', s+i++, -1]);
+    while (j < m) ops.push(['+', -1, s+j++]);
+  }
+  for (let k = 0; k < a.length - ea; k++) ops.push(['=', ea+k, eb+k]);
+  return ops;
+}
+
+// ---- 虛擬捲動渲染（只繪製可見的行） ----
+const RH = 20, BUF = 40;
+const pA = $('pA'), pB = $('pB');
+let rows = [], blocks = [], cur = -1, cs = -1, ce = -1, rs = -1, re = -1, winA, winB;
+
+function rowHtml(i, side){
+  const r = rows[i], A = side === 'A';
+  const cls = r.k === '=' ? '' : A ? (r.k === '-' ? 'del' : 'e') : (r.k === '+' ? 'add' : 'e');
+  return `<div class="r ${cls}${i >= cs && i <= ce ? ' cur' : ''}"><span class="n">${(A ? r.a : r.b) || ''}</span><span class="t">${esc(A ? r.ta : r.tb)}</span></div>`;
+}
+function render(force){
+  if (!winA) return;
+  const top = pA.scrollTop, h = pA.clientHeight || 400;
+  const vf = Math.floor(top / RH), vl = Math.ceil((top + h) / RH);
+  if (!force && rs >= 0 && vf >= rs && vl <= re && (rs === 0 || vf - rs >= 10) && (re === rows.length || re - vl >= 10)) return;
+  rs = Math.max(0, vf - BUF); re = Math.min(rows.length, vl + BUF);
+  let a = '', b = '';
+  for (let i = rs; i < re; i++){ a += rowHtml(i, 'A'); b += rowHtml(i, 'B'); }
+  winA.style.top = winB.style.top = rs * RH + 'px';
+  winA.innerHTML = a; winB.innerHTML = b;
+}
+[[pA,pB],[pB,pA]].forEach(([from, to]) => from.addEventListener('scroll', () => {
+  if (Math.abs(to.scrollTop - from.scrollTop) > .5) to.scrollTop = from.scrollTop;
+  if (Math.abs(to.scrollLeft - from.scrollLeft) > .5) to.scrollLeft = from.scrollLeft;
+  render();
+}, {passive:true}));
+syncResize(pA, pB, () => render(true));
+
+// ---- 差異導覽 ----
+function updNav(){
+  $('cnt').textContent = blocks.length ? `${cur + 1} / ${blocks.length}` : '0 / 0';
+  $('prev').disabled = $('next').disabled = !blocks.length;
+}
+function go(d){
+  if (!blocks.length) return;
+  cur = cur < 0 ? (d > 0 ? 0 : blocks.length - 1) : (cur + d + blocks.length) % blocks.length;
+  cs = blocks[cur].s; ce = blocks[cur].e;
+  pA.scrollTop = pB.scrollTop = Math.max(0, cs * RH - pA.clientHeight / 3);
+  render(true); updNav();
+  const t = $('res').getBoundingClientRect().top;
+  if (t < 0 || t > innerHeight * .5) $('res').scrollIntoView({block:'start'});
+}
+$('prev').onclick = () => go(-1);
+$('next').onclick = () => go(1);
+document.addEventListener('keydown', e => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'n' || e.key === 'N') go(1); else if (e.key === 'p' || e.key === 'P') go(-1);
+});
+
+// ---- 執行比對 ----
+function run(){
+  const split = t => t === '' ? [] : t.split(/\r\n|\r|\n/);
+  const A = split($('tA').value), B = split($('tB').value);
+  const norm = l => { if ($('ws').checked) l = l.replace(/\s+$/,''); if ($('ic').checked) l = l.toLowerCase(); return l; };
+  const ops = diffLines(A, B, A.map(norm), B.map(norm));
+  let add = 0, del = 0;
+  rows = ops.map(([op, i, j]) => {
+    if (op === '=') return {k:'=', a:i+1, b:j+1, ta:A[i], tb:B[j]};
+    if (op === '-'){ del++; return {k:'-', a:i+1, b:0, ta:A[i], tb:''}; }
+    add++; return {k:'+', a:0, b:j+1, ta:'', tb:B[j]};
+  });
+  blocks = [];
+  rows.forEach((r, i) => {
+    if (r.k === '=') return;
+    const l = blocks[blocks.length - 1];
+    if (l && l.e === i - 1) l.e = i; else blocks.push({s:i, e:i});
+  });
+  let ml = 0;
+  for (const l of A) ml = Math.max(ml, l.length + (l.split('\t').length - 1) * 3);
+  for (const l of B) ml = Math.max(ml, l.length + (l.split('\t').length - 1) * 3);
+  for (const p of [pA, pB]){
+    p.innerHTML = `<div class="sizer" style="height:${rows.length * RH}px;width:calc(72px + ${ml}ch)"><div class="win"></div></div>`;
+    p.scrollTop = 0; p.scrollLeft = 0;
+  }
+  winA = pA.querySelector('.win'); winB = pB.querySelector('.win');
+  cur = cs = ce = rs = re = -1;
+  $('rpA').textContent = $('pathA').value.trim() || '（未指定路徑）';
+  $('rpB').textContent = $('pathB').value.trim() || '（未指定路徑）';
+  $('res').style.display = 'grid';
+  $('stat').innerHTML = `<span class="ga">新增 ${add} 行</span> <span class="gd">刪除 ${del} 行</span>` +
+    (add + del === 0 ? ' 兩個檔案內容相同' : '') + (ops.big ? ' （檔案過大，已簡化比對）' : '');
+  setFold(true);                      // 比對後自動收合檔案區
+  render(true); updNav();
+  if (blocks.length) go(1);
+  window.scrollTo({top: 0});
+  if (!blocks.length) $('res').scrollIntoView({block:'start'});
+}
+$('go').onclick = run;
+
+$('swap').onclick = () => {
+  [$('tA').value, $('tB').value] = [$('tB').value, $('tA').value];
+  [$('pathA').value, $('pathB').value] = [$('pathB').value, $('pathA').value];
+  const t = F.A; setFolder('A', F.B); setFolder('B', t);
+};
+$('clr').onclick = () => {
+  ['A','B'].forEach(k => { $('t'+k).value = ''; $('path'+k).value = ''; setFolder(k, null); });
+  $('res').style.display = 'none'; $('stat').textContent = '';
+  rows = []; blocks = []; cur = -1; updNav(); setFold(false);
+};
+</script>
+</body>
+</html>
