@@ -793,29 +793,37 @@ function escapeHtml(s){
 // Builds a single self-contained HTML file with each result's image and
 // text shown together — this is the only output mode that keeps images.
 async function buildHtmlReport(results){
-  let sections = '';
-  for (const r of results){
-    let imgTag = '';
+  let textSections = '';
+  results.forEach((r, idx) => {
+    textSections += `<section><h2>文字 ${idx+1}：${escapeHtml(r.name)}</h2><pre>${escapeHtml(r.text)}</pre></section>`;
+  });
+
+  let imageSections = '';
+  for (let idx = 0; idx < results.length; idx++){
+    const r = results[idx];
     if (r.imageBlob){
       const dataUrl = await blobToDataURL(r.imageBlob);
-      imgTag = `<img src="${dataUrl}" alt="${escapeHtml(r.name)}">`;
+      imageSections += `<section><h2>圖片 ${idx+1}：${escapeHtml(r.name)}</h2><img src="${dataUrl}" alt="${escapeHtml(r.name)}"></section>`;
     }
-    sections += `<section><h2>${escapeHtml(r.name)}</h2>${imgTag}<pre>${escapeHtml(r.text)}</pre></section><hr>`;
   }
+
   return `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>OCR 辨識報告</title>
 <style>
   body{font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;max-width:900px;margin:40px auto;padding:0 20px;color:#20241f;line-height:1.6;}
   h1{border-bottom:2px solid #20241f;padding-bottom:10px;}
-  section{margin:32px 0;}
+  .group-title{font-size:19px;margin:40px 0 4px;padding-top:16px;border-top:2px solid #20241f;}
+  section{margin:24px 0;}
   h2{font-size:14px;color:#a13d2e;font-family:"Courier New",monospace;}
   img{max-width:100%;border:1px solid #ddd;margin:12px 0;display:block;}
   pre{white-space:pre-wrap;word-break:break-word;background:#f7f7f3;border:1px solid #e4ddc9;padding:14px;font-size:13px;}
-  hr{border:none;border-top:1px dashed #ccc;margin:30px 0;}
   .meta{color:#5b5f4f;font-size:13px;}
 </style></head><body>
 <h1>OCR 辨識報告</h1>
 <p class="meta">產生時間：${new Date().toLocaleString('zh-TW')}</p>
-${sections}
+<h2 class="group-title">文字內容</h2>
+${textSections}
+<h2 class="group-title">頁面圖片</h2>
+${imageSections}
 </body></html>`;
 }
 
