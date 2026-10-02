@@ -98,7 +98,7 @@ input[type=color]{width:42px;height:28px;padding:0;border:1px solid var(--bd);bo
 <div class="wrap">
 <header><div><a class="back" href="index.html">← 小工具首頁</a><h1>QR Code／條碼工具</h1><p class="tagline">產生與掃描 QR Code、Data Matrix、PDF417、Aztec 及常見 1D 條碼</p></div><div class="themes" id="themes">主題：</div></header>
 <p class="privacy">產生與掃描都在你的瀏覽器本機完成，內容不會上傳。相機掃描需要 HTTPS 網頁，並允許相機權限。</p>
-<div class="tabs"><button data-t="gen" class="on">產生</button><button data-t="scan">掃描</button></div>
+<div class="tabs"><button data-t="gen" class="on">產生</button><button data-t="batch">批次產生</button><button data-t="scan">掃描</button></div>
 <div class="panel on" id="p-gen"><div class="grid"><section><h2>內容與參數</h2>
 <textarea id="txt" placeholder="輸入要編碼的文字或網址">https://example.com</textarea>
 <div class="f"><span>編碼格式</span><select id="fmt"><optgroup label="2D 條碼"><option value="qrcode">QR Code</option><option value="microqrcode">Micro QR</option><option value="datamatrix">Data Matrix</option><option value="pdf417">PDF417</option><option value="azteccode">Aztec</option></optgroup><optgroup label="1D 條碼"><option value="code128">Code 128</option><option value="ean13">EAN-13</option><option value="upca">UPC-A</option><option value="code39">Code 39</option></optgroup></select></div>
@@ -110,6 +110,12 @@ input[type=color]{width:42px;height:28px;padding:0;border:1px solid var(--bd);bo
 <p class="adv-hint">QR 掃描建議保留 4 格白邊、深色前景配淺色背景。</p></section>
 <section><h2>預覽</h2><div class="pv"><canvas id="cv" width="10" height="10"></canvas><span class="msg" id="size"></span><span class="msg" id="err" style="color:#e5484d"></span>
 <div class="row"><button class="pri" id="dpng">下載 PNG</button><button id="dsvg">下載 SVG</button></div></div></section></div></div>
+<div class="panel" id="p-batch"><section><h2>批次產生</h2>
+<textarea id="bt" style="height:220px" placeholder="每行一筆資料，例如：&#10;A001&#10;A002&#10;A003（可直接從 Excel 複製一欄貼上）"></textarea>
+<div class="f"><span>輸出格式</span><select id="bf"><option value="png">PNG</option><option value="svg">SVG</option></select></div>
+<div class="f"><span>檔名</span><select id="bn"><option value="both">序號＋內容（001_A001）</option><option value="txt">只用內容</option><option value="seq">只用序號</option></select></div>
+<p class="adv-hint">條碼格式、大小、白邊、顏色等參數，沿用「產生」分頁目前的設定。空白行會略過，重複的檔名會自動加編號；zip 內附 index.csv 對照表。</p>
+<div class="row"><button class="pri" id="bgo">產生並下載 zip</button><span class="msg" id="bmsg"></span></div></section></div>
 <div class="panel" id="p-scan"><section><h2>掃描</h2>
 <div class="drop-zone" id="dz">拖曳或點擊選擇含條碼的圖片<input type="file" id="fin" accept="image/*"></div>
 <div class="row"><button id="cam">開啟相機掃描</button><span class="msg" id="smsg"></span></div>
@@ -117,6 +123,7 @@ input[type=color]{width:42px;height:28px;padding:0;border:1px solid var(--bd);bo
 <div class="res" id="res"></div></section></div>
 <footer>bwip-js（產生）＋ ZXing（掃描）</footer>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bwip-js@4/dist/bwip-js-min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script>
@@ -138,7 +145,7 @@ THEMES.forEach(([id, name, c1, c2]) => {
 applyTheme(document.documentElement.dataset.theme || 'auto');
 
 
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.panel').forEach(q=>q.classList.toggle('on',q.id==='p-'+b.dataset.t));if(b.dataset.t==='gen')camOff()});
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.panel').forEach(q=>q.classList.toggle('on',q.id==='p-'+b.dataset.t));if(b.dataset.t!=='scan')camOff()});
 const D1=['code128','ean13','upca','code39'],hex=c=>c.replace('#','');
 let encMode='raw',cur=null;
 const enc=t=>encMode==='utf8'?unescape(encodeURIComponent(t)):t;
@@ -206,6 +213,41 @@ $('cam').onclick=async()=>{
     const v=$('vid');v.srcObject=stream;v.style.display='block';await v.play();$('cam').textContent='關閉相機';$('smsg').textContent='請將條碼對準鏡頭';
     timer=setInterval(()=>{if(!v.videoWidth)return;const c=$('sc2');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);try{show(decodeCanvas(c));$('smsg').textContent='已掃描到內容';camOff()}catch(e){}},200);
   }catch(e){camOff();$('smsg').textContent='無法開啟相機：'+(e.name==='NotAllowedError'?'未允許相機權限':e.message)}
+};
+// ---- 批次產生 ----
+function build(t){
+  const o=opts(enc(t)),c=document.createElement('canvas');bwipjs.toCanvas(c,o);
+  const m=Math.round(Math.max(0,+$('mg').value||0)*o.scale),out=document.createElement('canvas');
+  out.width=c.width+2*m;out.height=c.height+2*m;const x=out.getContext('2d');x.fillStyle=$('bg').value;x.fillRect(0,0,out.width,out.height);x.drawImage(c,m,m);
+  return{out,o,w:c.width,h:c.height,m};
+}
+function svgOf({o,w,h,m}){
+  const s=bwipjs.toSVG(o),vb=(s.match(/viewBox=["']([^"']+)["']/)||[])[1]||`0 0 ${w} ${h}`,inner=s.replace(/^[\s\S]*?<svg[^>]*>/,'').replace(/<\/svg>\s*$/,''),W=w+2*m,H=h+2*m;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="${$('bg').value}"/><svg x="${m}" y="${m}" width="${w}" height="${h}" viewBox="${vb}">${inner}</svg></svg>`;
+}
+$('bgo').onclick=async()=>{
+  const L=$('bt').value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  if(!L.length){$('bmsg').textContent='請輸入內容';return}
+  $('bgo').disabled=true;
+  const z=new JSZip(),used={},rows=['序號,內容,檔名'],bad=[],ext=$('bf').value,pad=String(L.length).length,mode=$('bn').value;
+  const safe=s=>s.replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,40)||'x',q=s=>'"'+s.replace(/"/g,'""')+'"';
+  let ok=0;
+  for(let i=0;i<L.length;i++){
+    $('bmsg').textContent=`處理中 ${i+1}/${L.length}...`;
+    try{
+      const r=build(L[i]),no=String(i+1).padStart(pad,'0');
+      let base=mode==='seq'?no:mode==='txt'?safe(L[i]):no+'_'+safe(L[i]);
+      if(used[base]){used[base]++;base+='_'+used[base]}else used[base]=1;
+      const nm=base+'.'+ext;
+      z.file(nm,ext==='png'?await new Promise(res=>r.out.toBlob(res)):svgOf(r));
+      rows.push([i+1,q(L[i]),q(nm)].join(','));ok++;
+    }catch(e){bad.push(`第 ${i+1} 筆「${L[i]}」：${String((e&&e.message)||e).replace(/^bwipp\.[^:]*:?\s*/,'')}`)}
+    if(i%20===19)await new Promise(r=>setTimeout(r));
+  }
+  if(!ok){$('bmsg').textContent='全部失敗：'+bad[0];$('bgo').disabled=false;return}
+  z.file('index.csv','\uFEFF'+rows.join('\r\n'));if(bad.length)z.file('errors.txt',bad.join('\n'));
+  save(await z.generateAsync({type:'blob'}),'barcodes.zip');
+  $('bmsg').textContent=`完成：${ok} 個`+(bad.length?`，失敗 ${bad.length} 個（詳見 zip 內 errors.txt）`:'');$('bgo').disabled=false;
 };
 // ---- 啟動：偵測 bwip-js 對中文的編碼方式，確保 QR 內容以 UTF-8 掃出正確文字 ----
 (function(){
