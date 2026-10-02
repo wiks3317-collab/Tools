@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emoji 圖庫</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%98%80%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.sub,.msg{color:var(--mut);font-size:12px;margin:2px 0 0}
+.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
+.sw.on{outline:2px solid var(--pri);outline-offset:2px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+button{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+button:hover{border-color:var(--pri)}
+.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+input[type=text],textarea{width:100%;font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+textarea{font-size:22px;line-height:1.4;resize:vertical;min-height:56px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px}
+.e{font-size:28px;line-height:1;padding:10px 0;background:var(--gut);border:1px solid transparent;border-radius:8px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.e:hover{border-color:var(--pri)}
+.empty{color:var(--mut);padding:20px;text-align:center;grid-column:1/-1}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:6px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:.92}
+footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><a class="back" href="index.html">← 回小工具集</a><h1>Emoji 圖庫</h1><p class="sub">點一下就複製，也會加進下方組合區，可一次複製多個。可用中文或英文搜尋。</p></div><div class="themes" id="themes">主題：</div></header>
+
+<section>
+<textarea id="mix" placeholder="組合區：點選的 emoji 會出現在這裡，也可以直接輸入文字"></textarea>
+<div class="row"><button class="pri" id="copyAll">複製全部</button><button id="undo">刪除最後一個</button><button id="clr">清空</button></div>
+</section>
+
+<section>
+<input type="text" id="q" placeholder="搜尋，例如：愛心、笑、cat、food" autocomplete="off">
+<div class="tabs" id="tabs"></div>
+<div class="grid" id="grid"></div>
+<div class="row"><span class="msg" id="count"></span><button id="clrRecent" style="display:none;margin-left:auto">清除最近使用</button></div>
+</section>
+<footer>emoji 的外觀會因作業系統與瀏覽器而不同；部分國旗在 Windows 會顯示為字母。</footer>
+</div>
+<div id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+const THEMES=[['auto','跟隨系統','#ffffff','#171a21'],['light','淺色','#f6f7f9','#2563eb'],['dark','深色','#0f1115','#4c8dff'],['sepia','護眼米黃','#f1e8d4','#a8652a'],['forest','森林綠','#eaf2ec','#2f855a'],['ocean','深海藍','#0b1e2d','#2bb3d9'],['dracula','紫夜','#282a36','#bd93f9']];
+function applyTheme(t){
+  if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;
+  try{localStorage.setItem('tools-theme',t)}catch(e){}
+  document.querySelectorAll('.sw').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+}
+THEMES.forEach(([id,name,c1,c2])=>{const b=document.createElement('button');b.className='sw';b.dataset.t=id;b.title=name;b.style.background=`linear-gradient(135deg,${c1} 50%,${c2} 50%)`;b.onclick=()=>applyTheme(id);$('themes').appendChild(b)});
+applyTheme(document.documentElement.dataset.theme||'auto');
+
+// 資料格式：「emoji 名稱 關鍵字」以逗號分隔
+const DATA={
+'表情':'😀 笑臉 smile,😃 開心 happy,😄 大笑,😁 露齒笑 grin,😆 哈哈 laugh,😅 苦笑 sweat,🤣 笑翻 rofl,😂 笑哭 joy,🙂 微笑,🙃 倒臉,😉 眨眼 wink,😊 害羞 blush,😇 天使 angel,🥰 愛心臉 love,😍 愛心眼,🤩 星星眼 star,😘 飛吻 kiss,😋 好吃 yum,😛 吐舌,😜 調皮,🤪 瘋狂,🤗 擁抱 hug,🤔 思考 think,🤫 噓 shush,🤭 偷笑,😐 無表情,😶 無言,🙄 翻白眼,😏 得意,😬 尷尬,😌 放鬆,😔 失落,😴 睡 sleep,🤤 流口水,😷 口罩 mask,🤒 發燒 sick,🤕 受傷,🤢 想吐,🤧 噴嚏,🥵 熱 hot,🥶 冷 cold,🥴 暈,🤯 爆炸 mindblown,🤠 牛仔,🥳 派對 party,😎 墨鏡 cool,🤓 書呆子 nerd,🧐 打量,😕 困惑,😟 擔心,🙁 皺眉,😮 驚訝,😳 臉紅,🥺 拜託 please,😨 害怕,😰 冷汗,😢 哭 cry,😭 大哭,😱 尖叫 scream,😩 崩潰,🥱 哈欠,😤 哼,😡 生氣 angry,🤬 咒罵,😈 小惡魔,💀 骷髏 skull,💩 便便,🤡 小丑,👻 幽靈 ghost,👽 外星人 alien,🤖 機器人 robot',
+'手勢人物':'👋 揮手 wave,🤚 手背,✋ 舉手 stop,🖖 瓦肯,👌 OK,🤌 手指併攏,🤏 一點點,✌️ 耶 peace,🤞 祈福 luck,🤟 愛你,🤘 搖滾 rock,🤙 打電話,👈 左指,👉 右指,👆 上指,👇 下指,☝️ 食指,👍 讚 like,👎 倒讚,✊ 拳頭,👊 出拳,👏 鼓掌 clap,🙌 歡呼,🤲 捧手,🤝 握手 deal,🙏 感謝 拜託 thanks,✍️ 寫字,💪 肌肉 strong,🧠 大腦 brain,👀 眼睛 eyes,👂 耳朵,👄 嘴,👶 嬰兒 baby,👦 男孩,👧 女孩,👨 男人,👩 女人,👴 爺爺,👵 奶奶,🙋 舉手發問,🙅 不行,🙆 可以,🤦 掩面 facepalm,🤷 聳肩 shrug,🙇 鞠躬,🧑‍💻 工程師 coder,🧑‍🏫 老師 teacher,🧑‍⚕️ 醫護,🕵️ 偵探,💃 跳舞 dance,🚶 走路,🏃 跑步 run',
+'動物自然':'🐶 狗 dog,🐱 貓 cat,🐭 老鼠,🐹 倉鼠,🐰 兔子 rabbit,🦊 狐狸,🐻 熊 bear,🐼 熊貓 panda,🐨 無尾熊,🐯 老虎 tiger,🦁 獅子 lion,🐮 牛,🐷 豬 pig,🐸 青蛙 frog,🐵 猴子 monkey,🙈 非禮勿視,🙉,🙊,🐔 雞,🐧 企鵝,🐦 鳥 bird,🦆 鴨,🦉 貓頭鷹,🦄 獨角獸 unicorn,🐴 馬,🐝 蜜蜂 bee,🦋 蝴蝶,🐌 蝸牛,🐞 瓢蟲,🐢 烏龜,🐍 蛇,🐙 章魚,🦀 螃蟹,🐠 熱帶魚,🐬 海豚,🐳 鯨魚 whale,🦈 鯊魚,🐘 大象,🦒 長頸鹿,🌵 仙人掌,🎄 聖誕樹,🌳 樹 tree,🌴 棕櫚,🌱 幼苗,🍀 幸運草,🍁 楓葉,🌷 鬱金香,🌹 玫瑰 rose,🌻 向日葵,🌸 櫻花 sakura,💐 花束,🍄 蘑菇,🌞 太陽 sun,🌙 月亮 moon,⭐ 星星,✨ 閃亮 sparkle,⚡ 閃電,🔥 火 fire,🌈 彩虹 rainbow,☁️ 雲,🌧️ 下雨 rain,❄️ 雪花 snow,💧 水滴,🌊 海浪 wave',
+'食物飲料':'🍎 蘋果,🍊 橘子,🍋 檸檬,🍌 香蕉,🍉 西瓜,🍇 葡萄,🍓 草莓,🍑 桃子,🍒 櫻桃,🍍 鳳梨,🥭 芒果,🥝 奇異果,🍅 番茄,🥑 酪梨,🥕 紅蘿蔔,🌽 玉米,🌶️ 辣椒,🥔 馬鈴薯,🍞 麵包 bread,🥐 可頌,🧀 起司,🍳 煎蛋,🥓 培根,🍗 雞腿,🍖 肉,🌭 熱狗,🍔 漢堡 burger,🍟 薯條,🍕 披薩 pizza,🥪 三明治,🌮 塔可,🥗 沙拉,🍝 義大利麵,🍜 拉麵 noodle,🍲 火鍋,🍣 壽司 sushi,🍱 便當,🍤 蝦,🍙 飯糰,🍚 白飯 rice,🥟 餃子,🍡 糰子,🍦 冰淇淋,🍩 甜甜圈,🍪 餅乾,🎂 蛋糕 cake,🍰 切片蛋糕,🍫 巧克力,🍬 糖果,🍯 蜂蜜,🥛 牛奶,☕ 咖啡 coffee,🍵 茶 tea,🧋 珍珠奶茶 boba,🍺 啤酒 beer,🍻 乾杯,🍷 紅酒 wine,🥂 香檳,🍸 調酒,🧊 冰塊,🥤 飲料',
+'活動運動':'⚽ 足球,🏀 籃球,🏈 美式足球,⚾ 棒球 baseball,🎾 網球,🏐 排球,🏓 桌球,🏸 羽球,🥊 拳擊,🎯 靶 target,🎳 保齡球,🎮 遊戲 game,🕹️ 搖桿,🎲 骰子 dice,🧩 拼圖,🎨 畫 art,🎬 電影 movie,🎤 麥克風 karaoke,🎧 耳機 headphone,🎸 吉他,🎹 鋼琴,🥁 鼓,🎺 小號,🎻 小提琴,🎁 禮物 gift,🎈 氣球,🎉 慶祝 tada,🎊 彩球,🏆 獎盃 trophy,🥇 金牌,🥈 銀牌,🥉 銅牌,🏅 獎牌',
+'旅行地點':'🚗 汽車 car,🚕 計程車 taxi,🚌 公車 bus,🚑 救護車,🚒 消防車,🚓 警車,🚚 貨車,🚲 腳踏車 bike,🛵 機車 scooter,🏍️ 摩托車,🚄 高鐵 train,🚇 捷運 metro,✈️ 飛機 plane,🚀 火箭 rocket,🚁 直升機,⛵ 帆船,🚢 船,⚓ 錨,🏠 房子 home,🏢 辦公大樓 office,🏥 醫院,🏦 銀行,🏫 學校,🏯 城堡,🗼 鐵塔,⛪ 教堂,🌋 火山,🏔️ 山,🏝️ 小島,🏖️ 海灘 beach,⛺ 露營 camp,🌃 夜景,🌆 黃昏',
+'物品工具':'⌚ 手錶,📱 手機 phone,💻 筆電 laptop,🖥️ 電腦,⌨️ 鍵盤,🖱️ 滑鼠,💾 磁碟 save,📷 相機 camera,📺 電視,📻 收音機,☎️ 電話,🔋 電池,🔌 插頭,💡 燈泡 idea,🔦 手電筒,💰 錢袋 money,💳 信用卡,💎 鑽石 gem,🔧 板手,🔨 鎚子,⚙️ 齒輪 settings,🧰 工具箱,🔒 鎖 lock,🔓 解鎖,🔑 鑰匙 key,📦 包裹 box,✉️ 信封 mail,📝 筆記 memo,📁 資料夾 folder,📅 日曆,📊 長條圖,📈 上升 chart,📉 下降,📌 圖釘 pin,📎 迴紋針,✂️ 剪刀,✏️ 鉛筆,📖 書 book,📚 書堆,🔍 搜尋 search,🔔 鈴鐺 bell,🔕 靜音,🧹 掃把,🛒 購物車,🚪 門,🛏️ 床,🚿 淋浴,🧻 衛生紙',
+'符號':'❤️ 紅心 heart,🧡 橘心,💛 黃心,💚 綠心,💙 藍心,💜 紫心,🖤 黑心,🤍 白心,💔 心碎,💕 雙心,💖 閃亮心,💗 跳動心,💯 一百分 100,✅ 完成 check,❌ 叉 cross,⭕ 圈,❗ 驚嘆號,❓ 問號,‼️ 雙驚嘆,⚠️ 警告 warning,🚫 禁止,⛔ 禁行,♻️ 回收,✔️ 勾,➕ 加,➖ 減,✖️ 乘,➡️ 右,⬅️ 左,⬆️ 上,⬇️ 下,🔄 重新整理 refresh,▶️ 播放 play,⏸️ 暫停,⏹️ 停止,🔊 音量,🔇 靜音,💬 對話 chat,💭 想法,🆗 OK,🆕 新 new,🆓 免費 free,🔴 紅圓,🟠 橘圓,🟡 黃圓,🟢 綠圓,🔵 藍圓,🟣 紫圓,⚫ 黑圓,⚪ 白圓,🟥 紅方,🟧 橘方,🟨 黃方,🟩 綠方,🟦 藍方,🟪 紫方,⬛ 黑方,⬜ 白方,🔶 橘菱形,🔷 藍菱形',
+'旗幟':'🏁 終點旗,🚩 紅旗,🎌 交叉旗,🏴 黑旗,🏳️ 白旗,🏳️‍🌈 彩虹旗 pride,🇹🇼 台灣 taiwan,🇯🇵 日本 japan,🇰🇷 韓國 korea,🇺🇸 美國 usa,🇬🇧 英國 uk,🇭🇰 香港,🇸🇬 新加坡,🇫🇷 法國,🇩🇪 德國,🇮🇹 義大利,🇪🇸 西班牙,🇦🇺 澳洲,🇨🇦 加拿大'
+};
+const ALL=[];const CATS=Object.keys(DATA);
+CATS.forEach(c=>DATA[c].split(',').forEach(s=>{const i=s.indexOf(' ');ALL.push({c,e:i<0?s:s.slice(0,i),k:i<0?'':s.slice(i+1)})}));
+
+let cat='全部',recent=[];
+try{recent=JSON.parse(localStorage.getItem('emoji-recent')||'[]')}catch(e){}
+const tabs=['全部','最近使用',...CATS];
+
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),1200)}
+async function copy(t){
+  try{await navigator.clipboard.writeText(t);return true}catch(e){
+    const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
+    let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();return ok;
+  }
+}
+function render(){
+  const q=$('q').value.trim().toLowerCase();
+  let list=cat==='最近使用'?recent.map(e=>ALL.find(x=>x.e===e)||{e,k:''}):ALL.filter(x=>cat==='全部'||x.c===cat);
+  if(q)list=(cat==='最近使用'?list:ALL.filter(x=>cat==='全部'||x.c===cat)).filter(x=>(x.e+' '+x.k).toLowerCase().includes(q));
+  $('grid').innerHTML='';
+  if(!list.length){$('grid').innerHTML='<div class="empty">'+(cat==='最近使用'&&!q?'還沒有最近使用的 emoji':'找不到符合的 emoji')+'</div>'}
+  list.forEach(x=>{const b=document.createElement('button');b.className='e';b.textContent=x.e;b.title=x.k||x.e;b.onclick=()=>pick(x.e);$('grid').appendChild(b)});
+  $('count').textContent=list.length+' 個';
+  $('clrRecent').style.display=cat==='最近使用'&&recent.length?'':'none';
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===cat));
+}
+async function pick(e){
+  const m=$('mix');m.value+=e;
+  recent=[e,...recent.filter(x=>x!==e)].slice(0,30);
+  try{localStorage.setItem('emoji-recent',JSON.stringify(recent))}catch(_){}
+  toast(await copy(e)?'已複製 '+e:'複製失敗，請從組合區手動複製');
+  if(cat==='最近使用')render();
+}
+tabs.forEach(t=>{const b=document.createElement('button');b.textContent=t;b.dataset.t=t;b.onclick=()=>{cat=t;render()};$('tabs').appendChild(b)});
+$('q').oninput=render;
+$('copyAll').onclick=async()=>{const v=$('mix').value;if(!v)return toast('組合區是空的');toast(await copy(v)?'已複製全部':'複製失敗')};
+$('undo').onclick=()=>{const v=$('mix').value;const a=window.Intl&&Intl.Segmenter?[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(v)].map(x=>x.segment):[...v];a.pop();$('mix').value=a.join('')};
+$('clr').onclick=()=>{$('mix').value=''};
+$('clrRecent').onclick=()=>{recent=[];try{localStorage.removeItem('emoji-recent')}catch(e){}render()};
+render();
+</script>
+</body>
+</html>
