@@ -239,12 +239,34 @@ $('go').onclick=async()=>{
       if(!gpu||stop)throw e;
       if(worker){worker.terminate();worker=null}pend=null;gpu=false;
       setP(0,'WebGPU 無法使用，改用 CPU 載入模型...');await load(false,mv)}
-    for(let s=0;s<total&&!stop;s+=SEG){
-      setP(s/total*100,'辨識中 '+tm(s/16000)+' / '+tm(total/16000)+(map?'（已略過靜音）':''));
-      const part=a.slice(s,Math.min(total,s+SEG)),r=await call({type:'run',audio:part,lang:$('lang').value},[part.buffer]);
-      for(const c of r.chunks){const t=(c.text||'').trim();if(!t)continue;const t0=c.timestamp[0]||0;segs.push({a:mp(s/16000+t0),b:c.timestamp[1]!=null?mp(s/16000+c.timestamp[1]):null,t})}
-      render();
+    // 約 60 秒一段，切點挪到附近最安靜的位置（避免切斷句子，維持準確度）
+    const FR=1600,nf=Math.floor(total/FR),en=new Float32Array(nf);
+    for(let i=0;i<nf;i++){let q=0;for(let j=i*FR,e=j+FR;j<e;j++)q+=a[j]*a[j];en[i]=q}
+    const cuts=[0];
+    while(cuts[cuts.length-1]<total){
+      const cur=cuts[cuts.length-1],tg=cur+16000*60;
+      if(tg>=total-16000*20){cuts.push(total);break}
+      let best=Math.floor(tg/FR);const lo=Math.max(Math.floor((tg-16000*10)/FR),Math.floor(cur/FR)+1),hi=Math.min(Math.floor((tg+16000*10)/FR),nf-1);
+      for(let i=lo;i<=hi;i++)if(en[i]<en[best])best=i;
+      cuts.push(best*FR);
     }
+    // 進度：每段完成後以實測速度估算，每 0.5 秒更新一次畫面
+    const secT=total/16000;let rate=0,ss=0,ee=0,st0=Date.now();
+    const tick=()=>{
+      const el=(Date.now()-t0)/1000;let pos=ss;
+      if(rate>0)pos=ss+Math.min((ee-ss)*.97,(Date.now()-st0)/1000*rate);
+      setP(pos/secT*100,'辨識中 '+tm(mp(pos))+' / '+tm(full/16000)+'（'+Math.floor(pos/secT*100)+'%）　已耗時 '+tm(el)+(rate>0?'，預估剩餘 '+tm(Math.max(0,(secT-pos)/rate)):'，正在處理第一段，請稍候'));
+    };
+    const timer=setInterval(tick,500);
+    try{
+      for(let k=0;k+1<cuts.length&&!stop;k++){
+        ss=cuts[k]/16000;ee=cuts[k+1]/16000;st0=Date.now();tick();
+        const part=a.slice(cuts[k],cuts[k+1]),r=await call({type:'run',audio:part,lang:$('lang').value},[part.buffer]);
+        const inst=(ee-ss)/Math.max(.001,(Date.now()-st0)/1000);rate=rate?rate*.5+inst*.5:inst;
+        for(const c of r.chunks){const t=(c.text||'').trim();if(!t)continue;const c0=c.timestamp[0]||0;segs.push({a:mp(ss+c0),b:c.timestamp[1]!=null?mp(ss+c.timestamp[1]):null,t})}
+        render();
+      }
+    }finally{clearInterval(timer)}
     const el=(Date.now()-t0)/1000;
     setP(stop?0:100,stop?'已停止，保留已辨識的部分':'完成，共 '+segs.length+' 段，耗時 '+tm(el)+'（約 '+(full/16000/el).toFixed(1)+' 倍速，'+(gpu?'WebGPU':'CPU')+'）');
   }catch(e){setP(0,e.message==='stop'?'已停止，保留已辨識的部分':'失敗：'+e.message)}
