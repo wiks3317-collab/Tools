@@ -83,6 +83,8 @@ footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 .tool{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px;color:var(--fg);text-decoration:none}
 .tool:hover,.tool:focus-visible{border-color:var(--pri);outline:none}
 .tool b{font-size:16px}.tool span{color:var(--mut);font-size:13px}.tool small{color:var(--mut);font-size:12px;margin-top:auto;padding-top:6px}
+.mv{display:none;gap:6px;margin-top:8px}.mv button{padding:2px 12px}
+.menu.editing .mv{display:flex}.menu.editing .tool{cursor:grab;border-style:dashed}.menu.editing .tool.drag{opacity:.4}
 </style>
 </head>
 <body>
@@ -97,6 +99,7 @@ footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 <a class="tool" href="barcode_tool.html"><b>QR Code／條碼</b><span>產生與掃描 QR Code、Data Matrix、PDF417、Aztec 等條碼，可批次產生。</span><small>可調格式、大小、白邊、顏色；支援相機掃描</small></a>
 <a class="tool" href="table_compare.html"><b>Excel／CSV 比對</b><span>找出兩份表格新增、刪除、修改的列，可輸出差異報告。</span><small>支援 xlsx、xls、csv，也可貼上內容</small></a>
 </nav>
+<div class="row" style="margin-top:14px;display:flex;gap:8px;align-items:center"><button id="edit">調整順序</button><button id="reset" style="display:none">恢復預設順序</button><span class="msg" id="emsg" style="color:var(--mut);font-size:12px"></span></div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
@@ -116,6 +119,31 @@ THEMES.forEach(([id, name, c1, c2]) => {
 });
 applyTheme(document.documentElement.dataset.theme || 'auto');
 
+
+(function(){
+  const nav=document.querySelector('.menu'),KEY='tools-order',def=[...nav.children].map(a=>a.getAttribute('href'));
+  const get=h=>[...nav.children].find(a=>a.getAttribute('href')===h);
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify([...nav.children].map(a=>a.getAttribute('href'))))}catch(e){}};
+  let o=[];try{o=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}
+  [...o.filter(h=>def.includes(h)),...def.filter(h=>!o.includes(h))].forEach(h=>nav.appendChild(get(h)));
+  [...nav.children].forEach(a=>{const d=document.createElement('div');d.className='mv';d.innerHTML='<button data-d="-1">←</button><button data-d="1">→</button>';a.appendChild(d)});
+  let edit=false,drag=null;
+  $('edit').onclick=()=>{edit=!edit;nav.classList.toggle('editing',edit);$('edit').textContent=edit?'完成':'調整順序';$('reset').style.display=edit?'':'none';$('emsg').textContent=edit?'拖曳方塊，或按 ← → 移動；順序會記在這個瀏覽器':''};
+  $('reset').onclick=()=>{def.forEach(h=>nav.appendChild(get(h)));try{localStorage.removeItem(KEY)}catch(e){}};
+  nav.addEventListener('click',e=>{
+    if(!edit)return;e.preventDefault();
+    const b=e.target.closest('button[data-d]');if(!b)return;
+    const a=b.closest('.tool'),d=+b.dataset.d,sib=d<0?a.previousElementSibling:a.nextElementSibling;
+    if(sib){d<0?nav.insertBefore(a,sib):nav.insertBefore(sib,a);save()}
+  });
+  nav.addEventListener('dragstart',e=>{if(!edit)return;drag=e.target.closest('.tool');if(!drag)return;drag.classList.add('drag');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','')});
+  nav.addEventListener('dragover',e=>{if(edit&&drag)e.preventDefault()});
+  nav.addEventListener('drop',e=>{
+    if(!edit||!drag)return;e.preventDefault();
+    const t=e.target.closest('.tool');if(t&&t!==drag){const k=[...nav.children];k.indexOf(drag)<k.indexOf(t)?t.after(drag):t.before(drag);save()}
+  });
+  nav.addEventListener('dragend',()=>{if(drag)drag.classList.remove('drag');drag=null});
+})();
 </script>
 </body>
 </html>
