@@ -103,7 +103,11 @@ textarea{display:block;width:100%;height:320px;resize:vertical;border:1px solid 
 <div class="opt">語言：<select id="lang"><option value="">自動偵測</option><option value="chinese" selected>中文</option><option value="english">英文</option><option value="japanese">日文</option><option value="korean">韓文</option><option value="vietnamese">越南文</option><option value="thai">泰文</option><option value="french">法文</option><option value="german">德文</option><option value="spanish">西班牙文</option><option value="russian">俄文</option><option value="indonesian">印尼文</option><option value="portuguese">葡萄牙文</option></select>
 模型：<select id="model"><option value="base">base（較快，約 80 MB）</option><option value="small" selected>small（較準，約 250 MB，CPU 建議）</option><option value="turbo">large-v3-turbo（最準，約 800 MB，僅限 WebGPU）</option></select></div>
 <div class="opt"><label><input type="checkbox" id="gpu" checked> WebGPU 加速（需較新的 Chrome／Edge，失敗時自動改用 CPU）</label><label><input type="checkbox" id="vad" checked> 略過長時間靜音（更快，也減少幻聽）</label><label><input type="checkbox" id="t2" checked> 簡體轉繁體</label></div>
-<p class="adv-hint">有 WebGPU 時速度可快數倍至十幾倍，並可改用最準的 turbo 模型；沒有 WebGPU 則用 CPU，1 小時錄音可能要跑很久。</p></section>
+<p class="adv-hint">有 WebGPU 時速度可快數倍至十幾倍，並可改用最準的 turbo 模型；沒有 WebGPU 則用 CPU，1 小時錄音可能要跑很久。</p>
+<div class="opt" style="flex-direction:column;align-items:flex-start;gap:6px"><span>常用詞彙（每行一個：人名、專有名詞、縮寫）</span>
+<textarea id="gl" style="height:110px" placeholder="蕾名&#10;Kubernetes&#10;雷鳴=>蕾名"></textarea>
+<label><input type="checkbox" id="gh" checked> 同音字自動校正（辨識結果裡與詞彙同音、但寫法不同的詞，換成你的寫法）</label>
+<span class="adv-hint" id="glmsg">直接寫詞彙即可；也可寫「錯誤寫法=>正確寫法」強制取代。修改詞彙後，已產生的逐字稿會立即重新套用，不必重跑辨識。</span></div></section>
 <section><h2><span class="num">3</span>開始辨識</h2>
 <div class="row"><button class="pri" id="go" disabled>開始辨識</button><button id="stopBtn" style="display:none">停止</button></div>
 <div id="progressArea" style="display:none"><div class="progress-bar-bg"><div class="progress-bar-fill" id="bar"></div></div><ol class="steps" id="steps"></ol><div id="progressText"></div></div></section>
@@ -138,6 +142,7 @@ self.onmessage = async e => {
   } catch (err) { self.postMessage({ type: 'err', msg: String((err && err.message) || err) }); }
 };
 </script>
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3/dist/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -227,9 +232,48 @@ function mix(ab){
   return out;
 }
 // 輸出
-const cv=s=>{if($('t2').checked&&window.OpenCC){conv=conv||OpenCC.Converter({from:'cn',to:'twp'});return conv(s)}return s};
+// ---- 常用詞彙校正（後處理）----
+let GL={key:null,map:[],terms:[]},GLN=0;
+const PY=new Map(),RX=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const py=c=>{let v=PY.get(c);if(v===undefined){try{v=/[\u4e00-\u9fff]/.test(c)&&window.pinyinPro?(pinyinPro.pinyin(c,{toneType:'none',type:'array'})[0]||''):''}catch(e){v=''}PY.set(c,v)}return v};
+function parseGl(){
+  const t=$('gl').value;if(GL.key===t)return GL;
+  GL={key:t,map:[],terms:[]};
+  t.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).forEach(l=>{const m=l.match(/^(.+?)\s*(?:=>|＝>|->|→)\s*(.+)$/);if(m)GL.map.push([m[1].trim(),m[2].trim()]);else GL.terms.push(l)});
+  GL.terms.sort((x,y)=>y.length-x.length);
+  GL.cjk=GL.terms.filter(t=>[...t].length>=2&&[...t].every(c=>py(c)));
+  return GL;
+}
+function glossary(s){
+  const g=parseGl();if(!g.map.length&&!g.terms.length)return s;
+  for(const[x,y]of g.map)s=s.replace(new RegExp(RX(x),'gi'),()=>{GLN++;return y});
+  for(const t of g.terms){if(!/[A-Za-z]/.test(t))continue;s=s.replace(new RegExp('(?<![A-Za-z0-9])'+RX(t)+'(?![A-Za-z0-9])','gi'),m=>{if(m!==t)GLN++;return t})}
+  if($('gh').checked&&!$('gh').disabled&&g.cjk.length){
+    const set=new Set(g.terms),ch=[...s];let out='';
+    for(let i=0;i<ch.length;){
+      let done=false;
+      for(const t of g.cjk){
+        const tc=[...t],L=tc.length;if(i+L>ch.length)continue;
+        let ok=true,same=true;
+        for(let j=0;j<L;j++){if(ch[i+j]!==tc[j])same=false;const p=py(ch[i+j]);if(!p||p!==py(tc[j])){ok=false;break}}
+        if(!ok)continue;
+        const w=ch.slice(i,i+L).join('');
+        if(same||set.has(w)){out+=w;i+=L;done=true;break}
+        out+=t;GLN++;i+=L;done=true;break;
+      }
+      if(!done){out+=ch[i];i++}
+    }
+    s=out;
+  }
+  return s;
+}
+try{$('gl').value=localStorage.getItem('asr-glossary')||''}catch(e){}
+if(!window.pinyinPro){$('gh').checked=false;$('gh').disabled=true}
+let gt;$('gl').oninput=()=>{try{localStorage.setItem('asr-glossary',$('gl').value)}catch(e){}clearTimeout(gt);gt=setTimeout(()=>{if(segs.length)render()},300)};
+$('gh').onchange=()=>{if(segs.length)render()};
+const cv=s=>{if($('t2').checked&&window.OpenCC){conv=conv||OpenCC.Converter({from:'cn',to:'twp'});s=conv(s)}return glossary(s)};
 const lines=()=>segs.map((s,i)=>({a:s.a,b:s.b!=null?s.b:(segs[i+1]?segs[i+1].a:s.a+3),t:cv(s.t)}));
-function render(){$('out').value=lines().map(l=>($('ts').checked?'['+tm(l.a)+'] ':'')+l.t).join('\n');$('res').style.display=segs.length?'block':'none'}
+function render(){GLN=0;$('out').value=lines().map(l=>($('ts').checked?'['+tm(l.a)+'] ':'')+l.t).join('\n');$('res').style.display=segs.length?'block':'none';$('glmsg').textContent=GLN?'已套用詞彙校正 '+GLN+' 處':'直接寫詞彙即可；也可寫「錯誤寫法=>正確寫法」強制取代。修改詞彙後，已產生的逐字稿會立即重新套用，不必重跑辨識。'}
 $('ts').onchange=$('t2').onchange=render;
 function save(text,name,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1e4)}
 const base=()=>file?file.name.replace(/\.[^.]+$/,''):'transcript';
