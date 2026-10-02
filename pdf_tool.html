@@ -78,18 +78,25 @@ details.advanced summary{cursor:pointer;padding:8px 12px;font-size:13px;color:va
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
 .dz{position:relative}
 .dz.over{border-color:var(--pri);background:var(--gut)}
-.dz.over::after{content:"放開滑鼠以加入 PDF";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--gut);opacity:.95;border-radius:8px;color:var(--pri);font-weight:700;font-size:15px;pointer-events:none}
+.dz.over::after{content:"放開滑鼠以加入檔案";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--gut);opacity:.95;border-radius:8px;color:var(--pri);font-weight:700;font-size:15px;pointer-events:none}
 .dzh{color:var(--mut);font-size:12px;margin:6px 0 0}
 .lst div{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--bd)}
 .lst span{flex:1;word-break:break-all}
 footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
+.opt{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}.opt label{display:flex;gap:4px;align-items:center;cursor:pointer}.opt>span:first-child{color:var(--mut)}
+input[type=number]{width:80px;font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+input[type=color]{width:42px;height:28px;padding:0;border:1px solid var(--bd);border-radius:4px;background:none}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:10px}
+.pc{border:1px solid var(--bd);border-radius:6px;padding:6px;text-align:center;background:var(--card);cursor:grab}.pc.del{opacity:.35}
+.pt{height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--gut);border-radius:4px}.pt img{max-width:100%;max-height:100%}
+.pn{font-size:12px;color:var(--mut);margin:4px 0}.pc button{padding:2px 7px;font-size:12px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><div><a class="back" href="index.html">← 小工具首頁</a><h1>PDF 工具</h1><p class="tagline">PDF 文字辨識（可輸出 HTML 報告）、合併、拆分、壓縮、解鎖</p></div><div class="themes" id="themes">主題：</div></header>
+  <header><div><a class="back" href="index.html">← 小工具首頁</a><h1>PDF 工具</h1><p class="tagline">PDF 辨識、合併、拆分、壓縮、解鎖、頁面管理、浮水印與頁碼、圖片互轉</p></div><div class="themes" id="themes">主題：</div></header>
 <p class="privacy">所有 PDF 處理皆在你的瀏覽器本機完成，檔案不會上傳到任何伺服器。若另外開啟「翻譯」功能，辨識出的文字才會傳送到第三方翻譯服務。</p>
-<div class="tabs"><button data-t="ocr" class="on">辨識與 HTML 報告</button><button data-t="merge">合併</button><button data-t="split">拆分</button><button data-t="comp">壓縮</button><button data-t="unl">解鎖</button></div>
+<div class="tabs"><button data-t="ocr" class="on">辨識與 HTML 報告</button><button data-t="merge">合併</button><button data-t="split">拆分</button><button data-t="comp">壓縮</button><button data-t="unl">解鎖</button><button data-t="pages">頁面管理</button><button data-t="mark">浮水印／頁碼</button><button data-t="i2p">圖片轉 PDF</button><button data-t="p2i">PDF 轉圖片</button></div>
 <div class="panel on" id="p-ocr">
 
   <section>
@@ -261,6 +268,34 @@ footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 <div class="row"><input type="password" id="ulPw" placeholder="開啟密碼（若只是限制複製／列印而沒有開啟密碼，可留空）" autocomplete="off"></div>
 <p class="warn">僅限處理你本人有權解鎖的檔案。解鎖後會輸出為影像式 PDF（每頁轉成圖片），文字將無法選取，檔案也可能變大。</p>
 <div class="row"><button class="pri" id="ulGo" disabled>解鎖並下載</button><span class="msg" id="ulMsg"></span></div></section></div>
+<div class="panel" id="p-pages"><section><h2>頁面管理（刪除／重排／旋轉）</h2>
+<label class="btn">選擇 PDF<input type="file" id="pgIn" accept=".pdf,application/pdf"></label> <span class="msg" id="pgInfo"></span>
+<p class="adv-hint">可拖曳縮圖調整順序，也可用 ← → 移動；↻ 順時針旋轉 90°；「刪除」可再按「還原」。加密的 PDF 請先到「解鎖」處理。</p>
+<div class="pgrid" id="pgGrid"></div>
+<div class="row"><button class="pri" id="pgGo" disabled>輸出新 PDF</button><span class="msg" id="pgMsg"></span></div></section></div>
+<div class="panel" id="p-mark"><section><h2>浮水印與頁碼</h2>
+<label class="btn">選擇 PDF<input type="file" id="mkIn" accept=".pdf,application/pdf"></label> <span class="msg" id="mkInfo"></span>
+<div class="opt"><span>浮水印文字</span><input type="text" id="mkText" placeholder="例如：機密、DRAFT（留空則不加）" style="max-width:300px"></div>
+<div class="opt"><span>樣式</span><select id="mkMode"><option value="one">置中單一</option><option value="tile">平鋪整頁</option></select>
+<label>字級 <input type="number" id="mkSize" value="64" min="8" max="300"></label><label>透明度 <input type="number" id="mkOp" value="25" min="5" max="100">%</label><label>角度 <input type="number" id="mkAng" value="45" min="-90" max="90">°</label><label>顏色 <input type="color" id="mkColor" value="#888888"></label></div>
+<div class="opt"><label><input type="checkbox" id="mkPn"> 加入頁碼</label><span>格式</span><input type="text" id="mkFmt" value="{n} / {total}" style="width:140px">
+<select id="mkPos"><option value="bc">底部置中</option><option value="br">底部靠右</option><option value="bl">底部靠左</option><option value="tc">頂部置中</option><option value="tr">頂部靠右</option><option value="tl">頂部靠左</option></select>
+<label>字級 <input type="number" id="mkPs" value="11" min="6" max="40"></label><label>起始頁碼 <input type="number" id="mkStart" value="1" min="0"></label></div>
+<p class="adv-hint">浮水印與頁碼以圖片方式加入（支援中文），所以無法被選取或搜尋；原本頁面內容不變。</p>
+<div class="row"><button class="pri" id="mkGo" disabled>加入並下載</button><span class="msg" id="mkMsg"></span></div></section></div>
+<div class="panel" id="p-i2p"><section><h2>圖片轉 PDF</h2>
+<label class="btn">選擇圖片（可多選）<input type="file" id="ipIn" accept="image/*" multiple></label>
+<div class="lst" id="ipList"></div>
+<div class="opt"><span>頁面大小</span><select id="ipSize"><option value="fit">符合圖片比例</option><option value="a4">A4</option><option value="letter">Letter</option></select>
+<label>邊距 <input type="number" id="ipMg" value="0" min="0" max="100"> pt</label><label>JPG 品質 <input type="number" id="ipQ" value="90" min="30" max="100"></label><label>最長邊上限 <input type="number" id="ipLim" value="0" min="0"> px（0 = 不限）</label></div>
+<p class="adv-hint">依清單順序，每張圖片一頁；A4／Letter 會依圖片長寬自動選直式或橫式。手機照片的方向會自動校正。支援 JPG、PNG、WebP、GIF、BMP。</p>
+<div class="row"><button class="pri" id="ipGo" disabled>轉成 PDF 並下載</button><span class="msg" id="ipMsg"></span></div></section></div>
+<div class="panel" id="p-p2i"><section><h2>PDF 轉圖片</h2>
+<label class="btn">選擇 PDF<input type="file" id="piIn" accept=".pdf,application/pdf"></label> <span class="msg" id="piInfo"></span>
+<div class="opt"><span>格式</span><select id="piFmt"><option value="png">PNG</option><option value="jpeg">JPG</option></select><span>解析度</span><select id="piDpi"><option value="100">100 DPI（螢幕）</option><option value="150" selected>150 DPI</option><option value="200">200 DPI</option><option value="300">300 DPI（列印）</option></select></div>
+<div class="opt"><span>頁碼範圍</span><input type="text" id="piRange" placeholder="例：1-3,5（留空 = 全部）" style="max-width:240px"><span>密碼</span><input type="password" id="piPw" placeholder="（若需要）" style="width:140px" autocomplete="off"></div>
+<p class="adv-hint">只輸出一頁時直接下載圖片，多頁會打包成 zip。</p>
+<div class="row"><button class="pri" id="piGo" disabled>轉換並下載</button><span class="msg" id="piMsg"></span></div></section></div>
 <footer>PDF.js ＋ pdf-lib ＋ Tesseract.js ＋ JSZip　·　僅供內部作業使用</footer>
 </div>
 
@@ -802,21 +837,128 @@ $('ulGo').onclick=busy($('ulGo'),$('ulMsg'),async()=>{
   const blob=await rasterToPdf(ul,$('ulPw').value,2,.9,(i,n)=>$('ulMsg').textContent=`處理中 ${i}/${n} 頁...`);
   dl(blob,stem(ul)+'_unlocked.pdf');$('ulMsg').textContent=`完成（${fmt(blob.size)}）`;});
 
-// ---------- 拖曳上傳（合併／拆分／壓縮／解鎖） ----------
+// ---------- 頁面管理 / 浮水印與頁碼 / 圖片轉 PDF / PDF 轉圖片 ----------
+const isImg=f=>/^image\//.test(f.type)||/\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name);
+const toBlob=(c,m,q)=>new Promise(r=>c.toBlob(r,m,q));
+// 頁面管理
+let pgSrc=null,pg=[],dragK=-1;
+function pgRender(){
+  $('pgGrid').innerHTML=pg.map((p,k)=>`<div class="pc${p.del?' del':''}" draggable="true" data-k="${k}"><div class="pt"><img data-i="${p.i}" src="${p.th||''}" style="transform:rotate(${p.rot}deg) scale(${p.rot%180?.75:1})"></div><div class="pn">原第 ${p.i+1} 頁${p.del?'（刪除）':''}</div><div><button data-a="l">←</button><button data-a="r">→</button><button data-a="rot">↻</button><button data-a="d">${p.del?'還原':'刪除'}</button></div></div>`).join('');
+  const keep=pg.filter(p=>!p.del).length;$('pgGo').disabled=!keep;$('pgMsg').textContent=pg.length?`保留 ${keep} / ${pg.length} 頁`:'';
+}
+$('pgIn').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;pgSrc=f;pg=[];pgRender();$('pgInfo').textContent=f.name+'（'+fmt(f.size)+'）讀取中...';
+  try{
+    const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;
+    pg=Array.from({length:pdf.numPages},(_,i)=>({i,rot:0,del:false}));pgRender();$('pgInfo').textContent=f.name+'（'+fmt(f.size)+'，'+pdf.numPages+' 頁）';
+    for(let i=0;i<pdf.numPages&&pgSrc===f;i++){
+      const q=await pdf.getPage(i+1),v0=q.getViewport({scale:1}),v=q.getViewport({scale:140/v0.width}),c=document.createElement('canvas');
+      c.width=v.width;c.height=v.height;await q.render({canvasContext:c.getContext('2d'),viewport:v}).promise;
+      const o=pg.find(x=>x.i===i);if(!o)continue;o.th=c.toDataURL('image/jpeg',.6);const im=$('pgGrid').querySelector(`img[data-i="${i}"]`);if(im)im.src=o.th;
+    }
+  }catch(err){$('pgInfo').textContent='無法讀取：'+(err.name==='PasswordException'?'檔案已加密，請先解鎖':err.message)}
+};
+$('pgGrid').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;const k=+b.closest('.pc').dataset.k,a=b.dataset.a;
+  if(a==='l'&&k>0)[pg[k-1],pg[k]]=[pg[k],pg[k-1]];else if(a==='r'&&k<pg.length-1)[pg[k+1],pg[k]]=[pg[k],pg[k+1]];
+  else if(a==='rot')pg[k].rot=(pg[k].rot+90)%360;else if(a==='d')pg[k].del=!pg[k].del;
+  pgRender();
+};
+$('pgGrid').ondragstart=e=>{const c=e.target.closest('.pc');if(c){dragK=+c.dataset.k;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','')}};
+$('pgGrid').ondragover=e=>{if(dragK>=0)e.preventDefault()};
+$('pgGrid').ondrop=e=>{const c=e.target.closest('.pc');if(c&&dragK>=0){e.preventDefault();const k=+c.dataset.k,[x]=pg.splice(dragK,1);pg.splice(k,0,x);dragK=-1;pgRender()}};
+$('pgGrid').ondragend=()=>dragK=-1;
+$('pgGo').onclick=busy($('pgGo'),$('pgMsg'),async()=>{
+  const src=await PDFLib.PDFDocument.load(await pgSrc.arrayBuffer()),out=await PDFLib.PDFDocument.create(),keep=pg.filter(p=>!p.del);
+  (await out.copyPages(src,keep.map(p=>p.i))).forEach((q,j)=>{const r=keep[j].rot;if(r)q.setRotation(PDFLib.degrees((q.getRotation().angle+r)%360));out.addPage(q)});
+  dl(new Blob([await out.save()],PDFT),stem(pgSrc)+'_edited.pdf');$('pgMsg').textContent=`完成（輸出 ${keep.length} 頁）`;
+});
+// 浮水印與頁碼（文字先畫成透明 PNG 再嵌入，所以支援中文）
+let mk;pick('mkIn','mkInfo','mkGo',f=>mk=f);
+async function textPng(t,px,color,bold){
+  try{await document.fonts.load((bold?'700 ':'400 ')+'40px "Noto Sans TC"',t)}catch(e){}
+  const S=3,c=document.createElement('canvas'),x=c.getContext('2d'),font=`${bold?700:400} ${px*S}px "Noto Sans TC",sans-serif`;
+  x.font=font;const w=Math.ceil(x.measureText(t).width)+8,h=Math.ceil(px*S*1.4);
+  c.width=w;c.height=h;x.font=font;x.fillStyle=color;x.textBaseline='middle';x.fillText(t,4,h/2);
+  return{bytes:await(await toBlob(c,'image/png')).arrayBuffer(),w:w/S,h:h/S};
+}
+$('mkGo').onclick=busy($('mkGo'),$('mkMsg'),async()=>{
+  const wm=$('mkText').value.trim(),pn=$('mkPn').checked;
+  if(!wm&&!pn)throw Error('請輸入浮水印文字，或勾選加入頁碼');
+  const doc=await PDFLib.PDFDocument.load(await mk.arrayBuffer()),pages=doc.getPages(),N=pages.length,st=+$('mkStart').value||0;
+  let wi=null;
+  if(wm){const t=await textPng(wm,+$('mkSize').value||64,$('mkColor').value,true);wi={img:await doc.embedPng(t.bytes),w:t.w,h:t.h}}
+  const op=(+$('mkOp').value||25)/100,ang=+$('mkAng').value||0,th=ang*Math.PI/180;
+  for(let k=0;k<N;k++){
+    $('mkMsg').textContent=`處理中 ${k+1}/${N}...`;
+    const q=pages[k],{width:W,height:H}=q.getSize();
+    if(wi){
+      const put=(cx,cy)=>q.drawImage(wi.img,{x:cx-(wi.w/2*Math.cos(th)-wi.h/2*Math.sin(th)),y:cy-(wi.w/2*Math.sin(th)+wi.h/2*Math.cos(th)),width:wi.w,height:wi.h,opacity:op,rotate:PDFLib.degrees(ang)});
+      if($('mkMode').value==='one')put(W/2,H/2);
+      else{const sx=Math.max(wi.w,wi.h)*1.5,sy=sx*.8;for(let y=sy/2,r=0;y<H+sy/2;y+=sy,r++)for(let x=r%2?0:sx/2;x<W+sx;x+=sx)put(x,y)}
+    }
+    if(pn){
+      const label=$('mkFmt').value.replace('{n}',st+k).replace('{total}',st+N-1),t=await textPng(label,+$('mkPs').value||11,'#333333',false),img=await doc.embedPng(t.bytes),pos=$('mkPos').value,mg=24;
+      q.drawImage(img,{x:pos[1]==='l'?mg:pos[1]==='r'?W-mg-t.w:(W-t.w)/2,y:pos[0]==='b'?mg:H-mg-t.h,width:t.w,height:t.h});
+    }
+  }
+  dl(new Blob([await doc.save()],PDFT),stem(mk)+'_marked.pdf');$('mkMsg').textContent='完成';
+});
+// 圖片轉 PDF
+let ip=[];
+const ipRender=()=>{$('ipList').innerHTML=ip.map((f,i)=>`<div><span>${i+1}. ${escapeHtml(f.name)}（${fmt(f.size)}）</span><button data-i="${i}" data-a="u">↑</button><button data-i="${i}" data-a="d">↓</button><button data-i="${i}" data-a="x">✕</button></div>`).join('');$('ipGo').disabled=!ip.length};
+$('ipIn').onchange=e=>{ip.push(...[...e.target.files].filter(isImg));e.target.value='';ipRender()};
+$('ipList').onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=+b.dataset.i,a=b.dataset.a;if(a==='x')ip.splice(i,1);else{const j=a==='u'?i-1:i+1;if(j>=0&&j<ip.length)[ip[i],ip[j]]=[ip[j],ip[i]]}ipRender()};
+$('ipGo').onclick=busy($('ipGo'),$('ipMsg'),async()=>{
+  const out=await PDFLib.PDFDocument.create(),mode=$('ipSize').value,m=+$('ipMg').value||0,q=(+$('ipQ').value||90)/100,lim=+$('ipLim').value||0;
+  for(let k=0;k<ip.length;k++){
+    $('ipMsg').textContent=`處理中 ${k+1}/${ip.length}...`;const f=ip[k];
+    const bm=await createImageBitmap(f,{imageOrientation:'from-image'}).catch(()=>createImageBitmap(f));
+    const s=lim?Math.min(1,lim/Math.max(bm.width,bm.height)):1,w=Math.round(bm.width*s),h=Math.round(bm.height*s),c=document.createElement('canvas'),x=c.getContext('2d'),png=/png/i.test(f.type);
+    c.width=w;c.height=h;if(!png){x.fillStyle='#fff';x.fillRect(0,0,w,h)}x.drawImage(bm,0,0,w,h);
+    const buf=await(await toBlob(c,png?'image/png':'image/jpeg',q)).arrayBuffer(),img=png?await out.embedPng(buf):await out.embedJpg(buf);
+    let pw,ph;
+    if(mode==='fit'){const k2=842/Math.max(w,h);pw=w*k2+2*m;ph=h*k2+2*m}else{const[a,b]=mode==='a4'?[595.28,841.89]:[612,792];[pw,ph]=w>h?[b,a]:[a,b]}
+    const page=out.addPage([pw,ph]),k3=Math.min((pw-2*m)/w,(ph-2*m)/h),dw=w*k3,dh=h*k3;
+    page.drawImage(img,{x:(pw-dw)/2,y:(ph-dh)/2,width:dw,height:dh});
+  }
+  const blob=new Blob([await out.save()],PDFT);dl(blob,'images.pdf');$('ipMsg').textContent=`完成（${ip.length} 頁，${fmt(blob.size)}）`;
+});
+// PDF 轉圖片
+let pi;pick('piIn','piInfo','piGo',f=>pi=f);
+$('piGo').onclick=busy($('piGo'),$('piMsg'),async()=>{
+  const pdf=await pdfjsLib.getDocument({data:await pi.arrayBuffer(),password:$('piPw').value||undefined}).promise,n=pdf.numPages;
+  const idx=$('piRange').value.trim()?parseR($('piRange').value,n).flatMap(x=>x.idx):Array.from({length:n},(_,i)=>i);
+  const png=$('piFmt').value==='png',sc=(+$('piDpi').value||150)/72,files=[];
+  for(let j=0;j<idx.length;j++){
+    $('piMsg').textContent=`處理中 ${j+1}/${idx.length}...`;
+    const q=await pdf.getPage(idx[j]+1),v=q.getViewport({scale:sc}),c=document.createElement('canvas'),x=c.getContext('2d');
+    c.width=Math.round(v.width);c.height=Math.round(v.height);x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+    await q.render({canvasContext:x,viewport:v}).promise;
+    files.push({name:`${stem(pi)}_p${String(idx[j]+1).padStart(String(n).length,'0')}.${png?'png':'jpg'}`,blob:await toBlob(c,png?'image/png':'image/jpeg',.92)});
+  }
+  if(files.length===1)dl(files[0].blob,files[0].name);
+  else{const z=new JSZip();files.forEach(f=>z.file(f.name,f.blob));dl(await z.generateAsync({type:'blob'}),stem(pi)+'_images.zip')}
+  $('piMsg').textContent=`完成（${files.length} 張）`;
+});
+
+// ---------- 拖曳上傳 ----------
 ['dragover','drop'].forEach(ev=>window.addEventListener(ev,e=>{if(!e.target.closest||!e.target.closest('.dz'))e.preventDefault()}));
-[['p-merge','mgIn',true],['p-split','spIn',false],['p-comp','cpIn',false],['p-unl','ulIn',false]].forEach(([pid,inId,multi])=>{
-  const sec=document.querySelector('#'+pid+' section'),inp=$(inId);
+const isFiles=e=>e.dataTransfer&&[...e.dataTransfer.types].includes('Files');
+[['p-merge','mgIn',true],['p-split','spIn',false],['p-comp','cpIn',false],['p-unl','ulIn',false],['p-pages','pgIn',false],['p-mark','mkIn',false],['p-i2p','ipIn',true],['p-p2i','piIn',false]].forEach(([pid,inId,multi])=>{
+  const sec=document.querySelector('#'+pid+' section'),inp=$(inId),img=pid==='p-i2p',ok=img?isImg:(f=>/\.pdf$/i.test(f.name)||f.type==='application/pdf'),word=img?'圖片':'PDF';
   sec.classList.add('dz');
-  const h=document.createElement('p');h.className='dzh';h.textContent=multi?'也可以直接把多個 PDF 拖曳到這個區塊。':'也可以直接把 PDF 拖曳到這個區塊。';
-  sec.insertBefore(h,sec.querySelector('.row,.lst,input[type=text]')||null);
+  const h=document.createElement('p');h.className='dzh';h.textContent=multi?`也可以直接把多個${word}拖曳到這個區塊。`:`也可以直接把 ${word} 拖曳到這個區塊。`;
+  sec.insertBefore(h,sec.querySelector('.row,.lst,.opt,.pgrid,input[type=text]')||null);
   let depth=0;
-  sec.addEventListener('dragenter',e=>{e.preventDefault();depth++;sec.classList.add('over')});
+  sec.addEventListener('dragenter',e=>{if(!isFiles(e))return;e.preventDefault();depth++;sec.classList.add('over')});
   sec.addEventListener('dragleave',()=>{if(--depth<=0){depth=0;sec.classList.remove('over')}});
-  sec.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy'});
+  sec.addEventListener('dragover',e=>{if(!isFiles(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy'});
   sec.addEventListener('drop',e=>{
+    if(!isFiles(e))return;
     e.preventDefault();depth=0;sec.classList.remove('over');
-    let fs=[...e.dataTransfer.files].filter(f=>/\.pdf$/i.test(f.name)||f.type==='application/pdf');
-    if(!fs.length){alert('請拖曳 PDF 檔案');return}
+    let fs=[...e.dataTransfer.files].filter(ok);
+    if(!fs.length){alert('請拖曳'+word+'檔案');return}
     if(!multi)fs=fs.slice(0,1);
     const dt=new DataTransfer();fs.forEach(f=>dt.items.add(f));
     inp.files=dt.files;inp.dispatchEvent(new Event('change'));
