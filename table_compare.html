@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Excel／CSV 比對</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--add:#c8f0cf;--del:#ffd0d0;--emp:#e9ebee;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--add:#1d5a2c;--del:#6b2323;--emp:#20242c;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--add:#cfe8b8;--del:#f4c9b8;--emp:#ebe0c4;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--add:#bfe8c9;--del:#f5cdcd;--emp:#dce8df;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--add:#17604a;--del:#7a2f3f;--emp:#0e2536;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--add:#2c6e49;--del:#7d2f46;--emp:#2b2d3a;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+a{color:var(--pri)}
+.wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.sub,.tagline,.adv-hint,.msg{color:var(--mut);font-size:12px;margin:2px 0 0}
+.msg{font-size:13px;margin-top:8px}
+.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
+.sw.on{outline:2px solid var(--pri);outline-offset:2px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.num{width:20px;height:20px;border-radius:50%;background:var(--gut);color:var(--mut);font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.privacy,.warn{color:var(--mut);font-size:12px;border-left:3px solid var(--pri);padding:6px 10px;margin:8px 0;background:var(--gut)}
+.warn{border-left-color:#e5484d}
+button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+button:hover:not(:disabled),.btn:hover{border-color:var(--pri)}
+button:disabled{opacity:.4;cursor:default}
+.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+input[type=file]{display:none}
+select,input[type=text],input[type=password]{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+input[type=text],input[type=password]{width:100%}
+option{background:var(--card);color:var(--fg)}
+.drop-zone{border:2px dashed var(--bd);border-radius:8px;padding:28px 16px;text-align:center;cursor:pointer;color:var(--mut);transition:border-color .15s,background .15s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--pri);color:var(--fg);background:var(--gut)}
+.drop-zone input{display:none}
+#fileList{margin-top:10px;font-size:13px;color:var(--mut);max-height:140px;overflow-y:auto}
+.file-row{border-bottom:1px dashed var(--bd);padding:2px 0}
+.clear-link{color:var(--pri);cursor:pointer;text-decoration:underline;font-size:12px}
+.field{margin-bottom:12px}
+.radio-group label{display:block;margin:6px 0;cursor:pointer}
+.radio-group input,.translate-toggle input{margin-right:6px}
+.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;margin-top:6px}
+.lang-grid label{cursor:pointer;display:flex;align-items:center;gap:6px}
+.translate-toggle{display:block;margin-bottom:10px;cursor:pointer}
+#translateOptions .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+details.advanced{margin-top:14px;border:1px solid var(--bd);border-radius:6px}
+details.advanced summary{cursor:pointer;padding:8px 12px;font-size:13px;color:var(--mut)}
+.adv-body{padding:4px 14px 12px}
+.adv-field{margin-bottom:12px}
+.adv-field label{display:block;margin-bottom:4px;color:var(--mut)}
+.chip-btn{display:inline-block;font-size:12px;color:var(--pri);border:1px solid var(--pri);border-radius:12px;padding:1px 9px;margin:6px 6px 0 0;cursor:pointer}
+.progress-bar-bg,.item-progress-bg{background:var(--gut);border-radius:4px;overflow:hidden}
+.progress-bar-bg{height:8px}.item-progress-bg{height:4px}
+.progress-bar-fill,.item-progress-fill{height:100%;width:0;background:var(--pri);transition:width .2s}
+.item-progress-fill.error{background:#e5484d}
+#progressArea{margin-top:14px}
+#progressText{margin:8px 0;color:var(--mut);font-size:13px}
+#statusList{list-style:none;padding:0;margin:0;max-height:180px;overflow-y:auto;border:1px solid var(--bd);border-radius:6px;font-size:12.5px}
+#statusList li{padding:6px 8px;border-bottom:1px dashed var(--bd)}
+.status-label{margin-bottom:4px}
+#previewText{white-space:pre-wrap;background:var(--gut);border:1px solid var(--bd);border-radius:6px;padding:10px;max-height:260px;overflow-y:auto;margin-top:12px;color:var(--mut);font:12.5px/1.6 ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+.panel{display:none}.panel.on{display:block}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.lst div{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--bd)}
+.lst span{flex:1;word-break:break-all}
+footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
+.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px}
+.tool{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px;color:var(--fg);text-decoration:none}
+.tool:hover,.tool:focus-visible{border-color:var(--pri);outline:none}
+.tool b{font-size:16px}.tool span{color:var(--mut);font-size:13px}.tool small{color:var(--mut);font-size:12px;margin-top:auto;padding-top:6px}
+.wrap{max-width:1200px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+textarea{display:block;width:100%;height:80px;margin-top:8px;resize:vertical;border:1px solid var(--bd);border-radius:6px;padding:8px;background:var(--card);color:var(--fg);font:12.5px/1.5 ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace}
+.opt{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}.opt label{display:flex;gap:4px;align-items:center;cursor:pointer}
+.chip{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--bd);border-radius:14px;padding:1px 10px;margin:3px 4px 3px 0;cursor:pointer;font-size:13px}
+.tw{overflow:auto;max-height:70vh;border:1px solid var(--bd);border-radius:6px;margin-top:8px}
+table{border-collapse:collapse;font:12.5px/1.5 "Noto Sans TC",system-ui,sans-serif;width:max-content;min-width:100%}
+th,td{border:1px solid var(--bd);padding:3px 8px;white-space:pre-wrap;max-width:360px;vertical-align:top;word-break:break-all}
+th{position:sticky;top:0;background:var(--gut);z-index:1}td.st{white-space:nowrap}td.st small{color:var(--mut)}
+.r-add td{background:var(--add)}.r-del td{background:var(--del)}.r-mod td.chg{background:color-mix(in srgb,var(--pri) 20%,transparent)}
+td.chg s{color:#c0392b}td.chg b{color:#1a7f37}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><a class="back" href="index.html">← 小工具首頁</a><h1>Excel／CSV 比對</h1><p class="tagline">找出兩份表格新增、刪除、修改的列</p></div><div class="themes" id="themes">主題：</div></header>
+<p class="privacy">檔案只在你的瀏覽器本機處理，不會上傳。支援 xlsx、xls、ods、csv、tsv，也可以直接貼上內容。</p>
+<div class="grid2"><section><h2>A　舊檔</h2><div class="drop-zone" id="dzA">拖曳或點擊選擇 Excel／CSV<input type="file" id="fA" accept=".xlsx,.xlsm,.xls,.ods,.csv,.tsv,.txt"></div>
+<div class="opt"><select id="shA" style="display:none"></select><span class="msg" id="infoA"></span></div>
+<textarea id="taA" placeholder="或直接貼上從 Excel 複製的內容"></textarea></section><section><h2>B　新檔</h2><div class="drop-zone" id="dzB">拖曳或點擊選擇 Excel／CSV<input type="file" id="fB" accept=".xlsx,.xlsm,.xls,.ods,.csv,.tsv,.txt"></div>
+<div class="opt"><select id="shB" style="display:none"></select><span class="msg" id="infoB"></span></div>
+<textarea id="taB" placeholder="或直接貼上從 Excel 複製的內容"></textarea></section></div>
+<section><h2>比對設定</h2>
+<div class="opt"><label><input type="checkbox" id="hdr" checked> 第一列是欄位標題（兩邊以標題名稱對應欄位）</label><label><input type="checkbox" id="trim" checked> 忽略前後空白</label><label><input type="checkbox" id="ic"> 忽略大小寫</label></div>
+<div>主鍵欄位（用來判斷「同一列」，可多選）：<div id="keys">（請先載入檔案）</div></div>
+<div class="opt"><label><input type="checkbox" id="nokey"> 不使用主鍵，依列順序一一對應</label></div>
+<div class="row"><button class="pri" id="go" disabled>開始比對</button><span class="msg" id="msg"></span></div></section>
+<section id="resSec" style="display:none"><h2>比對結果</h2><div id="sum"></div><div id="warn" class="msg"></div><div id="flt"></div>
+<div class="tw"><table id="tbl"></table></div><div class="row"><button id="xl">下載差異報告 (.xlsx)</button></div></section>
+<footer>SheetJS</footer>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const THEMES = [['auto','跟隨系統','#ffffff','#171a21'],['light','淺色','#f6f7f9','#2563eb'],['dark','深色','#0f1115','#4c8dff'],
+  ['sepia','護眼米黃','#f1e8d4','#a8652a'],['forest','森林綠','#eaf2ec','#2f855a'],['ocean','深海藍','#0b1e2d','#2bb3d9'],['dracula','紫夜','#282a36','#bd93f9']];
+function applyTheme(t){
+  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('tools-theme', t); } catch(e){}
+  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+}
+THEMES.forEach(([id, name, c1, c2]) => {
+  const b = document.createElement('button');
+  b.className = 'sw'; b.dataset.t = id; b.title = name;
+  b.style.background = `linear-gradient(135deg,${c1} 50%,${c2} 50%)`;
+  b.onclick = () => applyTheme(id);
+  $('themes').appendChild(b);
+});
+applyTheme(document.documentElement.dataset.theme || 'auto');
+
+
+const S={a:null,b:null},ST={add:'新增',del:'刪除',mod:'修改',same:'相同'};let LAST=null,selKeys=new Set();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function parseText(t){
+  t=t.replace(/^\uFEFF/,'');const first=t.split(/\r?\n/,1)[0];
+  const d=[['\t',first.split('\t').length],[',',first.split(',').length],[';',first.split(';').length]].sort((x,y)=>y[1]-x[1])[0][0];
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"'&&f==='')q=true;
+    else if(c===d){row.push(f);f=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}
+    else f+=c}
+  if(f!==''||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(x=>x!==''));
+}
+const rowsOf=s=>S[s]?S[s].sheets[S[s].sheet]:null;
+function table(s){
+  const rows=rowsOf(s)||[],h=$('hdr').checked,n=rows.reduce((m,r)=>Math.max(m,r.length),0),seen={};
+  const cols=Array.from({length:n},(_,i)=>{let c=h?String((rows[0]||[])[i]??'').trim():'';c=c||'欄'+(i+1);if(seen[c]){seen[c]++;c+='_'+seen[c]}else seen[c]=1;return c});
+  return{cols,body:rows.slice(h?1:0),off:h?2:1};
+}
+function setSide(s,o){
+  S[s]=o;const K=s.toUpperCase(),sh=$('sh'+K),names=Object.keys(o.sheets);
+  sh.innerHTML=names.map(n=>`<option>${esc(n)}</option>`).join('');sh.style.display=names.length>1?'':'none';sh.value=o.sheet;
+  $('info'+K).textContent=o.name+'：'+rowsOf(s).length+' 列';renderKeys();$('go').disabled=!(S.a&&S.b);
+}
+async function loadFile(s,f){
+  try{
+    const buf=await f.arrayBuffer();
+    if(/\.(xlsx|xlsm|xls|xlsb|ods)$/i.test(f.name)){
+      const wb=XLSX.read(buf,{type:'array'}),sheets={};
+      wb.SheetNames.forEach(n=>sheets[n]=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:'',raw:false}).map(r=>r.map(x=>String(x))));
+      setSide(s,{name:f.name,sheets,sheet:wb.SheetNames[0]});
+    }else{
+      let t;try{t=new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){t=new TextDecoder('big5').decode(buf)}
+      setSide(s,{name:f.name,sheets:{'(CSV)':parseText(t)},sheet:'(CSV)'});
+    }
+  }catch(e){$('info'+s.toUpperCase()).textContent='讀取失敗：'+e.message}
+}
+['a','b'].forEach(s=>{
+  const K=s.toUpperCase(),dz=$('dz'+K),fi=$('f'+K);
+  fi.onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)loadFile(s,f)};
+  dz.onclick=e=>{if(e.target!==fi)fi.click()};
+  dz.ondragover=e=>{e.preventDefault();dz.classList.add('dragover')};dz.ondragleave=()=>dz.classList.remove('dragover');
+  dz.ondrop=e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)loadFile(s,f)};
+  $('sh'+K).onchange=e=>{S[s].sheet=e.target.value;$('info'+K).textContent=S[s].name+'：'+rowsOf(s).length+' 列';renderKeys()};
+  let tm;$('ta'+K).oninput=e=>{clearTimeout(tm);tm=setTimeout(()=>{const t=e.target.value;if(!t.trim())return;setSide(s,{name:'貼上內容',sheets:{'貼上':parseText(t)},sheet:'貼上'})},400)};
+});
+['dragover','drop'].forEach(v=>window.addEventListener(v,e=>{if(!e.target.closest('.drop-zone'))e.preventDefault()}));
+$('hdr').onchange=renderKeys;
+function renderKeys(){
+  const cols=[...new Set(['a','b'].filter(s=>S[s]).flatMap(s=>table(s).cols))];
+  if(!cols.length){$('keys').textContent='（請先載入檔案）';return}
+  selKeys=new Set([...selKeys].filter(c=>cols.includes(c)));if(!selKeys.size)selKeys.add(cols[0]);
+  $('keys').innerHTML=cols.map(c=>`<label class="chip"><input type="checkbox" class="kc" value="${esc(c)}"${selKeys.has(c)?' checked':''}>${esc(c)}</label>`).join('');
+}
+$('keys').onchange=e=>{if(e.target.classList.contains('kc'))e.target.checked?selKeys.add(e.target.value):selKeys.delete(e.target.value)};
+$('go').onclick=()=>{
+  const tr=$('trim').checked,ic=$('ic').checked;
+  const nv=v=>{let s=String(v??'');if(tr)s=s.trim();if(ic)s=s.toLowerCase();if(/^-?(0|[1-9]\d*)(\.\d+)?$/.test(s))s=String(Number(s));return s};
+  const A=table('a'),B=table('b'),cols=[...A.cols,...B.cols.filter(c=>!A.cols.includes(c))],both=cols.filter(c=>A.cols.includes(c)&&B.cols.includes(c));
+  const keys=[...selKeys].filter(k=>cols.includes(k)),pos=$('nokey').checked||!keys.length;
+  const obj=(t,r)=>{const o={};t.cols.forEach((c,i)=>o[c]=r[i]??'');return o};
+  const keyOf=(o,i)=>pos?String(i):keys.map(k=>nv(o[k]??'')).join('\u0001');
+  let dup=0;const mapB=new Map();
+  B.body.forEach((r,i)=>{const o=obj(B,r),k=keyOf(o,i);let n=0,kk=k;while(mapB.has(kk)){n++;kk=k+'\u0002'+n}if(n)dup++;mapB.set(kk,{o,rb:i+B.off,used:false})});
+  const seen=new Map(),res=[],st={add:0,del:0,mod:0,same:0};
+  A.body.forEach((r,i)=>{
+    const o=obj(A,r),k=keyOf(o,i),c=seen.get(k)||0;seen.set(k,c+1);if(c)dup++;
+    const m=mapB.get(c?k+'\u0002'+c:k),ra=i+A.off;
+    if(!m){res.push({s:'del',a:o,ra});st.del++;return}
+    m.used=true;const d=both.filter(col=>nv(o[col])!==nv(m.o[col]));
+    if(d.length){res.push({s:'mod',a:o,b:m.o,d,ra,rb:m.rb});st.mod++}else{res.push({s:'same',a:o,b:m.o,d:[],ra,rb:m.rb});st.same++}
+  });
+  mapB.forEach(m=>{if(!m.used){res.push({s:'add',b:m.o,rb:m.rb});st.add++}});
+  LAST={res,cols,st,keys:pos?[]:keys,onlyA:A.cols.filter(c=>!B.cols.includes(c)),onlyB:B.cols.filter(c=>!A.cols.includes(c))};
+  $('sum').textContent=`新增 ${st.add}　刪除 ${st.del}　修改 ${st.mod}　相同 ${st.same}`;
+  const w=[];if(dup)w.push(`有 ${dup} 列主鍵重複，已依出現順序配對，建議改選更能辨識唯一列的主鍵`);
+  if(LAST.onlyA.length)w.push('只在 A 的欄位：'+LAST.onlyA.join('、'));if(LAST.onlyB.length)w.push('只在 B 的欄位：'+LAST.onlyB.join('、'));
+  $('warn').textContent=w.join('；');
+  $('flt').innerHTML=['mod','add','del','same'].map(k=>`<label class="chip"><input type="checkbox" data-s="${k}"${k==='same'?'':' checked'}>${ST[k]} ${st[k]}</label>`).join('');
+  $('resSec').style.display='';renderTable();
+};
+$('flt').onchange=()=>renderTable();
+function renderTable(){
+  const{res,cols}=LAST,on=new Set([...document.querySelectorAll('#flt input:checked')].map(x=>x.dataset.s)),CAP=3000;
+  const rs=res.filter(r=>on.has(r.s)),shown=rs.slice(0,CAP);
+  const val=(r,c)=>r.a&&c in r.a?r.a[c]:r.b?r.b[c]??'':'';
+  $('tbl').innerHTML='<thead><tr><th>狀態</th>'+cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+shown.map(r=>{
+    const loc=r.s==='del'?'A'+r.ra:r.s==='add'?'B'+r.rb:`A${r.ra}→B${r.rb}`;
+    return `<tr class="r-${r.s}"><td class="st">${ST[r.s]} <small>${loc}</small></td>`+cols.map(c=>r.s==='mod'&&r.d.includes(c)?`<td class="chg"><s>${esc(r.a[c])}</s> <b>${esc(r.b[c])}</b></td>`:`<td>${esc(val(r,c))}</td>`).join('')+'</tr>';
+  }).join('')+'</tbody>';
+  $('msg').textContent=rs.length>CAP?`畫面只顯示前 ${CAP} 列（共 ${rs.length} 列），完整內容請下載差異報告`:'';
+}
+$('xl').onclick=()=>{
+  const{res,cols,st,keys,onlyA,onlyB}=LAST,wb=XLSX.utils.book_new(),add=(n,a)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(a),n);
+  add('摘要',[['項目','數量'],['新增列',st.add],['刪除列',st.del],['修改列',st.mod],['相同列',st.same],[],['只在 A 的欄位',onlyA.join('、')],['只在 B 的欄位',onlyB.join('、')]]);
+  const kc=keys.length?keys:[],chg=[];
+  res.filter(r=>r.s==='mod').forEach(r=>r.d.forEach(c=>chg.push([...(kc.length?kc.map(k=>r.a[k]):['A'+r.ra+' / B'+r.rb]),c,r.a[c],r.b[c]])));
+  add('修改明細',[[...(kc.length?kc:['列號']),'欄位','舊值 (A)','新值 (B)'],...chg]);
+  add('新增列',[['B 列號',...cols],...res.filter(r=>r.s==='add').map(r=>[r.rb,...cols.map(c=>r.b[c]??'')])]);
+  add('刪除列',[['A 列號',...cols],...res.filter(r=>r.s==='del').map(r=>[r.ra,...cols.map(c=>r.a[c]??'')])]);
+  XLSX.writeFile(wb,'compare_result.xlsx');
+};
+</script>
+</body>
+</html>
