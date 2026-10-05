@@ -18,6 +18,7 @@ html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b32
 html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--pri:#2f855a;--prifg:#fff}
 html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--pri:#2bb3d9;--prifg:#04202c}
 html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--pri:#bd93f9;--prifg:#1e1f29}
+@font-face{font-family:"Twemoji Country Flags";unicode-range:U+1F1E6-1F1FF,U+1F3F4,U+E0062-E0063,U+E0065,U+E0067,U+E006C,U+E006E,U+E0073-E0074,U+E0077,U+E007F;src:url("https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1/dist/TwemojiCountryFlags.woff2") format("woff2");font-display:swap}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
 .wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
@@ -34,12 +35,12 @@ button:hover{border-color:var(--pri)}
 .pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
 input[type=text],textarea{width:100%;font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
 select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
-textarea{font-size:22px;line-height:1.4;resize:vertical;min-height:56px}
+textarea{font-family:"Twemoji Country Flags","Noto Sans TC","Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:22px;line-height:1.4;resize:vertical;min-height:56px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
 .tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px}
-.e{font-size:28px;line-height:1;padding:10px 0;background:var(--gut);border:1px solid transparent;border-radius:8px;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+.e{font-size:28px;line-height:1;padding:10px 0;background:var(--gut);border:1px solid transparent;border-radius:8px;font-family:"Twemoji Country Flags","Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 .e:hover{border-color:var(--pri)}
 .empty{color:var(--mut);padding:20px;text-align:center;grid-column:1/-1}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:6px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -62,7 +63,7 @@ footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 <div class="grid" id="grid"></div>
 <div class="row"><span class="msg" id="count"></span><button id="clrRecent" style="display:none;margin-left:auto">清除最近使用</button></div>
 </section>
-<footer>emoji 的外觀會因作業系統與瀏覽器而不同；部分國旗在 Windows 會顯示為字母；較新的 emoji 在舊版系統可能顯示為方框。</footer>
+<footer>emoji 的外觀會因作業系統與瀏覽器而不同；國旗在 Windows 以內建字型補上圖案（需連網載入約 77KB 字型）；較新的 emoji 在舊版系統可能顯示為方框。</footer>
 </div>
 <div id="toast"></div>
 <script>
