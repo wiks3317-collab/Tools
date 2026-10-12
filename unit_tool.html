@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>單位換算</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.sub{color:var(--mut);font-size:12px;margin:2px 0 0}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin:12px 0}
+button{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+button:hover{border-color:var(--pri)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+select,input{font:inherit;font-size:15px;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg);width:100%;min-width:0}
+option{background:var(--card);color:var(--fg)}
+.conv{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start}
+.conv .col{display:flex;flex-direction:column;gap:8px}
+.conv label{font-size:12px;color:var(--mut)}
+.swap{align-self:center;margin-top:18px}
+#out{background:var(--gut);font-weight:700}
+.tip{color:var(--mut);font-size:12px;margin:8px 0 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+td{padding:6px 8px;border-bottom:1px dashed var(--bd)}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums;word-break:break-all}
+tr.row{cursor:pointer}tr.row:hover{background:var(--gut)}
+tr.row.cur td{color:var(--pri);font-weight:700}
+.unit{color:var(--mut)}
+@media(max-width:560px){.conv{grid-template-columns:1fr}.swap{margin:0;justify-self:start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="back" href="index.html">← 回主選單</a><h1>單位換算</h1><p class="sub">工程與生活常用單位換算，另含即時匯率。所有計算都在你的瀏覽器內完成。</p></header>
+<div class="tabs" id="tabs"></div>
+<section>
+  <div class="conv">
+    <div class="col"><label>輸入數值</label><input id="inp" type="text" inputmode="decimal" value="1" autocomplete="off"><select id="uf"></select></div>
+    <button class="swap" id="swap" title="對調">⇄</button>
+    <div class="col"><label>換算結果（點一下複製）</label><input id="out" type="text" readonly><select id="ut"></select></div>
+  </div>
+  <p class="tip" id="tip"></p>
+</section>
+<section><b>所有單位對照</b><table id="all"></table><p class="tip">點選任一列可設為目標單位；點右側數值可複製。</p></section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+// 單位：[代碼, 顯示名稱, 換算到基準單位的係數]
+const C={
+ length:{n:'長度',b:'m',u:[['mm','毫米 mm',1e-3],['cm','公分 cm',1e-2],['m','公尺 m',1],['km','公里 km',1e3],['in','英寸 in',.0254],['ft','英尺 ft',.3048],['yd','碼 yd',.9144],['mi','英里 mi',1609.344],['nmi','海里 nmi',1852],['tchi','台尺',10/33],['tchun','台寸',1/33]]},
+ area:{n:'面積',b:'m²',u:[['mm2','平方毫米 mm²',1e-6],['cm2','平方公分 cm²',1e-4],['m2','平方公尺 m²',1],['km2','平方公里 km²',1e6],['ha','公頃 ha',1e4],['in2','平方英寸 in²',6.4516e-4],['ft2','平方英尺 ft²',.09290304],['yd2','平方碼 yd²',.83612736],['ac','英畝 acre',4046.8564224],['mi2','平方英里 mi²',2589988.110336],['ping','坪',400/121],['jia','甲',9699.17]]},
+ volume:{n:'體積',b:'L',u:[['ml','毫升 mL',1e-3],['l','公升 L',1],['m3','立方公尺 m³',1e3],['cm3','立方公分 cm³',1e-3],['gal','加侖 gal(US)',3.785411784],['qt','夸脫 qt(US)',.946352946],['pt','品脫 pt(US)',.473176473],['cup','杯 cup(US)',.2365882365],['floz','液盎司 fl oz(US)',.0295735295625],['tbsp','湯匙 tbsp(US)',.01478676478],['tsp','茶匙 tsp(US)',.00492892159],['in3','立方英寸 in³',.016387064],['ft3','立方英尺 ft³',28.316846592]]},
+ mass:{n:'重量',b:'kg',u:[['mg','毫克 mg',1e-6],['g','公克 g',1e-3],['kg','公斤 kg',1],['t','公噸 t',1e3],['oz','盎司 oz',.028349523125],['lb','磅 lb',.45359237],['st','英石 stone',6.35029318],['ct','克拉 ct',2e-4],['jin','台斤',.6],['liang','台兩',.0375]]},
+ speed:{n:'速度',b:'m/s',u:[['ms','公尺/秒 m/s',1],['kmh','公里/小時 km/h',1/3.6],['mph','英里/小時 mph',.44704],['kn','節 knot',1852/3600],['fts','英尺/秒 ft/s',.3048],['mach','馬赫 Mach(15°C)',340.29]]},
+ force:{n:'力',b:'N',u:[['N','牛頓 N',1],['kN','千牛頓 kN',1e3],['kgf','公斤力 kgf',9.80665],['gf','公克力 gf',.00980665],['tf','公噸力 tf',9806.65],['lbf','磅力 lbf',4.4482216152605],['dyn','達因 dyn',1e-5]]},
+ torque:{n:'扭力',b:'N·m',u:[['Nm','牛頓·公尺 N·m',1],['kNm','千牛頓·公尺 kN·m',1e3],['Ncm','牛頓·公分 N·cm',.01],['Nmm','牛頓·毫米 N·mm',1e-3],['kgfm','公斤力·公尺 kgf·m',9.80665],['kgfcm','公斤力·公分 kgf·cm',.0980665],['gfcm','公克力·公分 gf·cm',9.80665e-5],['lbfft','磅力·英尺 lbf·ft',1.3558179483],['lbfin','磅力·英寸 lbf·in',.112984829],['ozfin','盎司力·英寸 ozf·in',.00706155181]]},
+ pressure:{n:'壓力',b:'Pa',u:[['Pa','帕 Pa',1],['kPa','千帕 kPa',1e3],['MPa','兆帕 MPa',1e6],['bar','巴 bar',1e5],['mbar','毫巴 mbar',100],['atm','大氣壓 atm',101325],['kgfcm2','公斤力/平方公分 kgf/cm²',98066.5],['psi','磅/平方英寸 psi',6894.757293168],['mmHg','毫米汞柱 mmHg',133.322387415],['inHg','英寸汞柱 inHg',3386.389],['mmH2O','毫米水柱 mmH₂O',9.80665]]},
+ energy:{n:'能量',b:'J',u:[['J','焦耳 J',1],['kJ','千焦 kJ',1e3],['MJ','兆焦 MJ',1e6],['cal','卡 cal',4.184],['kcal','大卡 kcal',4184],['Wh','瓦時 Wh',3600],['kWh','度 kWh',3.6e6],['BTU','英熱單位 BTU',1055.05585],['ftlbf','英尺·磅力 ft·lbf',1.3558179483],['kgfm','公斤力·公尺 kgf·m',9.80665],['eV','電子伏特 eV',1.602176634e-19]]},
+ power:{n:'功率',b:'W',u:[['W','瓦 W',1],['kW','千瓦 kW',1e3],['MW','兆瓦 MW',1e6],['hp','英制馬力 hp',745.69987158],['ps','公制馬力 PS',735.49875],['btuh','BTU/小時',.29307107],['kcalh','大卡/小時 kcal/h',1.163],['ftlbfs','英尺·磅力/秒',1.3558179483],['rt','冷凍噸 RT',3516.8525]]},
+ temp:{n:'溫度',b:'',u:[['C','攝氏 °C',0],['F','華氏 °F',0],['K','克氏 K',0]]},
+ fx:{n:'貨幣匯率',b:'USD',u:[]}
+};
+// 貨幣：[代碼, 名稱, 備用匯率(每 1 USD 可換)]
+const FX=[['TWD','新台幣 TWD',32],['USD','美元 USD',1],['JPY','日圓 JPY',150],['EUR','歐元 EUR',.92],['CNY','人民幣 CNY',7.2],['HKD','港幣 HKD',7.8],['KRW','韓元 KRW',1350],['GBP','英鎊 GBP',.78],['AUD','澳幣 AUD',1.52],['CAD','加幣 CAD',1.37],['SGD','新加坡幣 SGD',1.33],['THB','泰銖 THB',35],['VND','越南盾 VND',25000],['MYR','馬來幣 MYR',4.4],['CHF','瑞士法郎 CHF',.88],['NZD','紐幣 NZD',1.65],['PHP','菲律賓披索 PHP',57],['IDR','印尼盾 IDR',15800],['INR','印度盧比 INR',83]];
+let rates={},fxInfo='目前使用內建的參考匯率（尚未取得即時資料）。';
+const fxUnits=()=>FX.map(([c,n])=>[c,n,1/(rates[c]||FX.find(x=>x[0]===c)[2])]);
+let cat='length',curTo=null;
+function toBase(v,u){ // 溫度轉成 K
+  if(cat==='temp')return u==='C'?v+273.15:u==='F'?(v-32)*5/9+273.15:v;
+  return v*C[cat].u.find(x=>x[0]===u)[2];
+}
+function fromBase(v,u){
+  if(cat==='temp')return u==='C'?v-273.15:u==='F'?(v-273.15)*9/5+32:v;
+  return v/C[cat].u.find(x=>x[0]===u)[2];
+}
+function fmt(n){
+  if(!isFinite(n))return '—';if(n===0)return '0';
+  const a=Math.abs(n);
+  if(a>=1e15||a<1e-6)return n.toExponential(6).replace(/\.?0+e/,'e');
+  return parseFloat(n.toPrecision(10)).toLocaleString('en',{maximumFractionDigits:10});
+}
+function parse(s){s=s.replace(/,/g,'').trim();if(s===''||s==='-')return NaN;return Number(s)}
+function fill(sel,list,val){sel.innerHTML=list.map(([c,n])=>`<option value="${c}">${n}</option>`).join('');sel.value=val}
+const defs={length:['m','ft'],area:['m2','ping'],volume:['l','gal'],mass:['kg','lb'],speed:['kmh','mph'],force:['N','kgf'],torque:['Nm','kgfcm'],pressure:['kgfcm2','psi'],energy:['kJ','kcal'],power:['kW','hp'],temp:['C','F'],fx:['USD','TWD']};
+function setCat(k){
+  cat=k;if(k==='fx')C.fx.u=fxUnits();
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  fill($('uf'),C[k].u,defs[k][0]);fill($('ut'),C[k].u,defs[k][1]);
+  $('tip').textContent=k==='fx'?fxInfo+' 實際買賣價以銀行牌告為準。':k==='area'?'1 坪 ≈ 3.3058 m²；1 甲 ≈ 9699.17 m²。':k==='mass'?'台斤 = 0.6 kg，台兩 = 37.5 g。':'';
+  try{localStorage.setItem('unit-cat',k)}catch(e){}
+  calc();
+}
+function calc(){
+  const v=parse($('inp').value),uf=$('uf').value,ut=$('ut').value;
+  const base=toBase(v,uf);
+  $('out').value=isNaN(v)?'':fmt(fromBase(base,ut));
+  $('all').innerHTML=isNaN(v)?'':C[cat].u.map(([c,n])=>`<tr class="row${c===ut?' cur':''}" data-c="${c}"><td class="unit">${n}</td><td>${fmt(fromBase(base,c))}</td></tr>`).join('');
+}
+const tabs=$('tabs');
+Object.keys(C).forEach(k=>{const b=document.createElement('button');b.dataset.k=k;b.textContent=C[k].n;b.onclick=()=>setCat(k);tabs.appendChild(b)});
+$('inp').oninput=calc;$('uf').onchange=calc;$('ut').onchange=calc;
+$('swap').onclick=()=>{const a=$('uf').value;$('uf').value=$('ut').value;$('ut').value=a;calc()};
+const copy=t=>{try{navigator.clipboard.writeText(t.replace(/,/g,''))}catch(e){}};
+$('out').onclick=()=>{if($('out').value){copy($('out').value);$('out').select()}};
+$('all').onclick=e=>{
+  const tr=e.target.closest('tr');if(!tr)return;
+  if(e.target.tagName==='TD'&&e.target.cellIndex===1){copy(e.target.textContent)}
+  $('ut').value=tr.dataset.c;calc();
+};
+// 即時匯率（open.er-api.com，免金鑰）；失敗時用內建備用值，並快取 6 小時
+async function loadFx(){
+  try{const c=JSON.parse(localStorage.getItem('unit-fx')||'null');if(c&&Date.now()-c.t<216e5){rates=c.r;fxInfo='匯率更新時間：'+c.u;return}}catch(e){}
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/USD');const j=await r.json();
+    if(j.result==='success'){rates=j.rates;const u=new Date(j.time_last_update_utc).toLocaleString('zh-TW');fxInfo='匯率更新時間：'+u;
+      try{localStorage.setItem('unit-fx',JSON.stringify({t:Date.now(),r:rates,u}))}catch(e){}}
+  }catch(e){fxInfo='無法連線取得即時匯率，目前使用內建的參考匯率（僅供概估）。'}
+}
+let first='length';try{first=localStorage.getItem('unit-cat')||first}catch(e){}
+setCat(C[first]?first:'length');
+loadFx().then(()=>{if(cat==='fx')setCat('fx')});
+</script>
+</body>
+</html>
