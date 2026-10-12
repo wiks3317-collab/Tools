@@ -6,7 +6,7 @@
 <title>圖片編輯／去背</title>
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="referrer" content="no-referrer">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%A8%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="icons/image-process.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script type="importmap">{"imports":{"onnxruntime-web":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.bundle.min.mjs","onnxruntime-web/webgpu":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.webgpu.bundle.min.mjs"}}</script>
 <script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
@@ -103,36 +103,75 @@ input[type=range]{width:100%;accent-color:var(--pri)}
    <div class="row"><button id="rst">重設調色</button></div>
   </section>
   <section>
+   <h2>圖片時間資訊</h2>
+   <div id="metaInfo" class="hint">載入圖片後會嘗試讀取 EXIF 拍攝／修改時間，並顯示檔案修改時間。</div>
+   <p class="hint">EXIF 資訊不一定存在；「檔案修改時間」是瀏覽器收到的檔案中繼資料，重新下載或透過通訊軟體傳送後可能已改變。</p>
+  </section>
+  <section>
+   <h2>日期時間浮水印</h2>
+   <div class="row"><label><input type="checkbox" id="wmOn"> 在預覽及匯出圖片加入浮水印</label></div>
+   <div class="row"><label>時間來源 <select id="wmSource"><option value="capture">EXIF 拍攝時間</option><option value="edit">EXIF 修改時間</option><option value="digitized">EXIF 數位化時間</option><option value="file">檔案修改時間</option><option value="now">目前時間</option><option value="custom">自訂時間</option></select></label></div>
+   <div class="row" id="wmCustomRow" hidden><label>自訂時間 <input type="datetime-local" id="wmCustom"></label></div>
+   <div class="row"><label>附加文字 <input type="text" id="wmExtra" maxlength="100" placeholder="例如：內部用／拍攝地點"></label></div>
+   <div class="row"><label>位置 <select id="wmPos"><option value="br">右下</option><option value="bl">左下</option><option value="tr">右上</option><option value="tl">左上</option><option value="bc">下方置中</option></select></label><label>文字顏色 <input type="color" id="wmColor" value="#ffffff"></label></div>
+   <div class="sl"><span>透明度</span><input type="range" id="wmAlpha" min="20" max="100" value="90"><output id="wmAlphaOut">90%</output></div>
+   <div class="sl"><span>文字大小</span><input type="range" id="wmSize" min="1" max="5" value="2"><output id="wmSizeOut">中</output></div>
+   <p class="hint">浮水印會實際寫入匯出圖片。日期可能與原始拍攝時間不同，請以讀取到的 EXIF／檔案中繼資料為準。</p>
+  </section>
+  <section>
    <h2>匯出</h2>
    <div class="row"><select id="fmt"><option value="image/png">PNG（保留透明）</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option></select></div>
    <div class="sl"><span>品質</span><input type="range" id="q" min="30" max="100" value="92"><output id="qo">92</output></div>
    <div class="row"><button class="pri" id="save">下載圖片</button></div>
-   <p class="hint">JPG 不支援透明，透明處會填背景色（未設定則為白色）。</p>
+   <p class="hint">JPG 不支援透明，透明處會填背景色（未設定則為白色）。浮水印會寫入輸出檔案。</p>
   </section>
  </div>
 </div>
 </div>
 <script>
 const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
 const clone=c=>{const n=mk(c.width,c.height);n.getContext('2d').drawImage(c,0,0);return n};
 const DEF={b:100,c:100,s:100,h:0,bl:0,g:0,se:0,inv:0};
 let work,ref,first,undo=[],mode='',F={...DEF},bg=null,sel=null,fname='image',down=false,last,cs;
+let sourceFile=null,imageMeta={capture:null,edit:null,digitized:null,file:null},watermarkNow=new Date();
 const view=$('view'),vx=view.getContext('2d');
 const say=t=>{$('msg').textContent=t||''};
 
 /* ---------- 載入 ---------- */
-async function load(f){
-  if(!f||!f.type.startsWith('image/'))return;
+function parseExifDate(v){
+  if(!v)return null;if(v instanceof Date&&!Number.isNaN(v.getTime()))return v;
+  const str=String(v).trim();const iso=str.replace(/^(\d{4}):(\d{2}):(\d{2})/,'$1-$2-$3').replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/,'$1T$2');
+  const d=new Date(iso);return Number.isNaN(d.getTime())?null:d;
+}
+function fmtDate(d){if(!d)return '未提供';return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`}
+async function readImageMetadata(f){
+  imageMeta={capture:null,edit:null,digitized:null,file:f.lastModified?new Date(f.lastModified):null};
   try{
-    const bm=await createImageBitmap(f),s=Math.min(1,4096/Math.max(bm.width,bm.height));
-    work=mk(Math.round(bm.width*s),Math.round(bm.height*s));
+    const exifr=await import('https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.esm.mjs');
+    const tags=await exifr.parse(f,{xmp:true,iptc:true});
+    if(tags){imageMeta.capture=parseExifDate(tags.DateTimeOriginal||tags.CreateDate||tags.DateCreated);imageMeta.edit=parseExifDate(tags.ModifyDate||tags.ModifyDateTime||tags.XMPModifyDate);imageMeta.digitized=parseExifDate(tags.DateTimeDigitized||tags.CreateDate)}
+  }catch(e){console.warn('EXIF 讀取失敗或套件未載入',e)}
+  const lines=[['EXIF 拍攝時間',imageMeta.capture],['EXIF 修改時間',imageMeta.edit],['EXIF 數位化時間',imageMeta.digitized],['檔案修改時間',imageMeta.file]];
+  $('metaInfo').replaceChildren(...lines.map(([label,value])=>{const d=document.createElement('div');d.textContent=`${label}：${fmtDate(value)}`;return d}));
+  if($('wmSource').value==='capture'&&!imageMeta.capture&&imageMeta.file){const d=document.createElement('div');d.textContent='提示：此圖片沒有讀到 EXIF 拍攝時間，可改選檔案修改時間。';$('metaInfo').appendChild(d)}
+}
+async function load(f){
+  if(!f)return;
+  const imageLike=f.type.startsWith('image/')||/\.(jpe?g|png|webp|gif|bmp|tiff?|heic|heif|avif)$/i.test(f.name);
+  if(!imageLike){say('請選擇圖片檔');return}
+  try{
+    sourceFile=f;const bm=await createImageBitmap(f,{imageOrientation:'from-image'});
+    const s=Math.min(1,4096/Math.max(bm.width,bm.height),Math.sqrt(10000000/(bm.width*bm.height)));
+    work=mk(Math.max(1,Math.round(bm.width*s)),Math.max(1,Math.round(bm.height*s)));
     work.getContext('2d').drawImage(bm,0,0,work.width,work.height);
     ref=clone(work);first=clone(work);undo=[];$('undo').disabled=true;
     fname=f.name.replace(/\.[^.]+$/,'')||'image';
     F={...DEF};bg=null;sel=null;setMode('');syncUI();
-    $('drop').style.display='none';$('ed').style.display='grid';say(s<1?'圖片過大，已縮小到最長邊 4096px':'');
-  }catch(e){say('無法讀取這個檔案（瀏覽器可能不支援此格式，例如 HEIC）');}
+    $('drop').style.display='none';$('ed').style.display='grid';say(s<1?`圖片尺寸較大，為避免瀏覽器記憶體不足已縮小為 ${work.width} × ${work.height}`:'');
+    await readImageMetadata(f);
+  }catch(e){say('無法讀取這個檔案（瀏覽器可能不支援此格式，例如 HEIC／AVIF）');}
 }
 $('file').onchange=e=>load(e.target.files[0]);
 $('newf').onclick=()=>{$('drop').style.display='';$('ed').style.display='none';$('file').value=''};
@@ -143,6 +182,22 @@ document.addEventListener('paste',e=>{const f=[...e.clipboardData.files][0];if(f
 
 /* ---------- 繪製 ---------- */
 const filt=()=>`brightness(${F.b}%) contrast(${F.c}%) saturate(${F.s}%) hue-rotate(${F.h}deg) blur(${F.bl}px) grayscale(${F.g}%) sepia(${F.se}%) invert(${F.inv}%)`;
+function watermarkValue(){
+  if(!$('wmOn').checked)return '';
+  const source=$('wmSource').value;let d=null,label='';
+  if(source==='capture'){d=imageMeta.capture;label='拍攝'}else if(source==='edit'){d=imageMeta.edit;label='修改'}else if(source==='digitized'){d=imageMeta.digitized;label='數位化'}else if(source==='file'){d=imageMeta.file;label='檔案修改'}else if(source==='now'){d=watermarkNow;label='建立'}else if(source==='custom'){d=parseExifDate($('wmCustom').value);label='自訂'}
+  if(!d){d=imageMeta.file;label='檔案修改（來源缺值，改用檔案時間）'}
+  let text=d?`${label}時間：${fmtDate(d)}`:'日期時間未提供';const extra=$('wmExtra').value.trim();if(extra)text+='  '+extra;return text;
+}
+function paintWatermark(context,w,h){
+  const text=watermarkValue();if(!text)return;
+  const ratio=+$('wmSize').value,fontPx=Math.max(12,Math.round(Math.min(w,h)*(.012+ratio*.004))),pad=Math.max(8,Math.round(fontPx*.55));
+  context.save();context.font=`600 ${fontPx}px "Noto Sans TC", sans-serif`;context.textBaseline='middle';
+  const tw=context.measureText(text).width,boxW=Math.min(Math.max(1,w-2*pad),tw+pad*2),boxH=fontPx+pad*1.2,alpha=+$('wmAlpha').value/100;
+  let x=pad,y=pad;const pos=$('wmPos').value;if(pos.endsWith('r'))x=w-pad-boxW;else if(pos==='bc')x=(w-boxW)/2;if(pos.startsWith('b'))y=h-pad-boxH;
+  context.globalAlpha=alpha;context.fillStyle='#000000';context.fillRect(Math.max(0,x),Math.max(0,y),boxW,boxH);
+  context.fillStyle=$('wmColor').value;context.globalAlpha=alpha;context.fillText(text,Math.max(0,x+pad),Math.max(fontPx/2,y+boxH/2),Math.max(0,boxW-2*pad));context.restore();
+}
 function draw(){
   if(!work)return;
   if(view.width!==work.width||view.height!==work.height){view.width=work.width;view.height=work.height}
@@ -155,6 +210,7 @@ function draw(){
     vx.fillRect(0,sel.y,sel.x,sel.h);vx.fillRect(sel.x+sel.w,sel.y,w,sel.h);
     vx.strokeStyle='#fff';vx.lineWidth=Math.max(1,w/500);vx.setLineDash([8,6]);vx.strokeRect(sel.x,sel.y,sel.w,sel.h);vx.setLineDash([]);
   }
+  paintWatermark(vx,w,h);
 }
 function push(){undo.push([clone(work),clone(ref)]);if(undo.length>20)undo.shift();$('undo').disabled=false}
 $('undo').onclick=()=>{const u=undo.pop();if(!u)return;[work,ref]=u;$('undo').disabled=!undo.length;syncUI();draw()};
@@ -172,6 +228,7 @@ $('modes').onclick=e=>{const b=e.target.closest('button');if(b)setMode(b.dataset
 $('tol').oninput=e=>$('tolo').textContent=e.target.value;
 $('bs').oninput=e=>$('bso').textContent=e.target.value;
 $('q').oninput=e=>$('qo').textContent=e.target.value;
+$('wmOn').onchange=draw;$('wmSource').onchange=()=>{$('wmCustomRow').hidden=$('wmSource').value!=='custom';if($('wmSource').value==='now')watermarkNow=new Date();draw()};$('wmCustom').oninput=draw;$('wmExtra').oninput=draw;$('wmPos').onchange=draw;$('wmColor').oninput=draw;$('wmAlpha').oninput=()=>{$('wmAlphaOut').textContent=$('wmAlpha').value+'%';draw()};$('wmSize').oninput=()=>{$('wmSizeOut').textContent=['很小','小','中','大','特大'][+$('wmSize').value-1];draw()};
 
 /* ---------- 指標操作 ---------- */
 const P=e=>{const r=view.getBoundingClientRect();return[(e.clientX-r.left)*view.width/r.width,(e.clientY-r.top)*view.height/r.height]};
@@ -185,9 +242,14 @@ view.onpointermove=e=>{
   if(!down)return;const p=P(e);
   if(mode==='crop'){
     const W=view.width,H=view.height,ar=+$('ratio').value;
-    let x2=Math.max(0,Math.min(W,p[0])),y2=Math.max(0,Math.min(H,p[1])),w=Math.abs(x2-cs[0]);
-    if(ar){const h=w/ar;y2=cs[1]+(y2<cs[1]?-h:h)}
-    sel={x:Math.min(cs[0],x2),y:Math.min(cs[1],y2),w,h:Math.abs(y2-cs[1])};draw();
+    const x2=clamp(p[0],0,W),y2=clamp(p[1],0,H),dx=x2-cs[0],dy=y2-cs[1];
+    let w=Math.abs(dx),h=Math.abs(dy);
+    if(ar){if(w/Math.max(h,0.001)>ar)h=w/ar;else w=h*ar;}
+    if(ar&&w>0&&h>0){
+      const maxW=dx<0?cs[0]:W-cs[0],maxH=dy<0?cs[1]:H-cs[1];
+      const factor=Math.min(1,maxW/w,maxH/h);w*=factor;h*=factor;
+    }else{w=Math.min(w,dx<0?cs[0]:W-cs[0]);h=Math.min(h,dy<0?cs[1]:H-cs[1]);}
+    sel={x:dx<0?cs[0]-w:cs[0],y:dy<0?cs[1]-h:cs[1],w,h};draw();
   }else{brush(last,p);last=p}
 };
 view.onpointerup=view.onpointercancel=()=>{down=false};
@@ -274,10 +336,12 @@ $('save').onclick=()=>{
   if(!work)return;
   const type=$('fmt').value,n=mk(work.width,work.height),x=n.getContext('2d');
   if(bg||type==='image/jpeg'){x.fillStyle=bg||'#fff';x.fillRect(0,0,n.width,n.height)}
-  x.filter=filt();x.drawImage(work,0,0);
+  x.filter=filt();x.drawImage(work,0,0);x.filter='none';paintWatermark(x,n.width,n.height);
   n.toBlob(b=>{
-    const a=document.createElement('a'),ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[type];
-    a.href=URL.createObjectURL(b);a.download=`${fname}_edited.${ext}`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    if(!b){say('匯出失敗：瀏覽器無法產生圖片資料');return}
+    const a=document.createElement('a'),ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[type],url=URL.createObjectURL(b);
+    a.href=url;a.download=`${fname}_edited.${ext}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+    say('圖片已匯出'+($('wmOn').checked?'（含日期時間浮水印）':''));
   },type,+$('q').value/100);
 };
 </script>
