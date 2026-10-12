@@ -21,7 +21,7 @@ html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
 a{color:var(--pri)}
-.wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
+.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}
 header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 h1{margin:0;font-size:20px}
 .back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
@@ -95,13 +95,12 @@ footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 <a class="tool" href="ocr_tool.html"><b>圖片文字辨識 OCR</b><span>把圖片或 ZIP 內的圖片轉成文字，可選擇性翻譯。</span><small>支援 jpg、png、zip 等</small></a>
 <a class="tool" href="pdf_tool.html"><b>PDF 工具</b><span>文字辨識與 HTML 報告、合併、拆分、壓縮、解鎖、頁面管理、浮水印與頁碼、圖片互轉。</span><small>支援 pdf、圖片</small></a>
 <a class="tool" href="audio_tool.html"><b>語音／影片轉文字</b><span>會議錄音、影片轉成逐字稿，可輸出 txt 與 srt 字幕。</span><small>支援 mp3、m4a、wav、mp4 等</small></a>
-<a class="tool" href="image_tool.html"><b>圖片處理</b><span>批次縮放、壓縮、轉檔、旋轉，可指定檔案大小上限。</span><small>支援 jpg、png、webp、heic 等</small></a>
 <a class="tool" href="barcode_tool.html"><b>QR Code／條碼</b><span>產生與掃描 QR Code、Data Matrix、PDF417、Aztec 等條碼，可批次產生。</span><small>可調格式、大小、白邊、顏色；支援相機掃描</small></a>
 <a class="tool" href="table_compare.html"><b>Excel／CSV 比對</b><span>找出兩份表格新增、刪除、修改的列，可輸出差異報告。</span><small>支援 xlsx、xls、csv，也可貼上內容</small></a>
 <a class="tool" href="emoji_tool.html"><b>Emoji 圖庫</b><span>依分類或關鍵字搜尋 emoji，點一下就複製，也能組合多個一次複製。</span><small>支援中英文搜尋、最近使用</small></a>
 <a class="tool" href="unit_tool.html"><b>單位換算</b><span>長度、面積、重量、速度、力、扭力、壓力、能量、功率、溫度，以及常見貨幣即時匯率。</span><small>含坪、台斤等台灣常用單位</small></a>
 <a class="tool" href="codec_tool.html"><b>編碼／解碼</b><span>Base64 與檔案互轉（圖片、PDF、音訊、執行檔等），也支援 Hex、URL、Unicode 等常用格式。</span><small>可預覽圖片、音訊、影片、PDF</small></a>
-<a class="tool" href="photo_editor.html"><b>圖片編輯／去背</b><span>AI 一鍵去背、點色去背、橡皮擦、裁切、旋轉、縮放、調色、濾鏡與日期時間浮水印。</span><small>支援 jpg、png、webp；可匯出透明 PNG</small></a>
+<a class="tool" href="image_suite.html"><b>圖片處理與編輯</b><span>整合批次壓縮、轉檔、縮放，以及圖片編輯、AI 去背、裁切、調色與浮水印。</span><small>同一頁切換批次處理與進階編輯功能</small></a>
 <a class="tool" href="redact_tool.html"><b>圖片／PDF 個資遮蔽</b><span>框選姓名、電話、地址與其他敏感資訊，以不透明色塊遮蔽後匯出。</span><small>支援圖片及多頁 PDF；PDF 會扁平化輸出</small></a>
 </nav>
 <div class="row" style="margin-top:14px;display:flex;gap:8px;align-items:center"><button id="edit">調整順序</button><button id="reset" style="display:none">恢復預設順序</button><span class="msg" id="emsg" style="color:var(--mut);font-size:12px"></span></div>
