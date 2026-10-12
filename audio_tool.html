@@ -102,7 +102,7 @@ textarea{display:block;width:100%;height:320px;resize:vertical;border:1px solid 
 <section><h2><span class="num">2</span>設定</h2>
 <div class="opt">語言：<select id="lang"><option value="">自動偵測</option><option value="chinese" selected>中文</option><option value="english">英文</option><option value="japanese">日文</option><option value="korean">韓文</option><option value="vietnamese">越南文</option><option value="thai">泰文</option><option value="french">法文</option><option value="german">德文</option><option value="spanish">西班牙文</option><option value="russian">俄文</option><option value="indonesian">印尼文</option><option value="portuguese">葡萄牙文</option></select>
 模型：<select id="model"><option value="base">base（較快，約 80 MB）</option><option value="small" selected>small（較準，約 250 MB，CPU 建議）</option><option value="turbo">large-v3-turbo（最準，約 800 MB，僅限 WebGPU）</option></select></div>
-<div class="opt"><label><input type="checkbox" id="gpu" checked> WebGPU 加速（需較新的 Chrome／Edge，失敗時自動改用 CPU）</label><label><input type="checkbox" id="vad" checked> 略過長時間靜音（更快，也減少幻聽）</label><label><input type="checkbox" id="t2" checked> 簡體轉繁體</label></div>
+<div class="opt"><label><input type="checkbox" id="gpu" checked> WebGPU 加速（需較新的 Chrome／Edge；Turbo 無法以 CPU 執行，失敗時改用 small 模型）</label><label><input type="checkbox" id="vad" checked> 略過長時間靜音（更快，也減少幻聽）</label><label><input type="checkbox" id="t2" checked> 簡體轉繁體</label></div>
 <p class="adv-hint">有 WebGPU 時速度可快數倍至十幾倍，並可改用最準的 turbo 模型；沒有 WebGPU 則用 CPU，1 小時錄音可能要跑很久。</p>
 <div class="opt" style="flex-direction:column;align-items:flex-start;gap:6px"><span>常用詞彙（每行一個：人名、專有名詞、縮寫）</span>
 <textarea id="gl" style="height:110px" placeholder="蕾名&#10;Kubernetes&#10;雷鳴=>蕾名"></textarea>
@@ -119,7 +119,7 @@ textarea{display:block;width:100%;height:320px;resize:vertical;border:1px solid 
 <footer>Whisper（OpenAI）＋ Transformers.js ＋ OpenCC</footer>
 </div>
 <script type="text/plain" id="wsrc">
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3';
+import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
 let asr = null, key = '';
 self.onmessage = async e => {
   const m = e.data;
@@ -142,7 +142,7 @@ self.onmessage = async e => {
   } catch (err) { self.postMessage({ type: 'err', msg: String((err && err.message) || err) }); }
 };
 </script>
-<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3/dist/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.5/dist/index.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js"></script>
 <script>
 const $=id=>document.getElementById(id);
@@ -325,7 +325,9 @@ $('go').onclick=async()=>{
     fl={};stage(cached?'load':'dl');prog(cached?null:0,cached?'讀取快取...':'準備下載...');
     try{await load(gpu,mv)}catch(e){
       if(!gpu||stop)throw e;
-      if(worker){worker.terminate();worker=null}pend=null;gpu=false;fl={};stage('load');prog(null,'WebGPU 無法使用，改用 CPU 載入模型...');await load(false,mv)}
+      if(worker){worker.terminate();worker=null}pend=null;gpu=false;fl={};stage('load');
+      if(mv==='turbo'){$('model').value='small';prog(null,'Turbo 模型無法在 CPU 執行，已改用 small 模型載入 CPU…');await load(false,'small')}
+      else {prog(null,'WebGPU 無法使用，改用 CPU 載入模型…');await load(false,mv)} }
     stage('asr');
     // 約 60 秒一段，切點挪到附近最安靜的位置（避免切斷句子，維持準確度）
     const FR=1600,nf=Math.floor(total/FR),en=new Float32Array(nf);
