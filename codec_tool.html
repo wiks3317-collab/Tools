@@ -175,8 +175,15 @@ const SIG=[['89504E47','png','image/png','PNG 圖片'],['FFD8FF','jpg','image/jp
  ['4F676753','ogg','audio/ogg','OGG 音訊'],['664C6143','flac','audio/flac','FLAC 音訊'],['494433','mp3','audio/mpeg','MP3 音訊'],['FFFB','mp3','audio/mpeg','MP3 音訊'],['FFF3','mp3','audio/mpeg','MP3 音訊'],['1A45DFA3','webm','video/webm','WebM／MKV 影片'],
  ['4D5A','exe','application/vnd.microsoft.portable-executable','Windows 執行檔 (EXE／DLL)'],['7F454C46','elf','application/x-executable','Linux ELF 執行檔'],['CAFEBABE','class','application/java-vm','Java class／Mach-O Universal'],['CFFAEDFE','macho','application/x-mach-binary','macOS Mach-O 執行檔'],
  ['0061736D','wasm','application/wasm','WebAssembly'],['53514C69746520666F726D6174203300','sqlite','application/vnd.sqlite3','SQLite 資料庫'],['424D','bmp','image/bmp','BMP 圖片'],['00000100','ico','image/x-icon','ICO 圖示'],['D0CF11E0','doc','application/msword','舊版 Office 文件 (doc／xls／ppt)'],['7B5C72746631','rtf','application/rtf','RTF 文件'],['774F4646','woff','font/woff','WOFF 字型'],['774F4632','woff2','font/woff2','WOFF2 字型']];
+function zipKind(u,d){ // docx／xlsx／pptx／apk／jar 等都是 ZIP，從內部檔名判斷
+ const L=new TextDecoder('latin1'),z=u.length>524288?L.decode(u.subarray(0,262144))+L.decode(u.subarray(u.length-262144)):L.decode(u);
+ const K=[['word/','docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','Word 文件 (docx)'],['xl/','xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Excel 活頁簿 (xlsx)'],['ppt/','pptx','application/vnd.openxmlformats-officedocument.presentationml.presentation','PowerPoint 簡報 (pptx)'],
+  ['AndroidManifest.xml','apk','application/vnd.android.package-archive','Android 安裝檔 (apk)'],['application/epub+zip','epub','application/epub+zip','EPUB 電子書'],['vnd.oasis.opendocument.text','odt','application/vnd.oasis.opendocument.text','OpenDocument 文件 (odt)'],
+  ['vnd.oasis.opendocument.spreadsheet','ods','application/vnd.oasis.opendocument.spreadsheet','OpenDocument 試算表 (ods)'],['vnd.oasis.opendocument.presentation','odp','application/vnd.oasis.opendocument.presentation','OpenDocument 簡報 (odp)'],['META-INF/MANIFEST.MF','jar','application/java-archive','Java 封裝檔 (jar)']];
+ for(const [k,e,m,n] of K)if(z.includes(k))return{e,m,n};
+ return d}
 function sniff(u){const h=hx(u.subarray(0,16)).join('').toUpperCase();
- for(const [s,e,m,n] of SIG)if(h.startsWith(s))return{e,m,n};
+ for(const [s,e,m,n] of SIG)if(h.startsWith(s))return s==='504B0304'?zipKind(u,{e,m,n}):{e,m,n};
  if(h.startsWith('52494646')){const t=String.fromCharCode(...u.subarray(8,12));if(t==='WEBP')return{e:'webp',m:'image/webp',n:'WebP 圖片'};if(t==='WAVE')return{e:'wav',m:'audio/wav',n:'WAV 音訊'};if(t==='AVI ')return{e:'avi',m:'video/x-msvideo',n:'AVI 影片'}}
  if(u.length>11&&String.fromCharCode(...u.subarray(4,8))==='ftyp'){const b=String.fromCharCode(...u.subarray(8,12));return b.startsWith('M4A')?{e:'m4a',m:'audio/mp4',n:'M4A 音訊'}:b.startsWith('heic')||b.startsWith('mif1')?{e:'heic',m:'image/heic',n:'HEIC 圖片'}:{e:'mp4',m:'video/mp4',n:'MP4／MOV 影片'}}
  try{const full=utf8(u),t=full.slice(0,4096).trimStart();
