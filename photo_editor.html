@@ -6,7 +6,7 @@
 <title>圖片編輯／去背</title>
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="referrer" content="no-referrer">
-<link rel="icon" type="image/svg+xml" href="icons/image-process.svg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%96%BC%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script type="importmap">{"imports":{"onnxruntime-web":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.bundle.min.mjs","onnxruntime-web/webgpu":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.webgpu.bundle.min.mjs"}}</script>
 <script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
@@ -21,7 +21,7 @@ html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
 a{color:var(--pri)}
-.wrap{max-width:1180px;margin:0 auto;padding:14px 20px 60px}
+.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}
 h1{margin:0;font-size:20px}
 .back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
 .tagline,.msg,.hint{color:var(--mut);font-size:12px;margin:2px 0 0}
@@ -40,8 +40,8 @@ input[type=range]{width:100%;accent-color:var(--pri)}
 .drop:hover,.drop.dragover{border-color:var(--pri);color:var(--fg);background:var(--gut)}
 #ed{display:none;grid-template-columns:1fr 330px;gap:14px;align-items:start}
 @media(max-width:860px){#ed{grid-template-columns:1fr}}
-.stage{background:var(--gut);border:1px solid var(--bd);border-radius:8px;padding:10px;display:flex;justify-content:center;align-items:center;min-height:300px;overflow:auto}
-#view{max-width:100%;max-height:72vh;touch-action:none;
+.stage{background:var(--gut);border:1px solid var(--bd);border-radius:8px;padding:10px;display:block;min-height:300px;max-height:72vh;overflow:auto}
+#view{display:block;max-width:none;max-height:none;flex:none;margin:0 auto;touch-action:none;
  background:conic-gradient(#ccc 25%,#fff 0 50%,#ccc 0 75%,#fff 0) 0 0/16px 16px}
 .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
 .row label{display:flex;align-items:center;gap:4px;font-size:13px}
@@ -61,7 +61,13 @@ input[type=range]{width:100%;accent-color:var(--pri)}
 
 <div id="ed">
  <div>
-  <div class="stage"><canvas id="view"></canvas></div>
+  <div class="stage" id="previewStage"><canvas id="view"></canvas></div>
+  <div class="row preview-zoom" aria-label="預覽縮放控制">
+   <button id="zoomOut" type="button" title="縮小預覽">－</button>
+   <label for="zoomRange">預覽縮放</label><input id="zoomRange" type="range" min="1" max="300" value="100" style="width:min(180px,35%)">
+   <output id="zoomLabel">適合視窗</output><button id="zoomIn" type="button" title="放大預覽">＋</button>
+   <button id="zoomFit" type="button">適合視窗</button><button id="zoomActual" type="button">原始尺寸</button>
+  </div>
   <div class="row">
    <button id="undo" disabled>↶ 復原</button><button id="init">還原原圖</button>
    <button id="newf">換一張圖片</button><span class="msg" id="msg"></span>
@@ -136,6 +142,7 @@ const clone=c=>{const n=mk(c.width,c.height);n.getContext('2d').drawImage(c,0,0)
 const DEF={b:100,c:100,s:100,h:0,bl:0,g:0,se:0,inv:0};
 let work,ref,first,undo=[],mode='',F={...DEF},bg=null,sel=null,fname='image',down=false,last,cs;
 let sourceFile=null,imageMeta={capture:null,edit:null,digitized:null,file:null},watermarkNow=new Date();
+let previewScale=1,previewFit=true;
 const view=$('view'),vx=view.getContext('2d');
 const say=t=>{$('msg').textContent=t||''};
 
@@ -162,7 +169,7 @@ async function load(f){
   const imageLike=f.type.startsWith('image/')||/\.(jpe?g|png|webp|gif|bmp|tiff?|heic|heif|avif)$/i.test(f.name);
   if(!imageLike){say('請選擇圖片檔');return}
   try{
-    sourceFile=f;const bm=await createImageBitmap(f,{imageOrientation:'from-image'});
+    previewFit=true;previewScale=1;sourceFile=f;const bm=await createImageBitmap(f,{imageOrientation:'from-image'});
     const s=Math.min(1,4096/Math.max(bm.width,bm.height),Math.sqrt(10000000/(bm.width*bm.height)));
     work=mk(Math.max(1,Math.round(bm.width*s)),Math.max(1,Math.round(bm.height*s)));
     work.getContext('2d').drawImage(bm,0,0,work.width,work.height);
@@ -170,6 +177,7 @@ async function load(f){
     fname=f.name.replace(/\.[^.]+$/,'')||'image';
     F={...DEF};bg=null;sel=null;setMode('');syncUI();
     $('drop').style.display='none';$('ed').style.display='grid';say(s<1?`圖片尺寸較大，為避免瀏覽器記憶體不足已縮小為 ${work.width} × ${work.height}`:'');
+    updatePreviewZoom(true);draw();
     await readImageMetadata(f);
   }catch(e){say('無法讀取這個檔案（瀏覽器可能不支援此格式，例如 HEIC／AVIF）');}
 }
@@ -198,6 +206,28 @@ function paintWatermark(context,w,h){
   context.globalAlpha=alpha;context.fillStyle='#000000';context.fillRect(Math.max(0,x),Math.max(0,y),boxW,boxH);
   context.fillStyle=$('wmColor').value;context.globalAlpha=alpha;context.fillText(text,Math.max(0,x+pad),Math.max(fontPx/2,y+boxH/2),Math.max(0,boxW-2*pad));context.restore();
 }
+function fitScale(){
+  if(!work)return 1;
+  const stage=$('previewStage');
+  const usableW=Math.max(120,stage.clientWidth-24);
+  const usableH=Math.max(180,Math.min(window.innerHeight*.58,stage.clientHeight||window.innerHeight*.58));
+  return Math.max(.01,Math.min(1,usableW/work.width,usableH/work.height));
+}
+function updatePreviewZoom(forceFit=false){
+  if(!work)return;
+  if(forceFit||previewFit)previewScale=fitScale();
+  view.style.width=Math.max(1,Math.round(work.width*previewScale))+'px';
+  view.style.height=Math.max(1,Math.round(work.height*previewScale))+'px';
+  $('zoomRange').value=String(clamp(Math.round(previewScale*100),1,300));
+  $('zoomLabel').textContent=`${Math.round(previewScale*100)}%${previewFit?'（適合）':''}`;
+}
+function setPreviewScale(scale,fit=false){previewFit=fit;previewScale=clamp(scale,.01,3);updatePreviewZoom(fit)}
+$('zoomRange').oninput=e=>setPreviewScale((+e.target.value||100)/100,false);
+$('zoomIn').onclick=()=>setPreviewScale(Math.min(3,previewScale*1.2),false);
+$('zoomOut').onclick=()=>setPreviewScale(Math.max(.01,previewScale/1.2),false);
+$('zoomFit').onclick=()=>setPreviewScale(fitScale(),true);
+$('zoomActual').onclick=()=>setPreviewScale(1,false);
+window.addEventListener('resize',()=>{if(previewFit)updatePreviewZoom(true)});
 function draw(){
   if(!work)return;
   if(view.width!==work.width||view.height!==work.height){view.width=work.width;view.height=work.height}
@@ -211,6 +241,7 @@ function draw(){
     vx.strokeStyle='#fff';vx.lineWidth=Math.max(1,w/500);vx.setLineDash([8,6]);vx.strokeRect(sel.x,sel.y,sel.w,sel.h);vx.setLineDash([]);
   }
   paintWatermark(vx,w,h);
+  updatePreviewZoom();
 }
 function push(){undo.push([clone(work),clone(ref)]);if(undo.length>20)undo.shift();$('undo').disabled=false}
 $('undo').onclick=()=>{const u=undo.pop();if(!u)return;[work,ref]=u;$('undo').disabled=!undo.length;syncUI();draw()};
@@ -344,6 +375,16 @@ $('save').onclick=()=>{
     say('圖片已匯出'+($('wmOn').checked?'（含日期時間浮水印）':''));
   },type,+$('q').value/100);
 };
+if(window.self!==window.top){
+  document.body.classList.add('embedded');
+  window.addEventListener('message',e=>{if(e.data?.type==='tools-theme'){try{if(e.data.theme==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=e.data.theme;localStorage.setItem('tools-theme',e.data.theme)}catch(_){}}});
+  const sendHeight=()=>window.parent.postMessage({type:'tools-iframe-height',height:document.documentElement.scrollHeight},'*');
+  new ResizeObserver(sendHeight).observe(document.body);window.addEventListener('load',sendHeight);window.addEventListener('resize',sendHeight);
+}
 </script>
+<style>
+body.embedded>.wrap{max-width:none;padding:8px 0 18px}
+body.embedded>.wrap>.back,body.embedded>.wrap>h1,body.embedded>.wrap>p.tagline,body.embedded>.wrap>.privacy{display:none!important}
+</style>
 </body>
 </html>
