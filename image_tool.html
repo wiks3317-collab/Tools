@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="referrer" content="no-referrer">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%F0%9F%96%BC%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%96%BC%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
@@ -172,14 +172,32 @@ async function run(it){
     x.imageSmoothingQuality='high';x.drawImage(bm,-dw/2,-dh/2,dw,dh);x.restore();
   }
   const q0=+$('q').value/100,lim=(+$('tk').value||0)*1024;
-  let s=1,blob;draw(1);blob=await toBlob(c,mime,q0);
-  if(lim&&mime!=='image/png'){
-    for(let n=0;n<8;n++){
-      blob=await toBlob(c,mime,q0);
-      if(blob.size>lim){let lo=.05,hi=q0,best=null;for(let j=0;j<7;j++){const m=(lo+hi)/2,b=await toBlob(c,mime,m);if(b.size<=lim){best=b;lo=m}else hi=m}blob=best||await toBlob(c,mime,.05)}
-      if(blob.size<=lim)break;s*=.85;draw(s);
+  let s=1,blob=null;draw(s);blob=await toBlob(c,mime,q0);
+  if(!blob)throw new Error('瀏覽器無法產生圖片資料');
+  if(lim){
+    let fitted=false;
+    for(let n=0;n<24;n++){
+      let best=null;
+      if(mime==='image/png'){
+        const candidate=await toBlob(c,mime);
+        if(candidate&&candidate.size<=lim)best=candidate;
+      }else{
+        let lo=.05,hi=q0;
+        const lowBlob=await toBlob(c,mime,lo);
+        if(lowBlob&&lowBlob.size<=lim)best=lowBlob;
+        for(let j=0;j<9;j++){
+          const quality=(lo+hi)/2,b=await toBlob(c,mime,quality);
+          if(b&&b.size<=lim){best=b;lo=quality}else hi=quality;
+        }
+      }
+      if(best&&best.size<=lim){blob=best;fitted=true;break;}
+      if(c.width<=1&&c.height<=1)break;
+      s*=.8;draw(s);
     }
+    if(!fitted)throw new Error(`降低畫質及解析度後仍無法達到 ${lim} bytes 上限；請提高上限或改用 JPG／WebP。`);
   }
+  if(!blob)throw new Error('圖片輸出失敗');
+  if(lim&&blob.size>lim)throw new Error(`輸出檔仍超過大小限制（${fmt(blob.size)}）`);
   it.out=blob;it.w=c.width;it.h=c.height;it.err='';it.outName=it.file.name.replace(/\.[^.]+$/,'')+'_new.'+ext;
 }
 $('go').onclick=async()=>{
