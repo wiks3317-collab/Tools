@@ -245,6 +245,9 @@ footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 <script>
 const IMAGE_EXT = ['jpg','jpeg','png','bmp','gif','webp','tif','tiff'];
 let pendingFiles = []; // {name, blob}
+const MAX_ZIP_IMAGES = 250;
+const MAX_ZIP_BYTES = 128 * 1024 * 1024;
+const MAX_PENDING_BYTES = 128 * 1024 * 1024;
 let resultBlob = null;
 let resultFilename = '';
 
@@ -281,19 +284,30 @@ async function handleFiles(fileArray){
   for (const f of fileArray){
     const lowerName = f.name.toLowerCase();
     if (lowerName.endsWith('.zip')){
+      if (f.size > MAX_ZIP_BYTES) { alert('單一 ZIP 壓縮檔不可超過 128 MB，請先分割或縮小檔案。'); continue; }
+      const beforeZip = pendingFiles.length;
+      const beforeBytes = pendingFiles.reduce((sum,x)=>sum+x.blob.size,0);
       try{
         const zip = await JSZip.loadAsync(f);
+        let zipCount = 0, zipBytes = 0;
         for (const relPath in zip.files){
           const entry = zip.files[relPath];
-          if (!entry.dir && isImageName(relPath)){
-            const blob = await entry.async('blob');
-            pendingFiles.push({name: relPath.split('/').pop(), blob});
-          }
+          if (entry.dir || !isImageName(relPath)) continue;
+          if (beforeZip + ++zipCount > MAX_ZIP_IMAGES) throw new Error(`ZIP 圖片數量超過 ${MAX_ZIP_IMAGES} 張上限`);
+          const expected = Number(entry._data && entry._data.uncompressedSize) || 0;
+          if (expected && (expected > MAX_ZIP_BYTES || beforeBytes + zipBytes + expected > MAX_PENDING_BYTES)) throw new Error('單一 ZIP 或待處理圖片解壓後超過 128 MB 上限');
+          const blob = await entry.async('blob');
+          zipBytes += blob.size;
+          if (blob.size > MAX_ZIP_BYTES || beforeBytes + zipBytes > MAX_PENDING_BYTES) throw new Error('單一 ZIP 或待處理圖片總大小超過 128 MB 上限');
+          // 保留相對路徑，避免不同資料夾的同名圖檔輸出時互相覆蓋。
+          pendingFiles.push({name: relPath, blob});
         }
       }catch(e){
-        alert('無法解壓縮 ' + f.name + '：' + e.message);
+        pendingFiles.splice(beforeZip);
+        alert('無法完整解壓縮 ' + f.name + '：' + e.message + '\n如 ZIP 含大量／超大圖片，請分批處理。');
       }
     } else if (f.type.startsWith('image/') || isImageName(f.name)){
+      if(pendingFiles.length>=MAX_ZIP_IMAGES || pendingFiles.reduce((sum,x)=>sum+x.blob.size,0)+f.size>MAX_PENDING_BYTES){alert('待處理圖片數量上限為 250 張、總大小上限為 128 MB，請分批處理。');continue}
       pendingFiles.push({name: f.name, blob: f});
     }
   }
@@ -301,18 +315,16 @@ async function handleFiles(fileArray){
 }
 
 function renderFileList(){
+  fileListEl.replaceChildren();
   if (!pendingFiles.length){
-    fileListEl.innerHTML = '';
     startBtn.disabled = true;
     return;
   }
-  fileListEl.innerHTML =
-    `已加入 ${pendingFiles.length} 張圖片　<span class="clear-link" id="clearLink">清除全部</span><br>` +
-    pendingFiles.map(f => `<div class="file-row"><span>${f.name}</span></div>`).join('');
-  document.getElementById('clearLink').addEventListener('click', () => {
-    pendingFiles = [];
-    renderFileList();
-  });
+  const summary=document.createElement('div');
+  summary.append(document.createTextNode(`已加入 ${pendingFiles.length} 張圖片　`));
+  const clear=document.createElement('button');clear.type='button';clear.className='clear-link';clear.id='clearLink';clear.textContent='清除全部';
+  clear.addEventListener('click',()=>{pendingFiles=[];renderFileList()});summary.appendChild(clear);fileListEl.appendChild(summary);
+  for(const f of pendingFiles){const row=document.createElement('div');row.className='file-row';const name=document.createElement('span');name.textContent=f.name;row.appendChild(name);fileListEl.appendChild(row)}
   startBtn.disabled = false;
 }
 
@@ -352,17 +364,21 @@ translateCheck.addEventListener('change', () => {
 async function translateText(text, srcIso, tgtIso){
   const trimmed = text.trim();
   if (!trimmed) return '';
-  const lines = trimmed.split('\n');
   const chunks = [];
   let current = '';
-  for (const line of lines){
-    if ((current + '\n' + line).length > 450){
-      if (current) chunks.push(current);
-      current = line;
-    } else {
-      current = current ? current + '\n' + line : line;
+  const pushLongLine = line => {
+    // Even a single source line can exceed the API limit; split it safely.
+    while(line.length > 450){
+      let cut = line.lastIndexOf(' ', 450);
+      if(cut < 180) cut = 450;
+      const part = line.slice(0, cut);
+      if(current){chunks.push(current);current=''}
+      chunks.push(part);line=line.slice(cut).trimStart();
     }
-  }
+    if(current && (current+'\n'+line).length > 450){chunks.push(current);current=''}
+    current = current ? current+'\n'+line : line;
+  };
+  for (const line of trimmed.split('\n')) pushLongLine(line);
   if (current) chunks.push(current);
 
   const translatedChunks = [];
@@ -610,7 +626,7 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 });
 </script>
 </body>
