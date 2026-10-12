@@ -203,8 +203,19 @@ function diffLines(a, b, ka, kb){
   for (let i = 0; i < s; i++) ops.push(['=', i, i]);
   const n = ea - s, m = eb - s, W = m + 1;
   if (n * m > 16e6){
-    for (let i = s; i < ea; i++) ops.push(['-', i, -1]);
-    for (let j = s; j < eb; j++) ops.push(['+', -1, j]);
+    // Bounded-memory fallback: align common lines in order instead of marking the
+    // entire middle region as unrelated. Exact LCS is reserved for smaller regions.
+    const positions=new Map();
+    for(let j=s;j<eb;j++){const key=kb[j];if(!positions.has(key))positions.set(key,[]);positions.get(key).push(j)}
+    const used=new Map(),matches=[];let last=s-1;
+    for(let i=s;i<ea;i++){
+      const arr=positions.get(ka[i]);if(!arr)continue;
+      let p=used.get(ka[i])||0;while(p<arr.length&&arr[p]<=last)p++;
+      if(p<arr.length){const j=arr[p];used.set(ka[i],p+1);matches.push([i,j]);last=j}
+    }
+    let ai=s,bj=s;
+    for(const [mi,mj] of matches){while(ai<mi)ops.push(['-',ai++,-1]);while(bj<mj)ops.push(['+',-1,bj++]);ops.push(['=',mi,mj]);ai=mi+1;bj=mj+1}
+    while(ai<ea)ops.push(['-',ai++,-1]);while(bj<eb)ops.push(['+',-1,bj++]);
     ops.big = true;
   } else {
     const L = new Uint32Array((n+1) * W);
