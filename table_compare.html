@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="referrer" content="no-referrer">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8A%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
@@ -99,9 +99,9 @@ td.chg s{color:#c0392b}td.chg b{color:#1a7f37}
 <div class="wrap">
 <header><div><a class="back" href="index.html">← 小工具首頁</a><h1>Excel／CSV 比對</h1><p class="tagline">找出兩份表格新增、刪除、修改的列</p></div><div class="themes" id="themes">主題：</div></header>
 <p class="privacy">檔案只在你的瀏覽器本機處理，不會上傳。支援 xlsx、xls、ods、csv、tsv，也可以直接貼上內容。</p>
-<div class="grid2"><section><h2>A　舊檔</h2><div class="drop-zone" id="dzA">拖曳或點擊選擇 Excel／CSV<input type="file" id="fA" accept=".xlsx,.xlsm,.xls,.ods,.csv,.tsv,.txt"></div>
+<div class="grid2"><section><h2>A　舊檔</h2><div class="drop-zone" id="dzA">拖曳或點擊選擇 Excel／CSV<input type="file" id="fA" accept=".xlsx,.xlsm,.xls,.xlsb,.ods,.csv,.tsv,.txt"></div>
 <div class="opt"><select id="shA" style="display:none"></select><span class="msg" id="infoA"></span></div>
-<textarea id="taA" placeholder="或直接貼上從 Excel 複製的內容"></textarea></section><section><h2>B　新檔</h2><div class="drop-zone" id="dzB">拖曳或點擊選擇 Excel／CSV<input type="file" id="fB" accept=".xlsx,.xlsm,.xls,.ods,.csv,.tsv,.txt"></div>
+<textarea id="taA" placeholder="或直接貼上從 Excel 複製的內容"></textarea></section><section><h2>B　新檔</h2><div class="drop-zone" id="dzB">拖曳或點擊選擇 Excel／CSV<input type="file" id="fB" accept=".xlsx,.xlsm,.xls,.xlsb,.ods,.csv,.tsv,.txt"></div>
 <div class="opt"><select id="shB" style="display:none"></select><span class="msg" id="infoB"></span></div>
 <textarea id="taB" placeholder="或直接貼上從 Excel 複製的內容"></textarea></section></div>
 <section><h2>比對設定</h2>
@@ -136,8 +136,16 @@ applyTheme(document.documentElement.dataset.theme || 'auto');
 const S={a:null,b:null},ST={add:'新增',del:'刪除',mod:'修改',same:'相同'};let LAST=null,selKeys=new Set();
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function parseText(t){
-  t=t.replace(/^\uFEFF/,'');const first=t.split(/\r?\n/,1)[0];
-  const d=[['\t',first.split('\t').length],[',',first.split(',').length],[';',first.split(';').length]].sort((x,y)=>y[1]-x[1])[0][0];
+  t=t.replace(/^\uFEFF/,'');
+  // Count possible delimiters outside quoted fields in the first logical record.
+  const counts={'\t':0,',':0,';':0};let inQuote=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(c==='"'){if(inQuote&&t[i+1]==='"'){i++;continue}inQuote=!inQuote;continue}
+    if(!inQuote&&(c==='\n'||c==='\r'))break;
+    if(!inQuote&&Object.prototype.hasOwnProperty.call(counts,c))counts[c]++;
+  }
+  const d=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
   const rows=[];let row=[],f='',q=false;
   for(let i=0;i<t.length;i++){const c=t[i];
     if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
