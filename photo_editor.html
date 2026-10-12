@@ -40,6 +40,7 @@ input[type=range]{width:100%;accent-color:var(--pri)}
 .drop:hover,.drop.dragover{border-color:var(--pri);color:var(--fg);background:var(--gut)}
 #ed{display:none;grid-template-columns:1fr 330px;gap:14px;align-items:start}
 @media(max-width:860px){#ed{grid-template-columns:1fr}}
+#ed>div{min-width:0}
 .stage{background:var(--gut);border:1px solid var(--bd);border-radius:8px;padding:10px;display:block;min-height:300px;max-height:72vh;overflow:auto}
 #view{display:block;max-width:none;max-height:none;flex:none;margin:0 auto;touch-action:none;
  background:conic-gradient(#ccc 25%,#fff 0 50%,#ccc 0 75%,#fff 0) 0 0/16px 16px}
@@ -182,7 +183,14 @@ async function load(f){
   }catch(e){say('無法讀取這個檔案（瀏覽器可能不支援此格式，例如 HEIC／AVIF）');}
 }
 $('file').onchange=e=>load(e.target.files[0]);
-$('newf').onclick=()=>{$('drop').style.display='';$('ed').style.display='none';$('file').value=''};
+$('newf').onclick=()=>{
+  work=ref=first=null;undo=[];sel=null;bg=null;F={...DEF};sourceFile=null;down=false;
+  imageMeta={capture:null,edit:null,digitized:null,file:null};
+  previewFit=true;previewScale=1;$('undo').disabled=true;say('');setMode('');syncSl();
+  view.width=view.height=1;
+  $('drop').style.display='';$('ed').style.display='none';
+  $('file').value='';$('file').click();
+};
 ['dragenter','dragover'].forEach(n=>document.addEventListener(n,e=>{e.preventDefault();$('drop').classList.add('dragover')}));
 ['dragleave','drop'].forEach(n=>document.addEventListener(n,e=>{e.preventDefault();$('drop').classList.remove('dragover')}));
 document.addEventListener('drop',e=>load(e.dataTransfer.files[0]));
@@ -210,7 +218,7 @@ function fitScale(){
   if(!work)return 1;
   const stage=$('previewStage');
   const usableW=Math.max(120,stage.clientWidth-24);
-  const usableH=Math.max(180,Math.min(window.innerHeight*.58,stage.clientHeight||window.innerHeight*.58));
+  const usableH=Math.max(180,window.innerHeight*.58);
   return Math.max(.01,Math.min(1,usableW/work.width,usableH/work.height));
 }
 function updatePreviewZoom(forceFit=false){
