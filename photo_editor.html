@@ -119,7 +119,7 @@ const clone=c=>{const n=mk(c.width,c.height);n.getContext('2d').drawImage(c,0,0)
 const DEF={b:100,c:100,s:100,h:0,bl:0,g:0,se:0,inv:0};
 let work,ref,first,undo=[],mode='',F={...DEF},bg=null,sel=null,fname='image',down=false,last,cs;
 const view=$('view'),vx=view.getContext('2d');
-const say=t=>$('msg').textContent=t||'';
+const say=t=>{$('msg').textContent=t||''};
 
 /* ---------- 載入 ---------- */
 async function load(f){
@@ -227,7 +227,7 @@ $('ai').onclick=async()=>{
   try{
     const {removeBackground}=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm');
     const blob=await new Promise(r=>work.toBlob(r,'image/png'));
-    const out=await removeBackground(blob,{progress:(key,cur,tot)=>say(`處理中：${key.replace('fetch:','下載 ')} ${tot?Math.round(cur/tot*100)+'%':''}`)});
+    const out=await removeBackground(blob,{progress:(key,cur,tot)=>{say(`處理中：${key.replace('fetch:','下載 ')} ${tot?Math.round(cur/tot*100)+'%':''}`)}});
     const bm=await createImageBitmap(out);push();
     const n=mk(work.width,work.height);n.getContext('2d').drawImage(bm,0,0,n.width,n.height);work=n;
     draw();say('去背完成。可用「還原筆刷」／「橡皮擦」修飾邊緣。');
