@@ -21,7 +21,7 @@ html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
 a{color:var(--pri)}
-.wrap{max-width:860px;margin:0 auto;padding:14px 20px 60px}
+.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}
 header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 h1{margin:0;font-size:20px}
 .back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
@@ -212,6 +212,8 @@ $('dl').onclick=async()=>{
   for(const it of ok){let nm=it.outName;if(used[nm]){const p=nm.lastIndexOf('.');nm=nm.slice(0,p)+'_'+used[nm]+nm.slice(p)}used[it.outName]=(used[it.outName]||0)+1;z.file(nm,it.out)}
   save(await z.generateAsync({type:'blob'}),'images.zip');
 };
+if(window.self!==window.top){document.body.classList.add('embedded');window.addEventListener('message',e=>{if(e.data?.type==='tools-theme'){try{if(e.data.theme==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=e.data.theme;localStorage.setItem('tools-theme',e.data.theme)}catch(_){}}});const sendHeight=()=>window.parent.postMessage({type:'tools-iframe-height',height:document.documentElement.scrollHeight},'*');new ResizeObserver(sendHeight).observe(document.body);window.addEventListener('load',sendHeight);window.addEventListener('resize',sendHeight)}
 </script>
+<style>body.embedded>.wrap{max-width:none;padding:8px 0 18px}body.embedded header,body.embedded .privacy{display:none!important}</style>
 </body>
 </html>
