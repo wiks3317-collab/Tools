@@ -418,7 +418,7 @@ function renderFileList(){
   }
   fileListEl.innerHTML =
     `已加入 ${pendingFiles.length} 頁　<span class="clear-link" id="clearLink">清除全部</span><br>` +
-    pendingFiles.map(f => `<div class="file-row"><span>${f.name}</span></div>`).join('');
+    pendingFiles.map(f => `<div class="file-row"><span>${escapeHtml(f.name)}</span></div>`).join('');
   document.getElementById('clearLink').addEventListener('click', () => {
     pendingFiles = [];
     renderFileList();
@@ -774,7 +774,7 @@ document.getElementById('downloadBtn').addEventListener('click', () => {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 });
 
 // ---------- PDF 工具：合併 / 拆分 / 壓縮 / 解鎖 ----------
