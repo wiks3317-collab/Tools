@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>圖片編輯／去背</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%96%BC%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"onnxruntime-web":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.bundle.min.mjs","onnxruntime-web/webgpu":"https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.webgpu.bundle.min.mjs"}}</script>
+<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+a{color:var(--pri)}
+.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.tagline,.msg,.hint{color:var(--mut);font-size:12px;margin:2px 0 0}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+h2{font-size:14px;margin:0 0 8px}
+.privacy{color:var(--mut);font-size:12px;border-left:3px solid var(--pri);padding:6px 10px;margin:8px 0 12px;background:var(--gut)}
+button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+button:hover:not(:disabled){border-color:var(--pri)}
+button:disabled{opacity:.4;cursor:default}
+button.on,.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+input[type=file]{display:none}
+select,input[type=number]{font:inherit;font-size:13px;padding:4px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+input[type=number]{width:84px}
+input[type=range]{width:100%;accent-color:var(--pri)}
+.drop{display:block;border:2px dashed var(--bd);border-radius:8px;padding:48px 16px;text-align:center;cursor:pointer;color:var(--mut)}
+.drop:hover,.drop.dragover{border-color:var(--pri);color:var(--fg);background:var(--gut)}
+#ed{display:none;grid-template-columns:1fr 330px;gap:14px;align-items:start}
+@media(max-width:860px){#ed{grid-template-columns:1fr}}
+.stage{background:var(--gut);border:1px solid var(--bd);border-radius:8px;padding:10px;display:block;min-height:300px;max-height:72vh;overflow:auto}
+#view{display:block;max-width:none;max-height:none;flex:none;margin:0 auto;touch-action:none;
+ background:conic-gradient(#ccc 25%,#fff 0 50%,#ccc 0 75%,#fff 0) 0 0/16px 16px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.row label{display:flex;align-items:center;gap:4px;font-size:13px}
+.sl{display:grid;grid-template-columns:62px 1fr 38px;gap:6px;align-items:center;font-size:13px}
+.sl output{color:var(--mut);text-align:right;font-size:12px}
+.opt{display:none}.opt.on{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="index.html">← 回到小工具集</a>
+<h1>圖片編輯／去背</h1>
+<p class="tagline">AI 一鍵去背、點色去背、橡皮擦／還原筆刷、裁切、旋轉、縮放、調色與濾鏡，最後匯出 PNG／JPG／WebP。</p>
+<div class="privacy">圖片只在你的瀏覽器內處理，不會上傳。※「AI 去背」第一次使用需從 CDN 下載模型（約數十 MB），之後會快取；其他功能完全離線可用。</div>
+
+<label class="drop" id="drop" for="file">點擊選擇圖片、拖曳到這裡，或直接貼上（Ctrl／⌘+V）<input type="file" id="file" accept="image/*"></label>
+
+<div id="ed">
+ <div>
+  <div class="stage" id="previewStage"><canvas id="view"></canvas></div>
+  <div class="row preview-zoom" aria-label="預覽縮放控制">
+   <button id="zoomOut" type="button" title="縮小預覽">－</button>
+   <label for="zoomRange">預覽縮放</label><input id="zoomRange" type="range" min="1" max="300" value="100" style="width:min(180px,35%)">
+   <output id="zoomLabel">適合視窗</output><button id="zoomIn" type="button" title="放大預覽">＋</button>
+   <button id="zoomFit" type="button">適合視窗</button><button id="zoomActual" type="button">原始尺寸</button>
+  </div>
+  <div class="row">
+   <button id="undo" disabled>↶ 復原</button><button id="init">還原原圖</button>
+   <button id="newf">換一張圖片</button><span class="msg" id="msg"></span>
+  </div>
+ </div>
+ <div>
+  <section>
+   <h2>去背</h2>
+   <div class="row"><button class="pri" id="ai">AI 一鍵去背</button></div>
+   <div class="row" id="modes">
+    <button data-m="pick">點色去背</button><button data-m="erase">橡皮擦</button>
+    <button data-m="restore">還原筆刷</button><button data-m="crop">裁切</button>
+   </div>
+   <div class="opt" data-for="pick">
+    <div class="sl"><span>容許度</span><input type="range" id="tol" min="0" max="120" value="30"><output id="tolo">30</output></div>
+    <label class="row"><input type="checkbox" id="contig" checked>只移除相連區域</label>
+    <p class="hint">點圖片上要變透明的顏色（例如純色背景）。</p>
+   </div>
+   <div class="opt" data-for="erase restore">
+    <div class="sl"><span>筆刷大小</span><input type="range" id="bs" min="5" max="150" value="40"><output id="bso">40</output></div>
+    <p class="hint">橡皮擦把畫面擦成透明；還原筆刷把原圖畫回來，可修 AI 去背的邊緣。</p>
+   </div>
+   <div class="opt" data-for="crop">
+    <div class="row"><select id="ratio"><option value="0">自由比例</option><option value="1">1:1</option><option value="1.3333">4:3</option><option value="0.75">3:4</option><option value="1.7778">16:9</option><option value="0.5625">9:16</option></select>
+    <button id="docrop" class="pri">套用裁切</button></div>
+    <p class="hint">在圖片上拖曳選取範圍。</p>
+   </div>
+   <div class="row"><label>背景色 <input type="color" id="bgc" value="#ffffff"></label><button id="bgon">填入背景</button><button id="bgoff">透明</button></div>
+  </section>
+  <section>
+   <h2>旋轉／翻轉／縮放</h2>
+   <div class="row"><button id="rl">⟲ 左轉</button><button id="rr">⟳ 右轉</button><button id="fh">⇋ 水平</button><button id="fv">⇅ 垂直</button></div>
+   <div class="row"><input type="number" id="rw" min="1"> × <input type="number" id="rh" min="1"><label><input type="checkbox" id="lock" checked>鎖定比例</label><button id="rs">縮放</button></div>
+  </section>
+  <section>
+   <h2>調色</h2>
+   <div class="row" id="presets"></div>
+   <div id="sliders"></div>
+   <div class="row"><button id="rst">重設調色</button></div>
+  </section>
+  <section>
+   <h2>圖片時間資訊</h2>
+   <div id="metaInfo" class="hint">載入圖片後會嘗試讀取 EXIF 拍攝／修改時間，並顯示檔案修改時間。</div>
+   <p class="hint">EXIF 資訊不一定存在；「檔案修改時間」是瀏覽器收到的檔案中繼資料，重新下載或透過通訊軟體傳送後可能已改變。</p>
+  </section>
+  <section>
+   <h2>日期時間浮水印</h2>
+   <div class="row"><label><input type="checkbox" id="wmOn"> 在預覽及匯出圖片加入浮水印</label></div>
+   <div class="row"><label>時間來源 <select id="wmSource"><option value="capture">EXIF 拍攝時間</option><option value="edit">EXIF 修改時間</option><option value="digitized">EXIF 數位化時間</option><option value="file">檔案修改時間</option><option value="now">目前時間</option><option value="custom">自訂時間</option></select></label></div>
+   <div class="row" id="wmCustomRow" hidden><label>自訂時間 <input type="datetime-local" id="wmCustom"></label></div>
+   <div class="row"><label>附加文字 <input type="text" id="wmExtra" maxlength="100" placeholder="例如：內部用／拍攝地點"></label></div>
+   <div class="row"><label>位置 <select id="wmPos"><option value="br">右下</option><option value="bl">左下</option><option value="tr">右上</option><option value="tl">左上</option><option value="bc">下方置中</option></select></label><label>文字顏色 <input type="color" id="wmColor" value="#ffffff"></label></div>
+   <div class="sl"><span>透明度</span><input type="range" id="wmAlpha" min="20" max="100" value="90"><output id="wmAlphaOut">90%</output></div>
+   <div class="sl"><span>文字大小</span><input type="range" id="wmSize" min="1" max="5" value="2"><output id="wmSizeOut">中</output></div>
+   <p class="hint">浮水印會實際寫入匯出圖片。日期可能與原始拍攝時間不同，請以讀取到的 EXIF／檔案中繼資料為準。</p>
+  </section>
+  <section>
+   <h2>匯出</h2>
+   <div class="row"><select id="fmt"><option value="image/png">PNG（保留透明）</option><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option></select></div>
+   <div class="sl"><span>品質</span><input type="range" id="q" min="30" max="100" value="92"><output id="qo">92</output></div>
+   <div class="row"><button class="pri" id="save">下載圖片</button></div>
+   <p class="hint">JPG 不支援透明，透明處會填背景色（未設定則為白色）。浮水印會寫入輸出檔案。</p>
+  </section>
+ </div>
+</div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const clone=c=>{const n=mk(c.width,c.height);n.getContext('2d').drawImage(c,0,0);return n};
+const DEF={b:100,c:100,s:100,h:0,bl:0,g:0,se:0,inv:0};
+let work,ref,first,undo=[],mode='',F={...DEF},bg=null,sel=null,fname='image',down=false,last,cs;
+let sourceFile=null,imageMeta={capture:null,edit:null,digitized:null,file:null},watermarkNow=new Date();
+let previewScale=1,previewFit=true;
+const view=$('view'),vx=view.getContext('2d');
+const say=t=>{$('msg').textContent=t||''};
+
+/* ---------- 載入 ---------- */
+function parseExifDate(v){
+  if(!v)return null;if(v instanceof Date&&!Number.isNaN(v.getTime()))return v;
+  const str=String(v).trim();const iso=str.replace(/^(\d{4}):(\d{2}):(\d{2})/,'$1-$2-$3').replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/,'$1T$2');
+  const d=new Date(iso);return Number.isNaN(d.getTime())?null:d;
+}
+function fmtDate(d){if(!d)return '未提供';return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`}
+async function readImageMetadata(f){
+  imageMeta={capture:null,edit:null,digitized:null,file:f.lastModified?new Date(f.lastModified):null};
+  try{
+    const exifr=await import('https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.esm.mjs');
+    const tags=await exifr.parse(f,{xmp:true,iptc:true});
+    if(tags){imageMeta.capture=parseExifDate(tags.DateTimeOriginal||tags.CreateDate||tags.DateCreated);imageMeta.edit=parseExifDate(tags.ModifyDate||tags.ModifyDateTime||tags.XMPModifyDate);imageMeta.digitized=parseExifDate(tags.DateTimeDigitized||tags.CreateDate)}
+  }catch(e){console.warn('EXIF 讀取失敗或套件未載入',e)}
+  const lines=[['EXIF 拍攝時間',imageMeta.capture],['EXIF 修改時間',imageMeta.edit],['EXIF 數位化時間',imageMeta.digitized],['檔案修改時間',imageMeta.file]];
+  $('metaInfo').replaceChildren(...lines.map(([label,value])=>{const d=document.createElement('div');d.textContent=`${label}：${fmtDate(value)}`;return d}));
+  if($('wmSource').value==='capture'&&!imageMeta.capture&&imageMeta.file){const d=document.createElement('div');d.textContent='提示：此圖片沒有讀到 EXIF 拍攝時間，可改選檔案修改時間。';$('metaInfo').appendChild(d)}
+}
+async function load(f){
+  if(!f)return;
+  const imageLike=f.type.startsWith('image/')||/\.(jpe?g|png|webp|gif|bmp|tiff?|heic|heif|avif)$/i.test(f.name);
+  if(!imageLike){say('請選擇圖片檔');return}
+  try{
+    previewFit=true;previewScale=1;sourceFile=f;const bm=await createImageBitmap(f,{imageOrientation:'from-image'});
+    const s=Math.min(1,4096/Math.max(bm.width,bm.height),Math.sqrt(10000000/(bm.width*bm.height)));
+    work=mk(Math.max(1,Math.round(bm.width*s)),Math.max(1,Math.round(bm.height*s)));
+    work.getContext('2d').drawImage(bm,0,0,work.width,work.height);
+    ref=clone(work);first=clone(work);undo=[];$('undo').disabled=true;
+    fname=f.name.replace(/\.[^.]+$/,'')||'image';
+    F={...DEF};bg=null;sel=null;setMode('');syncUI();
+    $('drop').style.display='none';$('ed').style.display='grid';say(s<1?`圖片尺寸較大，為避免瀏覽器記憶體不足已縮小為 ${work.width} × ${work.height}`:'');
+    updatePreviewZoom(true);draw();
+    await readImageMetadata(f);
+  }catch(e){say('無法讀取這個檔案（瀏覽器可能不支援此格式，例如 HEIC／AVIF）');}
+}
+$('file').onchange=e=>load(e.target.files[0]);
+$('newf').onclick=()=>{$('drop').style.display='';$('ed').style.display='none';$('file').value=''};
+['dragenter','dragover'].forEach(n=>document.addEventListener(n,e=>{e.preventDefault();$('drop').classList.add('dragover')}));
+['dragleave','drop'].forEach(n=>document.addEventListener(n,e=>{e.preventDefault();$('drop').classList.remove('dragover')}));
+document.addEventListener('drop',e=>load(e.dataTransfer.files[0]));
+document.addEventListener('paste',e=>{const f=[...e.clipboardData.files][0];if(f)load(f)});
+
+/* ---------- 繪製 ---------- */
+const filt=()=>`brightness(${F.b}%) contrast(${F.c}%) saturate(${F.s}%) hue-rotate(${F.h}deg) blur(${F.bl}px) grayscale(${F.g}%) sepia(${F.se}%) invert(${F.inv}%)`;
+function watermarkValue(){
+  if(!$('wmOn').checked)return '';
+  const source=$('wmSource').value;let d=null,label='';
+  if(source==='capture'){d=imageMeta.capture;label='拍攝'}else if(source==='edit'){d=imageMeta.edit;label='修改'}else if(source==='digitized'){d=imageMeta.digitized;label='數位化'}else if(source==='file'){d=imageMeta.file;label='檔案修改'}else if(source==='now'){d=watermarkNow;label='建立'}else if(source==='custom'){d=parseExifDate($('wmCustom').value);label='自訂'}
+  if(!d){d=imageMeta.file;label='檔案修改（來源缺值，改用檔案時間）'}
+  let text=d?`${label}時間：${fmtDate(d)}`:'日期時間未提供';const extra=$('wmExtra').value.trim();if(extra)text+='  '+extra;return text;
+}
+function paintWatermark(context,w,h){
+  const text=watermarkValue();if(!text)return;
+  const ratio=+$('wmSize').value,fontPx=Math.max(12,Math.round(Math.min(w,h)*(.012+ratio*.004))),pad=Math.max(8,Math.round(fontPx*.55));
+  context.save();context.font=`600 ${fontPx}px "Noto Sans TC", sans-serif`;context.textBaseline='middle';
+  const tw=context.measureText(text).width,boxW=Math.min(Math.max(1,w-2*pad),tw+pad*2),boxH=fontPx+pad*1.2,alpha=+$('wmAlpha').value/100;
+  let x=pad,y=pad;const pos=$('wmPos').value;if(pos.endsWith('r'))x=w-pad-boxW;else if(pos==='bc')x=(w-boxW)/2;if(pos.startsWith('b'))y=h-pad-boxH;
+  context.globalAlpha=alpha;context.fillStyle='#000000';context.fillRect(Math.max(0,x),Math.max(0,y),boxW,boxH);
+  context.fillStyle=$('wmColor').value;context.globalAlpha=alpha;context.fillText(text,Math.max(0,x+pad),Math.max(fontPx/2,y+boxH/2),Math.max(0,boxW-2*pad));context.restore();
+}
+function fitScale(){
+  if(!work)return 1;
+  const stage=$('previewStage');
+  const usableW=Math.max(120,stage.clientWidth-24);
+  const usableH=Math.max(180,Math.min(window.innerHeight*.58,stage.clientHeight||window.innerHeight*.58));
+  return Math.max(.01,Math.min(1,usableW/work.width,usableH/work.height));
+}
+function updatePreviewZoom(forceFit=false){
+  if(!work)return;
+  if(forceFit||previewFit)previewScale=fitScale();
+  view.style.width=Math.max(1,Math.round(work.width*previewScale))+'px';
+  view.style.height=Math.max(1,Math.round(work.height*previewScale))+'px';
+  $('zoomRange').value=String(clamp(Math.round(previewScale*100),1,300));
+  $('zoomLabel').textContent=`${Math.round(previewScale*100)}%${previewFit?'（適合）':''}`;
+}
+function setPreviewScale(scale,fit=false){previewFit=fit;previewScale=clamp(scale,.01,3);updatePreviewZoom(fit)}
+$('zoomRange').oninput=e=>setPreviewScale((+e.target.value||100)/100,false);
+$('zoomIn').onclick=()=>setPreviewScale(Math.min(3,previewScale*1.2),false);
+$('zoomOut').onclick=()=>setPreviewScale(Math.max(.01,previewScale/1.2),false);
+$('zoomFit').onclick=()=>setPreviewScale(fitScale(),true);
+$('zoomActual').onclick=()=>setPreviewScale(1,false);
+window.addEventListener('resize',()=>{if(previewFit)updatePreviewZoom(true)});
+function draw(){
+  if(!work)return;
+  if(view.width!==work.width||view.height!==work.height){view.width=work.width;view.height=work.height}
+  const w=view.width,h=view.height;vx.clearRect(0,0,w,h);
+  if(bg){vx.fillStyle=bg;vx.fillRect(0,0,w,h)}
+  vx.filter=filt();vx.drawImage(work,0,0);vx.filter='none';
+  if(mode==='crop'&&sel){
+    vx.fillStyle='rgba(0,0,0,.5)';
+    vx.fillRect(0,0,w,sel.y);vx.fillRect(0,sel.y+sel.h,w,h);
+    vx.fillRect(0,sel.y,sel.x,sel.h);vx.fillRect(sel.x+sel.w,sel.y,w,sel.h);
+    vx.strokeStyle='#fff';vx.lineWidth=Math.max(1,w/500);vx.setLineDash([8,6]);vx.strokeRect(sel.x,sel.y,sel.w,sel.h);vx.setLineDash([]);
+  }
+  paintWatermark(vx,w,h);
+  updatePreviewZoom();
+}
+function push(){undo.push([clone(work),clone(ref)]);if(undo.length>20)undo.shift();$('undo').disabled=false}
+$('undo').onclick=()=>{const u=undo.pop();if(!u)return;[work,ref]=u;$('undo').disabled=!undo.length;syncUI();draw()};
+$('init').onclick=()=>{push();work=clone(first);ref=clone(first);syncUI();draw()};
+function syncUI(){$('rw').value=work.width;$('rh').value=work.height}
+
+/* ---------- 模式 ---------- */
+function setMode(m){
+  mode=mode===m?'':m;sel=null;
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode));
+  document.querySelectorAll('.opt').forEach(o=>o.classList.toggle('on',o.dataset.for.split(' ').includes(mode)));
+  view.style.cursor=mode?'crosshair':'default';draw();
+}
+$('modes').onclick=e=>{const b=e.target.closest('button');if(b)setMode(b.dataset.m)};
+$('tol').oninput=e=>$('tolo').textContent=e.target.value;
+$('bs').oninput=e=>$('bso').textContent=e.target.value;
+$('q').oninput=e=>$('qo').textContent=e.target.value;
+$('wmOn').onchange=draw;$('wmSource').onchange=()=>{$('wmCustomRow').hidden=$('wmSource').value!=='custom';if($('wmSource').value==='now')watermarkNow=new Date();draw()};$('wmCustom').oninput=draw;$('wmExtra').oninput=draw;$('wmPos').onchange=draw;$('wmColor').oninput=draw;$('wmAlpha').oninput=()=>{$('wmAlphaOut').textContent=$('wmAlpha').value+'%';draw()};$('wmSize').oninput=()=>{$('wmSizeOut').textContent=['很小','小','中','大','特大'][+$('wmSize').value-1];draw()};
+
+/* ---------- 指標操作 ---------- */
+const P=e=>{const r=view.getBoundingClientRect();return[(e.clientX-r.left)*view.width/r.width,(e.clientY-r.top)*view.height/r.height]};
+view.onpointerdown=e=>{
+  if(!work||!mode)return;const p=P(e);
+  if(mode==='pick'){wand(p);return}
+  down=true;view.setPointerCapture(e.pointerId);
+  if(mode==='crop'){cs=p;sel=null}else{push();last=p;brush(p,p)}
+};
+view.onpointermove=e=>{
+  if(!down)return;const p=P(e);
+  if(mode==='crop'){
+    const W=view.width,H=view.height,ar=+$('ratio').value;
+    const x2=clamp(p[0],0,W),y2=clamp(p[1],0,H),dx=x2-cs[0],dy=y2-cs[1];
+    let w=Math.abs(dx),h=Math.abs(dy);
+    if(ar){if(w/Math.max(h,0.001)>ar)h=w/ar;else w=h*ar;}
+    if(ar&&w>0&&h>0){
+      const maxW=dx<0?cs[0]:W-cs[0],maxH=dy<0?cs[1]:H-cs[1];
+      const factor=Math.min(1,maxW/w,maxH/h);w*=factor;h*=factor;
+    }else{w=Math.min(w,dx<0?cs[0]:W-cs[0]);h=Math.min(h,dy<0?cs[1]:H-cs[1]);}
+    sel={x:dx<0?cs[0]-w:cs[0],y:dy<0?cs[1]-h:cs[1],w,h};draw();
+  }else{brush(last,p);last=p}
+};
+view.onpointerup=view.onpointercancel=()=>{down=false};
+
+function brush(a,b){
+  const k=view.width/view.getBoundingClientRect().width,r=+$('bs').value/2*k,x=work.getContext('2d'),
+    n=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/(r/3)));
+  for(let i=1;i<=n;i++){
+    const px=a[0]+(b[0]-a[0])*i/n,py=a[1]+(b[1]-a[1])*i/n;
+    x.save();x.beginPath();x.arc(px,py,r,0,7);
+    if(mode==='erase'){x.globalCompositeOperation='destination-out';x.fill()}
+    else{x.clip();x.clearRect(0,0,work.width,work.height);x.drawImage(ref,0,0)}
+    x.restore();
+  }
+  draw();
+}
+
+function wand([px,py]){
+  push();
+  const w=work.width,h=work.height,x=work.getContext('2d'),im=x.getImageData(0,0,w,h),d=im.data;
+  px|=0;py|=0;const i0=(py*w+px)*4,t=+$('tol').value*3,r=d[i0],g=d[i0+1],b=d[i0+2];
+  const ok=i=>d[i+3]>0&&Math.abs(d[i]-r)+Math.abs(d[i+1]-g)+Math.abs(d[i+2]-b)<=t;
+  if($('contig').checked){
+    const st=[py*w+px],seen=new Uint8Array(w*h);
+    while(st.length){
+      const p=st.pop();if(seen[p])continue;seen[p]=1;
+      const i=p*4;if(!ok(i))continue;d[i+3]=0;const cx=p%w;
+      if(cx>0)st.push(p-1);if(cx<w-1)st.push(p+1);if(p>=w)st.push(p-w);if(p<w*h-w)st.push(p+w);
+    }
+  }else for(let i=0;i<d.length;i+=4)if(ok(i))d[i+3]=0;
+  x.putImageData(im,0,0);draw();
+}
+
+/* ---------- AI 去背 ---------- */
+$('ai').onclick=async()=>{
+  if(!work)return;const btn=$('ai');btn.disabled=true;say('載入 AI 模型中…（首次需下載，請稍候）');
+  try{
+    const {removeBackground}=await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm');
+    const blob=await new Promise(r=>work.toBlob(r,'image/png'));
+    const out=await removeBackground(blob,{progress:(key,cur,tot)=>{say(`處理中：${key.replace('fetch:','下載 ')} ${tot?Math.round(cur/tot*100)+'%':''}`)}});
+    const bm=await createImageBitmap(out);push();
+    const n=mk(work.width,work.height);n.getContext('2d').drawImage(bm,0,0,n.width,n.height);work=n;
+    draw();say('去背完成。可用「還原筆刷」／「橡皮擦」修飾邊緣。');
+  }catch(e){console.error(e);say('AI 去背失敗：'+(e&&e.message||e)+'（可改用「點色去背」；詳細錯誤請看 F12 Console）')}
+  btn.disabled=false;
+};
+
+/* ---------- 幾何變換（work 與 ref 一起變） ---------- */
+function xf(fn){push();work=fn(work);ref=fn(ref);sel=null;syncUI();draw()}
+const rot=d=>c=>{const n=mk(c.height,c.width),x=n.getContext('2d');x.translate(n.width/2,n.height/2);x.rotate(Math.PI/2*d);x.drawImage(c,-c.width/2,-c.height/2);return n};
+const flip=(sx,sy)=>c=>{const n=mk(c.width,c.height),x=n.getContext('2d');x.translate(sx<0?c.width:0,sy<0?c.height:0);x.scale(sx,sy);x.drawImage(c,0,0);return n};
+$('rl').onclick=()=>xf(rot(-1));$('rr').onclick=()=>xf(rot(1));
+$('fh').onclick=()=>xf(flip(-1,1));$('fv').onclick=()=>xf(flip(1,-1));
+$('rw').oninput=()=>{if($('lock').checked)$('rh').value=Math.round($('rw').value*work.height/work.width)};
+$('rh').oninput=()=>{if($('lock').checked)$('rw').value=Math.round($('rh').value*work.width/work.height)};
+$('rs').onclick=()=>{
+  const w=Math.max(1,Math.min(8000,+$('rw').value|0)),h=Math.max(1,Math.min(8000,+$('rh').value|0));
+  xf(c=>{const n=mk(w,h),x=n.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(c,0,0,w,h);return n});
+};
+$('docrop').onclick=()=>{
+  if(!sel||sel.w<2||sel.h<2){say('請先在圖片上拖曳選取裁切範圍');return}
+  const x=Math.round(sel.x),y=Math.round(sel.y),w=Math.min(Math.round(sel.w),work.width-x),h=Math.min(Math.round(sel.h),work.height-y);
+  xf(c=>{const n=mk(w,h);n.getContext('2d').drawImage(c,x,y,w,h,0,0,w,h);return n});setMode('');
+};
+
+/* ---------- 背景色 ---------- */
+$('bgon').onclick=()=>{bg=$('bgc').value;draw()};
+$('bgoff').onclick=()=>{bg=null;draw()};
+$('bgc').oninput=()=>{if(bg){bg=$('bgc').value;draw()}};
+
+/* ---------- 調色 ---------- */
+const SL=[['b','亮度',0,200],['c','對比',0,200],['s','飽和度',0,300],['h','色相',-180,180],['bl','模糊',0,20],['g','黑白',0,100],['se','復古褐',0,100]];
+$('sliders').innerHTML=SL.map(([k,n,a,b])=>`<div class="sl"><span>${n}</span><input type="range" data-k="${k}" min="${a}" max="${b}" value="${DEF[k]}"><output></output></div>`).join('');
+const syncSl=()=>document.querySelectorAll('#sliders input').forEach(i=>{i.value=F[i.dataset.k];i.nextElementSibling.textContent=i.value});
+$('sliders').oninput=e=>{F[e.target.dataset.k]=+e.target.value;syncSl();draw()};
+const PRE={'原圖':{},'黑白':{g:100},'復古':{se:60,c:110,s:80},'鮮豔':{s:160,c:110},'冷調':{h:-20,s:110},'暖調':{h:15,se:25},'反相':{inv:100}};
+$('presets').innerHTML=Object.keys(PRE).map(k=>`<button>${k}</button>`).join('');
+$('presets').onclick=e=>{const b=e.target.closest('button');if(!b)return;F={...DEF,...PRE[b.textContent]};syncSl();draw()};
+$('rst').onclick=()=>{F={...DEF};syncSl();draw()};
+syncSl();
+
+/* ---------- 匯出 ---------- */
+$('save').onclick=()=>{
+  if(!work)return;
+  const type=$('fmt').value,n=mk(work.width,work.height),x=n.getContext('2d');
+  if(bg||type==='image/jpeg'){x.fillStyle=bg||'#fff';x.fillRect(0,0,n.width,n.height)}
+  x.filter=filt();x.drawImage(work,0,0);x.filter='none';paintWatermark(x,n.width,n.height);
+  n.toBlob(b=>{
+    if(!b){say('匯出失敗：瀏覽器無法產生圖片資料');return}
+    const a=document.createElement('a'),ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[type],url=URL.createObjectURL(b);
+    a.href=url;a.download=`${fname}_edited.${ext}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+    say('圖片已匯出'+($('wmOn').checked?'（含日期時間浮水印）':''));
+  },type,+$('q').value/100);
+};
+if(window.self!==window.top){
+  document.body.classList.add('embedded');
+  window.addEventListener('message',e=>{if(e.data?.type==='tools-theme'){try{if(e.data.theme==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=e.data.theme;localStorage.setItem('tools-theme',e.data.theme)}catch(_){}}});
+  const sendHeight=()=>window.parent.postMessage({type:'tools-iframe-height',height:document.documentElement.scrollHeight},'*');
+  new ResizeObserver(sendHeight).observe(document.body);window.addEventListener('load',sendHeight);window.addEventListener('resize',sendHeight);
+}
+</script>
+<style>
+body.embedded>.wrap{max-width:none;padding:8px 0 18px}
+body.embedded>.wrap>.back,body.embedded>.wrap>h1,body.embedded>.wrap>p.tagline,body.embedded>.wrap>.privacy{display:none!important}
+</style>
+</body>
+</html>
