@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>編碼／解碼工具</title>
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A3%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{color-scheme:light;--bg:#f6f7f9;--card:#fff;--fg:#1f2328;--mut:#6b7280;--bd:#d0d7de;--gut:#eef0f3;--pri:#2563eb;--prifg:#fff}
+@media (prefers-color-scheme:dark){html:not([data-theme]){color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}}
+html[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#171a21;--fg:#e6e8eb;--mut:#9aa3af;--bd:#2d333b;--gut:#1e232b;--pri:#4c8dff;--prifg:#fff}
+html[data-theme=sepia]{color-scheme:light;--bg:#f1e8d4;--card:#fbf5e6;--fg:#3b3226;--mut:#7d705c;--bd:#d9cbaa;--gut:#efe4c9;--pri:#a8652a;--prifg:#fff}
+html[data-theme=forest]{color-scheme:light;--bg:#eaf2ec;--card:#f8fcf9;--fg:#1d2b22;--mut:#5f7566;--bd:#c3d6c8;--gut:#dfeae2;--pri:#2f855a;--prifg:#fff}
+html[data-theme=ocean]{color-scheme:dark;--bg:#0b1e2d;--card:#10293c;--fg:#dbe9f4;--mut:#8fa9bd;--bd:#1f4059;--gut:#0d2335;--pri:#2bb3d9;--prifg:#04202c}
+html[data-theme=dracula]{color-scheme:dark;--bg:#1e1f29;--card:#282a36;--fg:#f8f8f2;--mut:#a0a4c0;--bd:#44475a;--gut:#2f3140;--pri:#bd93f9;--prifg:#1e1f29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:14px 20px 60px}
+h1{margin:0;font-size:20px}
+.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+.sub,.tip{color:var(--mut);font-size:12px;margin:2px 0 0}
+section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin:12px 0}
+button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px;text-decoration:none;display:inline-block}
+button:hover:not(:disabled),.btn:hover{border-color:var(--pri)}
+button:disabled{opacity:.4;cursor:default}
+.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+.panel{display:none}.panel.on{display:block}
+select,input[type=text],textarea{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+option{background:var(--card);color:var(--fg)}
+textarea{width:100%;min-height:150px;resize:vertical;font:12.5px/1.5 ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace;word-break:break-all}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.lbl{font-size:12px;color:var(--mut);margin:8px 0 4px;display:block}
+.drop{border:2px dashed var(--bd);border-radius:8px;padding:26px 16px;text-align:center;cursor:pointer;color:var(--mut)}
+.drop:hover,.drop.over{border-color:var(--pri);color:var(--fg);background:var(--gut)}
+input[type=file]{display:none}
+.info{background:var(--gut);border-radius:6px;padding:8px 10px;font-size:13px;margin:8px 0}
+.warn{border-left:3px solid #e5484d;background:var(--gut);color:var(--mut);font-size:12px;padding:6px 10px;margin:8px 0}
+.prev{margin-top:10px;text-align:center}
+.prev img,.prev video{max-width:100%;max-height:420px;border:1px solid var(--bd);border-radius:6px}
+.prev audio{width:100%}.prev iframe{width:100%;height:480px;border:1px solid var(--bd);border-radius:6px}
+.err{color:#e5484d;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><a class="back" href="index.html">← 回主選單</a><h1>編碼／解碼工具</h1><p class="sub">Base64 檔案轉換與常用文字編碼。所有處理都在你的瀏覽器內完成，內容不會上傳。</p></header>
+<div class="tabs" id="tabs"><button data-p="pt" class="on">文字編解碼</button><button data-p="pf">檔案 → Base64</button><button data-p="pd">Base64 → 檔案</button></div>
+
+<div class="panel on" id="pt"><section>
+ <div class="row"><select id="fmt"></select><button class="pri" id="enc">編碼 ↓</button><button id="dec">解碼 ↓</button><button id="swp">↕ 輸出移到輸入</button></div>
+ <span class="lbl">輸入</span><textarea id="tin" spellcheck="false" placeholder="貼上要編碼或解碼的文字"></textarea>
+ <span class="lbl">輸出</span><textarea id="tout" spellcheck="false" readonly></textarea>
+ <div class="row"><button id="tcopy">複製輸出</button><button id="tclr">清除</button><span class="err" id="terr"></span></div>
+ <p class="tip" id="thint"></p>
+</section></div>
+
+<div class="panel" id="pf"><section>
+ <label class="drop" id="fdrop"><input type="file" id="ffile">點擊或拖曳任何檔案到這裡（圖片、PDF、音訊、影片、執行檔、壓縮檔…）</label>
+ <div class="info" id="finfo" style="display:none"></div>
+ <div class="row" id="fopt" style="display:none">輸出格式：
+  <select id="fmode"><option value="raw">純 Base64</option><option value="uri">Data URI（data:類型;base64,…）</option><option value="url">Base64URL（URL 安全）</option><option value="wrap">純 Base64，每 76 字元換行（MIME）</option><option value="html">HTML &lt;img&gt; 標籤（僅圖片）</option></select>
+  <button class="pri" id="fcopy">複製</button><button id="fsave">下載為 .txt</button></div>
+ <textarea id="fout" spellcheck="false" readonly style="display:none"></textarea>
+ <p class="tip" id="fnote"></p>
+</section></div>
+
+<div class="panel" id="pd"><section>
+ <span class="lbl">貼上 Base64 或 Data URI（會自動去除空白、換行，並支援 URL 安全格式）</span>
+ <textarea id="din" spellcheck="false"></textarea>
+ <div class="row"><button class="pri" id="dgo">解碼並預覽</button><label class="btn">從文字檔載入<input type="file" id="dfile" accept=".txt,.b64,.base64,text/plain"></label><button id="dclr">清除</button><span class="err" id="derr"></span></div>
+ <div class="info" id="dinfo" style="display:none"></div>
+ <div class="row" id="dact" style="display:none">檔名：<input type="text" id="dname" style="width:200px"><button id="dsave" class="pri">下載檔案</button></div>
+ <div class="prev" id="dprev"></div>
+</section></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const te=new TextEncoder();
+/* ---------- 通用 ---------- */
+function bytesToB64(u){let s=[];for(let i=0;i<u.length;i+=30000)s.push(btoa(String.fromCharCode.apply(null,u.subarray(i,i+30000))));return s.join('')}
+function b64ToBytes(s){s=s.replace(/[\s]/g,'').replace(/-/g,'+').replace(/_/g,'/');if(/[^A-Za-z0-9+/=]/.test(s))throw new Error('含有非 Base64 字元');
+ s=s.replace(/=+$/,'');if(s.length%4===1)throw new Error('Base64 長度不正確');s+='='.repeat((4-s.length%4)%4);
+ const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+const utf8=u=>new TextDecoder('utf-8',{fatal:true}).decode(u);
+const size=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(2)+' MB';
+const copy=async(t,b)=>{try{await navigator.clipboard.writeText(t);const o=b.textContent;b.textContent='已複製';setTimeout(()=>b.textContent=o,1200)}catch(e){}};
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id===b.dataset.p))});
+
+/* ---------- 文字編解碼 ---------- */
+const B32='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const rot=(s,n)=>s.replace(/[a-z]/gi,c=>{const b=c<='Z'?65:97;return String.fromCharCode((c.charCodeAt(0)-b+n)%26+b)});
+const hx=u=>[...u].map(x=>x.toString(16).padStart(2,'0'));
+const CODECS={
+ b64:{n:'Base64',e:s=>bytesToB64(te.encode(s)),d:s=>utf8(b64ToBytes(s)),h:'標準 Base64（UTF-8 文字）。'},
+ b64u:{n:'Base64URL',e:s=>bytesToB64(te.encode(s)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),d:s=>utf8(b64ToBytes(s)),h:'URL／JWT 常用，以 - _ 取代 + /，不補 =。'},
+ b32:{n:'Base32',e:s=>{const u=te.encode(s);let bits='',o='';u.forEach(x=>bits+=x.toString(2).padStart(8,'0'));for(let i=0;i<bits.length;i+=5)o+=B32[parseInt(bits.slice(i,i+5).padEnd(5,'0'),2)];return o+'='.repeat((8-o.length%8)%8)},
+  d:s=>{s=s.replace(/[\s=]/g,'').toUpperCase();let bits='';for(const c of s){const i=B32.indexOf(c);if(i<0)throw new Error('含有非 Base32 字元');bits+=i.toString(2).padStart(5,'0')}const u=[];for(let i=0;i+8<=bits.length;i+=8)u.push(parseInt(bits.slice(i,i+8),2));return utf8(new Uint8Array(u))},h:'RFC 4648 Base32，常見於 TOTP 金鑰。'},
+ hex:{n:'十六進位 Hex',e:s=>hx(te.encode(s)).join(' '),d:s=>{s=s.replace(/0x|[\s,:]/gi,'');if(/[^0-9a-f]/i.test(s)||s.length%2)throw new Error('不是有效的 Hex');return utf8(Uint8Array.from(s.match(/../g)||[],x=>parseInt(x,16)))},h:'每個位元組兩位十六進位。'},
+ bin:{n:'二進位 Binary',e:s=>[...te.encode(s)].map(x=>x.toString(2).padStart(8,'0')).join(' '),d:s=>{s=s.replace(/\s/g,'');if(/[^01]/.test(s)||s.length%8)throw new Error('不是有效的二進位（需為 8 的倍數）');return utf8(Uint8Array.from(s.match(/.{8}/g)||[],x=>parseInt(x,2)))},h:'每個位元組 8 位元。'},
+ url:{n:'URL 百分比編碼',e:s=>encodeURIComponent(s),d:s=>decodeURIComponent(s.replace(/\+/g,' ')),h:'encodeURIComponent，空白會變 %20；解碼時 + 視為空白。'},
+ html:{n:'HTML 實體',e:s=>s.replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';').replace(/[^\x00-\x7f]/gu,c=>'&#x'+c.codePointAt(0).toString(16).toUpperCase()+';'),d:s=>new DOMParser().parseFromString(s,'text/html').documentElement.textContent,h:'特殊符號與非 ASCII 字元轉成 &#x…;，解碼支援 &amp; 等具名實體。'},
+ uni:{n:'Unicode 跳脫 \\uXXXX',e:s=>s.replace(/[^\x00-\x7f]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0')),d:s=>s.replace(/\\u\{([0-9a-f]+)\}/gi,(m,h)=>String.fromCodePoint(parseInt(h,16))).replace(/\\u([0-9a-f]{4})/gi,(m,h)=>String.fromCharCode(parseInt(h,16))),h:'JavaScript／JSON 字串常見；解碼也支援 \\u{1F600}。'},
+ qp:{n:'Quoted-Printable',e:s=>[...te.encode(s)].map(x=>(x>32&&x<127&&x!==61)||x===32?String.fromCharCode(x):'='+x.toString(16).toUpperCase().padStart(2,'0')).join('').replace(/\n/g,'\n'),d:s=>{s=s.replace(/=\r?\n/g,'');const o=[];for(let i=0;i<s.length;i++){if(s[i]==='='&&/^[0-9a-f]{2}$/i.test(s.substr(i+1,2))){o.push(parseInt(s.substr(i+1,2),16));i+=2}else o.push(...te.encode(s[i]))}return utf8(Uint8Array.from(o))},h:'電子郵件內文常見。'},
+ rot13:{n:'ROT13',e:s=>rot(s,13),d:s=>rot(s,13),h:'只位移英文字母，編碼與解碼相同（不是加密）。'},
+ esc:{n:'JSON 字串跳脫',e:s=>JSON.stringify(s).slice(1,-1),d:s=>JSON.parse('"'+s.replace(/"/g,'\\"').replace(/\\\\"/g,'\\"')+'"'),h:'換行、引號、反斜線轉成 \\n \\" \\\\。'}
+};
+$('fmt').innerHTML=Object.entries(CODECS).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('');
+const hint=()=>$('thint').textContent=CODECS[$('fmt').value].h;hint();$('fmt').onchange=hint;
+function run(m){$('terr').textContent='';try{$('tout').value=CODECS[$('fmt').value][m]($('tin').value)}catch(e){$('tout').value='';$('terr').textContent='失敗：'+(e.message||'輸入格式不正確')}}
+$('enc').onclick=()=>run('e');$('dec').onclick=()=>run('d');
+$('swp').onclick=()=>{$('tin').value=$('tout').value;$('tout').value=''};
+$('tcopy').onclick=e=>copy($('tout').value,e.target);
+$('tclr').onclick=()=>{$('tin').value=$('tout').value='';$('terr').textContent=''};
+
+/* ---------- 檔案 → Base64 ---------- */
+let F=null;
+const mk=(f,raw)=>{const m=f.type||'application/octet-stream';
+ const mode=$('fmode').value;
+ if(mode==='uri')return`data:${m};base64,${raw}`;
+ if(mode==='url')return raw.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+ if(mode==='wrap')return raw.replace(/.{76}/g,'$&\n');
+ if(mode==='html')return`<img src="data:${m};base64,${raw}" alt="">`;
+ return raw};
+function showF(){if(!F)return;const t=mk(F.file,F.raw);F.text=t;const LIM=200000;
+ $('fout').style.display='';$('fopt').style.display='';
+ $('fout').value=t.length>LIM?t.slice(0,LIM)+'\n…（內容過長，這裡只顯示前 '+LIM.toLocaleString()+' 字元；「複製」與「下載」仍為完整內容）':t;
+ $('fnote').textContent=`編碼後 ${t.length.toLocaleString()} 字元，約為原檔的 ${(t.length/Math.max(F.file.size,1)*100).toFixed(0)}%。`}
+async function doFile(f){if(!f)return;$('finfo').style.display='';$('finfo').textContent='處理中…';
+ try{const u=new Uint8Array(await f.arrayBuffer());F={file:f,raw:bytesToB64(u)};
+  $('finfo').textContent=`${f.name}｜${f.type||'未知類型'}｜${size(f.size)}`;showF()}catch(e){$('finfo').textContent='讀取失敗：'+e.message}}
+$('ffile').onchange=e=>doFile(e.target.files[0]);
+const dz=$('fdrop');['dragenter','dragover'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.remove('over')}));
+dz.addEventListener('drop',e=>doFile(e.dataTransfer.files[0]));
+$('fmode').onchange=showF;
+$('fcopy').onclick=e=>F&&copy(F.text,e.target);
+$('fsave').onclick=()=>F&&dl(new Blob([F.text],{type:'text/plain'}),F.file.name+'.base64.txt');
+
+/* ---------- Base64 → 檔案 ---------- */
+const SIG=[['89504E47','png','image/png','PNG 圖片'],['FFD8FF','jpg','image/jpeg','JPEG 圖片'],['47494638','gif','image/gif','GIF 圖片'],['25504446','pdf','application/pdf','PDF 文件'],
+ ['504B0304','zip','application/zip','ZIP／Office 壓縮檔（docx、xlsx、pptx、apk、jar 皆同格式）'],['52617221','rar','application/vnd.rar','RAR 壓縮檔'],['377ABCAF','7z','application/x-7z-compressed','7-Zip 壓縮檔'],['1F8B08','gz','application/gzip','GZIP 壓縮檔'],
+ ['4F676753','ogg','audio/ogg','OGG 音訊'],['664C6143','flac','audio/flac','FLAC 音訊'],['494433','mp3','audio/mpeg','MP3 音訊'],['FFFB','mp3','audio/mpeg','MP3 音訊'],['FFF3','mp3','audio/mpeg','MP3 音訊'],['1A45DFA3','webm','video/webm','WebM／MKV 影片'],
+ ['4D5A','exe','application/vnd.microsoft.portable-executable','Windows 執行檔 (EXE／DLL)'],['7F454C46','elf','application/x-executable','Linux ELF 執行檔'],['CAFEBABE','class','application/java-vm','Java class／Mach-O Universal'],['CFFAEDFE','macho','application/x-mach-binary','macOS Mach-O 執行檔'],
+ ['0061736D','wasm','application/wasm','WebAssembly'],['53514C69746520666F726D6174203300','sqlite','application/vnd.sqlite3','SQLite 資料庫'],['424D','bmp','image/bmp','BMP 圖片'],['00000100','ico','image/x-icon','ICO 圖示'],['D0CF11E0','doc','application/msword','舊版 Office 文件 (doc／xls／ppt)'],['7B5C72746631','rtf','application/rtf','RTF 文件'],['774F4646','woff','font/woff','WOFF 字型'],['774F4632','woff2','font/woff2','WOFF2 字型']];
+function sniff(u){const h=hx(u.subarray(0,16)).join('').toUpperCase();
+ for(const [s,e,m,n] of SIG)if(h.startsWith(s))return{e,m,n};
+ if(h.startsWith('52494646')){const t=String.fromCharCode(...u.subarray(8,12));if(t==='WEBP')return{e:'webp',m:'image/webp',n:'WebP 圖片'};if(t==='WAVE')return{e:'wav',m:'audio/wav',n:'WAV 音訊'};if(t==='AVI ')return{e:'avi',m:'video/x-msvideo',n:'AVI 影片'}}
+ if(u.length>11&&String.fromCharCode(...u.subarray(4,8))==='ftyp'){const b=String.fromCharCode(...u.subarray(8,12));return b.startsWith('M4A')?{e:'m4a',m:'audio/mp4',n:'M4A 音訊'}:b.startsWith('heic')||b.startsWith('mif1')?{e:'heic',m:'image/heic',n:'HEIC 圖片'}:{e:'mp4',m:'video/mp4',n:'MP4／MOV 影片'}}
+ try{const t=utf8(u.subarray(0,Math.min(u.length,4096))).trimStart();
+  if(/^<svg|^<\?xml[\s\S]*<svg/i.test(t))return{e:'svg',m:'image/svg+xml',n:'SVG 圖片'};
+  if(/^<!doctype html|^<html/i.test(t))return{e:'html',m:'text/html',n:'HTML 文字'};
+  if(/^[\[{]/.test(t)){try{JSON.parse(utf8(u));return{e:'json',m:'application/json',n:'JSON 文字'}}catch(e){}}
+  if(!/[\x00-\x08\x0e-\x1f]/.test(t))return{e:'txt',m:'text/plain',n:'純文字'}}catch(e){}
+ return{e:'bin',m:'application/octet-stream',n:'未知二進位資料'}}
+let D=null,pu=null;
+function decodeB64(){$('derr').textContent='';$('dprev').innerHTML='';if(pu){URL.revokeObjectURL(pu);pu=null}
+ let s=$('din').value.trim(),mime='';const m=s.match(/^data:([^;,]*)?(;[^,]*)?,/i);if(m){mime=m[1]||'';s=s.slice(m[0].length)}
+ if(!s){D=null;return}
+ let u;try{u=b64ToBytes(s)}catch(e){$('derr').textContent='解碼失敗：'+e.message;$('dinfo').style.display=$('dact').style.display='none';D=null;return}
+ const t=sniff(u);let ext=t.e,mt=t.m;if(mime&&(t.e==='bin'||t.e==='txt')){mt=mime;ext=(mime.split('/')[1]||'bin').split('+')[0].replace('plain','txt').replace('jpeg','jpg')}
+ D={u,mt,ext};
+ $('dinfo').style.display=$('dact').style.display='';
+ $('dinfo').innerHTML=`偵測結果：<b>${t.n}</b>${mime?`（Data URI 宣告：${mime}）`:''}｜解碼後大小 ${size(u.length)}｜MIME：${mt}`;
+ if(!$('dname').dataset.u||!$('dname').value)$('dname').value='decoded.'+ext;
+ pu=URL.createObjectURL(new Blob([u],{type:mt}));const p=$('dprev');
+ if(mt.startsWith('image/')&&mt!=='image/heic'){p.innerHTML=`<img src="${pu}" alt="預覽">`}
+ else if(mt.startsWith('audio/'))p.innerHTML=`<audio controls src="${pu}"></audio>`;
+ else if(mt.startsWith('video/'))p.innerHTML=`<video controls src="${pu}"></video>`;
+ else if(mt==='application/pdf')p.innerHTML=`<iframe src="${pu}" title="PDF 預覽"></iframe>`;
+ else if(mt.startsWith('text/')||mt==='application/json'){const x=document.createElement('textarea');x.readOnly=true;x.value=utf8(u).slice(0,50000);p.appendChild(x)}
+ else if(/executable|mach|java-vm|wasm|portable/.test(mt)){p.innerHTML='<div class="warn" style="text-align:left">這是可執行檔，已停用預覽。請先確認來源可信，再下載；建議先用防毒軟體掃描，且不要直接執行。</div>'}
+ else p.innerHTML='<p class="tip">此類型無法在瀏覽器預覽，請直接下載。</p>'}
+$('dgo').onclick=decodeB64;
+$('dname').oninput=()=>$('dname').dataset.u=1;
+$('dsave').onclick=()=>D&&dl(new Blob([D.u],{type:D.mt}),$('dname').value.trim()||'decoded.'+D.ext);
+$('dfile').onchange=async e=>{const f=e.target.files[0];if(f){$('din').value=await f.text();$('dname').dataset.u='';decodeB64()}};
+$('dclr').onclick=()=>{$('din').value='';$('dname').value='';$('dname').dataset.u='';$('derr').textContent='';$('dprev').innerHTML='';$('dinfo').style.display=$('dact').style.display='none';D=null};
+</script>
+</body>
+</html>
