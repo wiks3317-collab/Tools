@@ -40,7 +40,6 @@ option{background:var(--card);color:var(--fg)}
 .err{color:#bf616a}
 .tw{overflow-x:auto;border:1px solid var(--bd);border-radius:6px}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
-.t-main{min-width:920px}.t-unit{min-width:640px}
 th,td{text-align:left;padding:8px 10px;border-bottom:1px dashed var(--bd);vertical-align:top;overflow-wrap:anywhere}
 th{font-size:12px;color:var(--mut);font-weight:500;background:var(--gut);white-space:nowrap}
 tr:last-child td{border-bottom:0}
@@ -51,8 +50,9 @@ tr:hover td{background:var(--gut)}
 .tag.a{border-color:var(--pri);color:var(--pri)}
 .sm{color:var(--mut);font-size:12px}
 .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--mut)}
-.acts{white-space:nowrap}
-.acts button,.acts a{font-size:12px;padding:2px 9px;margin:0 4px 4px 0;display:inline-block}
+.acts{white-space:normal}
+.acts button,.acts a{font-size:12px;padding:2px 9px;margin:0 4px 4px 0;display:inline-block;line-height:1.5}
+.t-main .acts button,.t-main .acts a{display:block;width:max-content;max-width:100%;margin:0 0 5px}
 .acts a{border:1px solid var(--bd);border-radius:6px;text-decoration:none}
 .acts a:hover{border-color:var(--pri)}
 .chip-btn{display:inline-block;font-size:12px;color:var(--pri);border:1px solid var(--pri);border-radius:12px;padding:1px 9px;margin:4px 6px 0 0;cursor:pointer;background:transparent}
@@ -71,8 +71,8 @@ dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:8px 0}
 dt{color:var(--mut);font-size:12px}dd{margin:0;overflow-wrap:anywhere}
 footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
 /* 欄寬：機關欄加寬，標案名稱吃剩餘空間 */
-.t-main col.c-date{width:104px}.t-main col.c-type{width:128px}.t-main col.c-unit{width:28%}.t-main col.c-title{width:auto}.t-main col.c-act{width:128px}
-.t-unit col.c-code{width:150px}.t-unit col.c-name{width:auto}.t-unit col.c-act{width:210px}
+.t-main col.c-date{width:100px}.t-main col.c-type{width:12%}.t-main col.c-unit{width:24%}.t-main col.c-title{width:auto}.t-main col.c-act{width:92px}
+.t-unit col.c-code{width:22%}.t-unit col.c-name{width:auto}.t-unit col.c-act{width:150px}
 </style>
 <link rel="stylesheet" href="style.css">
 </head>
@@ -266,12 +266,12 @@ $('utb').addEventListener('click', async e => {
 /* ===== 標案查詢 ===== */
 let S = { records: [], page: 0, totalPages: 0, total: 0, mode: '', q: '', busy: false };
 const https = u => String(u || '').replace(/^http:\/\//i, 'https://');
-// 官網連結：優先用日期＋檔名組成採購網公告網址；沒有檔名時才退回 API 給的 url
-function officialUrl(r) {
-  if (r.filename && r.date) {
-    return `https://web.pcc.gov.tw/prkms/tender/common/noticeDate/redirectPublic?ds=${encodeURIComponent(r.date)}&fn=${encodeURIComponent(r.filename)}`;
-  }
-  return r.url ? https(r.url) : '';
+// 全文檢索：用標案案號查，查到後在結果按「檢視」。招標、決標公告都適用。
+function searchUrl(r) {
+  if (!r.job_number) return '';
+  const status = /決標/.test(r.brief?.type || '') ? '決標' : '招標';
+  const roc = Number(String(r.date).slice(0, 4)) - 1911;
+  return `https://web.pcc.gov.tw/prkms/tender/common/bulletion/readBulletion?querySentence=${encodeURIComponent(r.job_number)}&tenderStatusType=${encodeURIComponent(status)}&sortCol=TENDER_NOTICE_DATE&timeRange=${roc}&pageSize=10`;
 }
 // 詳細資料 API：用機關代碼＋標案案號自行組網址（一律 https）
 function detailUrl(r) {
@@ -388,8 +388,8 @@ function render() {
   $('tb').innerHTML = rows.length ? rows.map(r => {
     const b = r.brief || {};
     const cos = b.companies?.names?.length ? `<div class="sm">廠商：${esc(b.companies.names.join('、'))}</div>` : '';
-    const ou = officialUrl(r);
-    const link = ou ? `<a href="${esc(ou)}" target="_blank" rel="noopener">官網</a>` : '';
+    const su = searchUrl(r);
+    const link = su ? `<a href="${esc(su)}" target="_blank" rel="noopener" title="用標案案號在採購網查詢，結果頁按「檢視」">案號查詢</a>` : '';
     return `<tr><td class="d">${fmtDate(r.date)}</td>
       <td><span class="tag ${tagCls(b.type || '')}">${esc(b.type || '—')}</span></td>
       <td>${esc(r.unit_name)}<div class="code">${esc(r.unit_id)}</div></td>
