@@ -1,442 +1,506 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>政府標案查詢</title>
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%91%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
-a{color:var(--pri)}
-.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-h1{margin:0;font-size:20px}
-.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
-.sub,.msg{color:var(--mut);font-size:12px;margin:2px 0 0}
-.msg{font-size:13px;margin-top:8px}
-.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
-.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
-.sw.on{outline:2px solid var(--pri);outline-offset:2px}
-section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
-h2{font-size:15px;margin:0 0 10px}
-button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
-button:hover:not(:disabled){border-color:var(--pri)}
-button:disabled{opacity:.4;cursor:default}
-.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
-select,input[type=text]{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
-option{background:var(--card);color:var(--fg)}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
-.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
-.panel{display:none}.panel.on{display:block}
-.row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:10px 0}
-.row label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut);cursor:default}
-.grow{flex:1 1 280px}.grow input{width:100%}
-.warn{color:var(--mut);font-size:12px;border-left:3px solid #bf616a;padding:6px 10px;margin:8px 0;background:var(--gut)}
-.err{color:#bf616a}
-.tw{overflow-x:auto;border:1px solid var(--bd);border-radius:6px}
-table{border-collapse:collapse;width:100%;table-layout:fixed}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px dashed var(--bd);vertical-align:top;overflow-wrap:anywhere}
-th{font-size:12px;color:var(--mut);font-weight:500;background:var(--gut);white-space:nowrap}
-tr:last-child td{border-bottom:0}
-tr:hover td{background:var(--gut)}
-.d{color:var(--mut);white-space:nowrap}
-.tag{display:inline-block;max-width:100%;padding:1px 9px;border-radius:10px;font-size:12px;line-height:1.45;white-space:normal;overflow-wrap:anywhere;border:1px solid var(--bd);color:var(--mut)}
-.tag.t{border-color:#d08770;color:#d08770}
-.tag.a{border-color:var(--pri);color:var(--pri)}
-.sm{color:var(--mut);font-size:12px}
-.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--mut)}
-.acts{white-space:normal}
-.acts button,.acts a{font-size:12px;padding:2px 9px;margin:0 4px 4px 0;display:inline-block;line-height:1.5}
-.t-main .acts button,.t-main .acts a{display:block;width:max-content;max-width:100%;margin:0 0 5px}
-.acts a{border:1px solid var(--bd);border-radius:6px;text-decoration:none}
-.acts a:hover{border-color:var(--pri)}
-.chip-btn{display:inline-block;font-size:12px;color:var(--pri);border:1px solid var(--pri);border-radius:12px;padding:1px 9px;margin:4px 6px 0 0;cursor:pointer;background:transparent}
-.pick{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.bars{display:grid;gap:8px}
-.bar{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center}
-.track{display:flex;flex-direction:column;gap:3px}
-.seg{height:14px;border-radius:3px;min-width:2px;position:relative}
-.seg.t{background:#d08770}.seg.a{background:var(--pri)}
-.seg span{position:absolute;left:calc(100% + 6px);top:-3px;font-size:12px;color:var(--mut);white-space:nowrap}
-.legend{display:flex;gap:14px;font-size:12px;color:var(--mut);margin-bottom:10px}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
-dialog{width:min(660px,92vw);max-height:84vh;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:16px}
-dialog::backdrop{background:rgba(0,0,0,.45)}
-dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:8px 0}
-dt{color:var(--mut);font-size:12px}dd{margin:0;overflow-wrap:anywhere}
-footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
-/* 欄寬：機關欄加寬，標案名稱吃剩餘空間 */
-.t-main col.c-date{width:100px}.t-main col.c-type{width:12%}.t-main col.c-unit{width:24%}.t-main col.c-title{width:auto}.t-main col.c-act{width:92px}
-.t-unit col.c-code{width:22%}.t-unit col.c-name{width:auto}.t-unit col.c-act{width:150px}
-</style>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="wrap">
-<header>
-  <div>
-    <a class="back" href="index.html">← 返回小工具集</a>
-    <h1>政府標案查詢</h1>
-    <p class="sub">查詢各機關的招標、決標公告，可用機關名稱查代碼，並依年度統計。</p>
-  </div>
-  <div class="themes" id="themes">主題：</div>
-</header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>政府標案查詢</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%91%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}
+    </script>
+    <style>
+      *{box-sizing:border-box}
+      body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
+      a{color:var(--pri)}
+      .wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}
+      header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+      h1{margin:0;font-size:20px}
+      .back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
+      .sub,.msg{color:var(--mut);font-size:12px;margin:2px 0 0}
+      .msg{font-size:13px;margin-top:8px}
+      .themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+      .sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
+      .sw.on{outline:2px solid var(--pri);outline-offset:2px}
+      section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+      h2{font-size:15px;margin:0 0 10px}
+      button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
+      button:hover:not(:disabled){border-color:var(--pri)}
+      button:disabled{opacity:.4;cursor:default}
+      .pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+      select,input[type=text]{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
+      option{background:var(--card);color:var(--fg)}
+      .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+      .tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+      .panel{display:none}.panel.on{display:block}
+      .row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:10px 0}
+      .row label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut);cursor:default}
+      .grow{flex:1 1 280px}.grow input{width:100%}
+      .warn{color:var(--mut);font-size:12px;border-left:3px solid #bf616a;padding:6px 10px;margin:8px 0;background:var(--gut)}
+      .err{color:#bf616a}
+      .tw{overflow-x:auto;border:1px solid var(--bd);border-radius:6px}
+      table{border-collapse:collapse;width:100%;table-layout:fixed}
+      th,td{text-align:left;padding:8px 10px;border-bottom:1px dashed var(--bd);vertical-align:top;overflow-wrap:anywhere}
+      th{font-size:12px;color:var(--mut);font-weight:500;background:var(--gut);white-space:nowrap}
+      tr:last-child td{border-bottom:0}
+      tr:hover td{background:var(--gut)}
+      .d{color:var(--mut);white-space:nowrap}
+      .tag{display:inline-block;max-width:100%;padding:1px 9px;border-radius:10px;font-size:12px;line-height:1.45;white-space:normal;overflow-wrap:anywhere;border:1px solid var(--bd);color:var(--mut)}
+      .tag.t{border-color:#d08770;color:#d08770}
+      .tag.a{border-color:var(--pri);color:var(--pri)}
+      .sm{color:var(--mut);font-size:12px}
+      .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--mut)}
+      .acts{white-space:normal}
+      .acts button,.acts a{font-size:12px;padding:2px 9px;margin:0 4px 4px 0;display:inline-block;line-height:1.5}
+      .t-main .acts button,.t-main .acts a{display:block;width:max-content;max-width:100%;margin:0 0 5px}
+      .acts a{border:1px solid var(--bd);border-radius:6px;text-decoration:none}
+      .acts a:hover{border-color:var(--pri)}
+      .chip-btn{display:inline-block;font-size:12px;color:var(--pri);border:1px solid var(--pri);border-radius:12px;padding:1px 9px;margin:4px 6px 0 0;cursor:pointer;background:transparent}
+      .pick{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+      .bars{display:grid;gap:8px}
+      .bar{display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center}
+      .track{display:flex;flex-direction:column;gap:3px}
+      .seg{height:14px;border-radius:3px;min-width:2px;position:relative}
+      .seg.t{background:#d08770}.seg.a{background:var(--pri)}
+      .seg span{position:absolute;left:calc(100% + 6px);top:-3px;font-size:12px;color:var(--mut);white-space:nowrap}
+      .legend{display:flex;gap:14px;font-size:12px;color:var(--mut);margin-bottom:10px}
+      .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+      dialog{width:min(660px,92vw);max-height:84vh;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:16px}
+      dialog::backdrop{background:rgba(0,0,0,.45)}
+      dl{display:grid;grid-template-columns:max-content 1fr;gap:5px 14px;margin:8px 0}
+      dt{color:var(--mut);font-size:12px}dd{margin:0;overflow-wrap:anywhere}
+      footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
+      /* 欄寬：機關欄加寬，標案名稱吃剩餘空間 */
+      .t-main col.c-date{width:100px}.t-main col.c-type{width:12%}.t-main col.c-unit{width:24%}.t-main col.c-title{width:auto}.t-main col.c-act{width:92px}
+      .t-unit col.c-code{width:22%}.t-unit col.c-name{width:auto}.t-unit col.c-act{width:150px}
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <a class="back" href="index.html">← 返回小工具集</a>
+          <h1>政府標案查詢</h1>
+          <p class="sub">查詢各機關的招標、決標公告，可用機關名稱查代碼，並依年度統計。</p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
 
-<div class="tabs" role="tablist">
-  <button class="on" data-p="p-search">標案查詢</button>
-  <button data-p="p-unit">機關名稱／代碼</button>
-  <button data-p="p-stat">年度統計</button>
-</div>
+      <div class="tabs" role="tablist">
+        <button class="on" data-p="p-search">標案查詢</button>
+        <button data-p="p-unit">機關名稱／代碼</button>
+        <button data-p="p-stat">年度統計</button>
+      </div>
 
-<div class="panel on" id="p-search">
-  <section>
-    <h2>查詢條件</h2>
-    <form class="row" id="f">
-      <label>查詢方式
-        <select id="mode">
-          <option value="unit">機關（名稱或代碼）</option>
-          <option value="searchbytitle">標案名稱</option>
-          <option value="searchbycompanyname">廠商名稱</option>
-        </select>
-      </label>
-      <label class="grow">關鍵字
-        <input type="text" id="q" placeholder="例如：教育部、3.1.2、資訊系統" required>
-      </label>
-      <button class="pri" id="go">搜尋</button>
-    </form>
-    <div id="pick"></div>
-    <p class="msg" id="st">尚未搜尋。</p>
-  </section>
+      <div class="panel on" id="p-search">
+        <section>
+          <h2>查詢條件</h2>
+          <form class="row" id="f">
+            <label
+              >查詢方式
+              <select id="mode">
+                <option value="unit">機關（名稱或代碼）</option>
+                <option value="searchbytitle">標案名稱</option>
+                <option value="searchbycompanyname">廠商名稱</option>
+              </select>
+            </label>
+            <label class="grow"
+              >關鍵字
+              <input type="text" id="q" placeholder="例如：教育部、3.1.2、資訊系統" required />
+            </label>
+            <button class="pri" id="go">搜尋</button>
+          </form>
+          <div id="pick"></div>
+          <p class="msg" id="st">尚未搜尋。</p>
+        </section>
 
-  <section>
-    <h2>篩選與載入</h2>
-    <div class="row">
-      <label>公告類型
-        <select id="ftype"><option value="">全部</option><option value="招標">招標公告</option><option value="決標">決標公告</option></select>
-      </label>
-      <label>年度<select id="fyear"><option value="">全部</option></select></label>
-      <label>機關名稱包含<input type="text" id="funit" placeholder="例如：教育"></label>
-      <button id="more" disabled>載入下一頁</button>
-      <button id="all" disabled>載入全部（最多 20 頁）</button>
+        <section>
+          <h2>篩選與載入</h2>
+          <div class="row">
+            <label
+              >公告類型
+              <select id="ftype">
+                <option value="">全部</option>
+                <option value="招標">招標公告</option>
+                <option value="決標">決標公告</option>
+              </select>
+            </label>
+            <label
+              >年度<select id="fyear">
+                <option value="">全部</option>
+              </select></label
+            >
+            <label>機關名稱包含<input type="text" id="funit" placeholder="例如：教育" /></label>
+            <button id="more" disabled>載入下一頁</button>
+            <button id="all" disabled>載入全部（最多 20 頁）</button>
+          </div>
+        </section>
+
+        <section>
+          <div class="tw">
+            <table class="t-main">
+              <colgroup>
+                <col class="c-date" />
+                <col class="c-type" />
+                <col class="c-unit" />
+                <col class="c-title" />
+                <col class="c-act" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>類型</th>
+                  <th>機關</th>
+                  <th>標案名稱</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tb">
+                <tr>
+                  <td colspan="5" class="sm">輸入關鍵字後按「搜尋」。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="panel" id="p-unit">
+        <section>
+          <h2>機關名稱／代碼對照</h2>
+          <form class="row" id="uf">
+            <label class="grow"
+              >輸入機關名稱或代碼
+              <input type="text" id="uq" placeholder="例如：臺北市政府、教育部、3.1" required />
+            </label>
+            <button class="pri">查詢</button>
+          </form>
+          <p class="msg" id="ust">第一次查詢會下載機關清單，需要幾秒鐘。</p>
+          <div class="tw" style="margin-top:8px">
+            <table class="t-unit">
+              <colgroup>
+                <col class="c-code" />
+                <col class="c-name" />
+                <col class="c-act" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>機關代碼</th>
+                  <th>機關名稱</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="utb">
+                <tr>
+                  <td colspan="3" class="sm">尚無結果。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="panel" id="p-stat">
+        <section>
+          <h2>年度統計</h2>
+          <div class="legend">
+            <span><i style="background:#d08770"></i>招標公告</span
+            ><span><i style="background:var(--pri)"></i>決標公告</span>
+          </div>
+          <div class="bars" id="bars"><p class="sm">尚無資料。</p></div>
+          <p class="warn">
+            統計的是已載入的公告筆數，並套用「標案查詢」頁的篩選。要得到完整年度數字，請先按「載入全部」。
+          </p>
+        </section>
+      </div>
+
+      <dialog id="dlg">
+        <div id="dbody"></div>
+        <p style="text-align:right;margin:12px 0 0"><button id="dclose">關閉</button></p>
+      </dialog>
+
+      <footer>
+        資料來源：<a href="https://web.pcc.gov.tw" target="_blank" rel="noopener">政府電子採購網</a
+        >，經
+        <a href="https://pcc-api.openfun.app/" target="_blank" rel="noopener">g0v 標案 API</a>
+        整理。僅供參考，請以官網公告為準。
+      </footer>
     </div>
-  </section>
 
-  <section>
-    <div class="tw">
-      <table class="t-main">
-        <colgroup><col class="c-date"><col class="c-type"><col class="c-unit"><col class="c-title"><col class="c-act"></colgroup>
-        <thead><tr><th>日期</th><th>類型</th><th>機關</th><th>標案名稱</th><th>操作</th></tr></thead>
-        <tbody id="tb"><tr><td colspan="5" class="sm">輸入關鍵字後按「搜尋」。</td></tr></tbody>
-      </table>
-    </div>
-  </section>
-</div>
+    <script>
+      const API = 'https://pcc-api.openfun.app/api';
+      const $ = id => document.getElementById(id);
+      const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-<div class="panel" id="p-unit">
-  <section>
-    <h2>機關名稱／代碼對照</h2>
-    <form class="row" id="uf">
-      <label class="grow">輸入機關名稱或代碼
-        <input type="text" id="uq" placeholder="例如：臺北市政府、教育部、3.1" required>
-      </label>
-      <button class="pri">查詢</button>
-    </form>
-    <p class="msg" id="ust">第一次查詢會下載機關清單，需要幾秒鐘。</p>
-    <div class="tw" style="margin-top:8px">
-      <table class="t-unit">
-        <colgroup><col class="c-code"><col class="c-name"><col class="c-act"></colgroup>
-        <thead><tr><th>機關代碼</th><th>機關名稱</th><th>操作</th></tr></thead>
-        <tbody id="utb"><tr><td colspan="3" class="sm">尚無結果。</td></tr></tbody>
-      </table>
-    </div>
-  </section>
-</div>
+      /* ===== 主題（與小工具集共用） ===== */
+      const THEMES = [['auto','跟隨系統','#ffffff','#2b313c'],['light','淺色','#f5f6f7','#4f729b'],['dark','深色','#232831','#88c0d0'],
+        ['sepia','護眼米黃','#f3efe7','#8c6a43'],['forest','森林綠','#eff2ee','#4f7a62'],['ocean','深海藍','#1b2631','#7fb7cc'],['dracula','紫夜','#252833','#a8a0d6']];
+      function applyTheme(t){
+        if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+        try { localStorage.setItem('tools-theme', t); } catch(e){}
+        document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+      }
+      THEMES.forEach(([id, name, c1, c2]) => {
+        const b = document.createElement('button');
+        b.className = 'sw'; b.dataset.t = id; b.title = name;
+        b.style.background = `linear-gradient(135deg,${c1} 50%,${c2} 50%)`;
+        b.onclick = () => applyTheme(id);
+        $('themes').appendChild(b);
+      });
+      applyTheme(document.documentElement.dataset.theme || 'auto');
 
-<div class="panel" id="p-stat">
-  <section>
-    <h2>年度統計</h2>
-    <div class="legend"><span><i style="background:#d08770"></i>招標公告</span><span><i style="background:var(--pri)"></i>決標公告</span></div>
-    <div class="bars" id="bars"><p class="sm">尚無資料。</p></div>
-    <p class="warn">統計的是已載入的公告筆數，並套用「標案查詢」頁的篩選。要得到完整年度數字，請先按「載入全部」。</p>
-  </section>
-</div>
+      /* ===== 分頁 ===== */
+      function showTab(id) {
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === id));
+        document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === id));
+      }
+      document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) showTab(b.dataset.p); });
 
-<dialog id="dlg">
-  <div id="dbody"></div>
-  <p style="text-align:right;margin:12px 0 0"><button id="dclose">關閉</button></p>
-</dialog>
+      /* ===== 機關清單 ===== */
+      let UNITS = new Map();   // id -> name
+      let unitsLoaded = false;
 
-<footer>資料來源：<a href="https://web.pcc.gov.tw" target="_blank" rel="noopener">政府電子採購網</a>，經 <a href="https://pcc-api.openfun.app/" target="_blank" rel="noopener">g0v 標案 API</a> 整理。僅供參考，請以官網公告為準。</footer>
-</div>
+      function collectUnits(node, out) {
+        if (Array.isArray(node)) { node.forEach(n => collectUnits(n, out)); return; }
+        if (!node || typeof node !== 'object') return;
+        const id = node.unit_id ?? node.id ?? node.code;
+        const name = node.unit_name ?? node.name;
+        if (typeof id === 'string' && typeof name === 'string') out.set(id, name);
+        for (const [k, v] of Object.entries(node)) {
+          if (typeof v === 'string' && /^[\d.]+$/.test(k)) out.set(k, v);
+          else if (v && typeof v === 'object') collectUnits(v, out);
+        }
+      }
 
-<script>
-const API = 'https://pcc-api.openfun.app/api';
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      async function loadUnits() {
+        if (unitsLoaded) return;
+        const res = await fetch(`${API}/unit`);
+        if (!res.ok) throw new Error('機關清單載入失敗（' + res.status + '）');
+        collectUnits(await res.json(), UNITS);
+        if (!UNITS.size) throw new Error('機關清單格式無法辨識');
+        unitsLoaded = true;
+      }
 
-/* ===== 主題（與小工具集共用） ===== */
-const THEMES = [['auto','跟隨系統','#ffffff','#2b313c'],['light','淺色','#f5f6f7','#4f729b'],['dark','深色','#232831','#88c0d0'],
-  ['sepia','護眼米黃','#f3efe7','#8c6a43'],['forest','森林綠','#eff2ee','#4f7a62'],['ocean','深海藍','#1b2631','#7fb7cc'],['dracula','紫夜','#252833','#a8a0d6']];
-function applyTheme(t){
-  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
-  try { localStorage.setItem('tools-theme', t); } catch(e){}
-  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-}
-THEMES.forEach(([id, name, c1, c2]) => {
-  const b = document.createElement('button');
-  b.className = 'sw'; b.dataset.t = id; b.title = name;
-  b.style.background = `linear-gradient(135deg,${c1} 50%,${c2} 50%)`;
-  b.onclick = () => applyTheme(id);
-  $('themes').appendChild(b);
-});
-applyTheme(document.documentElement.dataset.theme || 'auto');
+      function findUnits(q) {
+        q = q.trim().toLowerCase();
+        const hits = [];
+        UNITS.forEach((name, id) => { if (id.toLowerCase().startsWith(q) || name.toLowerCase().includes(q)) hits.push([id, name]); });
+        return hits.sort((a, b) => a[0].localeCompare(b[0], 'en', { numeric: true }));
+      }
 
-/* ===== 分頁 ===== */
-function showTab(id) {
-  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.p === id));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === id));
-}
-document.querySelector('.tabs').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) showTab(b.dataset.p); });
+      async function copy(text) {
+        try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; }
+      }
 
-/* ===== 機關清單 ===== */
-let UNITS = new Map();   // id -> name
-let unitsLoaded = false;
+      $('uf').addEventListener('submit', async e => {
+        e.preventDefault();
+        const q = $('uq').value.trim();
+        if (!q) return;
+        $('ust').textContent = '查詢中…';
+        try { await loadUnits(); } catch (err) {
+          $('ust').innerHTML = `<span class="err">${esc(err.message)}。</span>也可以先用「標案查詢」找到公告，列表的機關欄位會顯示代碼。`;
+          return;
+        }
+        const hits = findUnits(q);
+        $('ust').textContent = hits.length ? `找到 ${hits.length} 個機關${hits.length > 200 ? '，只顯示前 200 個，請輸入更完整的名稱' : ''}。` : '找不到符合的機關，請換個關鍵字。';
+        $('utb').innerHTML = hits.length ? hits.slice(0, 200).map(([id, name]) =>
+          `<tr><td class="code">${esc(id)}</td><td>${esc(name)}</td>
+           <td class="acts"><button data-copy="${esc(id)}">複製代碼</button><button data-go="${esc(id)}" data-name="${esc(name)}">查詢標案</button></td></tr>`).join('')
+          : '<tr><td colspan="3" class="sm">沒有符合的機關。</td></tr>';
+      });
 
-function collectUnits(node, out) {
-  if (Array.isArray(node)) { node.forEach(n => collectUnits(n, out)); return; }
-  if (!node || typeof node !== 'object') return;
-  const id = node.unit_id ?? node.id ?? node.code;
-  const name = node.unit_name ?? node.name;
-  if (typeof id === 'string' && typeof name === 'string') out.set(id, name);
-  for (const [k, v] of Object.entries(node)) {
-    if (typeof v === 'string' && /^[\d.]+$/.test(k)) out.set(k, v);
-    else if (v && typeof v === 'object') collectUnits(v, out);
-  }
-}
+      $('utb').addEventListener('click', async e => {
+        const c = e.target.closest('button[data-copy]');
+        if (c) { const ok = await copy(c.dataset.copy); c.textContent = ok ? '已複製' : '請手動複製'; setTimeout(() => c.textContent = '複製代碼', 1200); return; }
+        const g = e.target.closest('button[data-go]');
+        if (g) { showTab('p-search'); $('mode').value = 'unit'; $('q').value = g.dataset.go; runQuery('listbyunit', g.dataset.go, g.dataset.name); }
+      });
 
-async function loadUnits() {
-  if (unitsLoaded) return;
-  const res = await fetch(`${API}/unit`);
-  if (!res.ok) throw new Error('機關清單載入失敗（' + res.status + '）');
-  collectUnits(await res.json(), UNITS);
-  if (!UNITS.size) throw new Error('機關清單格式無法辨識');
-  unitsLoaded = true;
-}
+      /* ===== 標案查詢 ===== */
+      let S = { records: [], page: 0, totalPages: 0, total: 0, mode: '', q: '', busy: false };
+      const https = u => String(u || '').replace(/^http:\/\//i, 'https://');
+      // 全文檢索：用標案案號查，查到後在結果按「檢視」。招標、決標公告都適用。
+      function searchUrl(r) {
+        if (!r.job_number) return '';
+        const status = /決標/.test(r.brief?.type || '') ? '決標' : '招標';
+        const roc = Number(String(r.date).slice(0, 4)) - 1911;
+        return `https://web.pcc.gov.tw/prkms/tender/common/bulletion/readBulletion?querySentence=${encodeURIComponent(r.job_number)}&tenderStatusType=${encodeURIComponent(status)}&sortCol=TENDER_NOTICE_DATE&timeRange=${roc}&pageSize=10`;
+      }
+      // 詳細資料 API：用機關代碼＋標案案號自行組網址（一律 https）
+      function detailUrl(r) {
+        if (r.unit_id && r.job_number) return `${API}/tender?unit_id=${encodeURIComponent(r.unit_id)}&job_number=${encodeURIComponent(r.job_number)}`;
+        return https(r.tender_api_url);
+      }
+      const yearOf = r => String(r.date).slice(0, 4);
+      const fmtDate = d => { d = String(d); return d.length === 8 ? `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6)}` : d; };
+      const tagCls = t => /招標/.test(t) ? 't' : /決標/.test(t) ? 'a' : '';
 
-function findUnits(q) {
-  q = q.trim().toLowerCase();
-  const hits = [];
-  UNITS.forEach((name, id) => { if (id.toLowerCase().startsWith(q) || name.toLowerCase().includes(q)) hits.push([id, name]); });
-  return hits.sort((a, b) => a[0].localeCompare(b[0], 'en', { numeric: true }));
-}
+      function apiUrl(mode, q, page) {
+        return `${API}/${mode}?${mode === 'listbyunit' ? 'unit_id' : 'query'}=${encodeURIComponent(q)}&page=${page}`;
+      }
 
-async function copy(text) {
-  try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; }
-}
+      async function loadPage(page) {
+        const res = await fetch(apiUrl(S.mode, S.q, page));
+        if (!res.ok) throw new Error('伺服器回應 ' + res.status);
+        const j = await res.json();
+        S.totalPages = j.total_pages || 1;
+        S.total = j.total_records ?? S.total;
+        S.page = page;
+        S.records.push(...(j.records || []));
+        // 把看到的機關補進對照表
+        S.records.forEach(r => { if (r.unit_id && r.unit_name) UNITS.set(r.unit_id, r.unit_name); });
+      }
 
-$('uf').addEventListener('submit', async e => {
-  e.preventDefault();
-  const q = $('uq').value.trim();
-  if (!q) return;
-  $('ust').textContent = '查詢中…';
-  try { await loadUnits(); } catch (err) {
-    $('ust').innerHTML = `<span class="err">${esc(err.message)}。</span>也可以先用「標案查詢」找到公告，列表的機關欄位會顯示代碼。`;
-    return;
-  }
-  const hits = findUnits(q);
-  $('ust').textContent = hits.length ? `找到 ${hits.length} 個機關${hits.length > 200 ? '，只顯示前 200 個，請輸入更完整的名稱' : ''}。` : '找不到符合的機關，請換個關鍵字。';
-  $('utb').innerHTML = hits.length ? hits.slice(0, 200).map(([id, name]) =>
-    `<tr><td class="code">${esc(id)}</td><td>${esc(name)}</td>
-     <td class="acts"><button data-copy="${esc(id)}">複製代碼</button><button data-go="${esc(id)}" data-name="${esc(name)}">查詢標案</button></td></tr>`).join('')
-    : '<tr><td colspan="3" class="sm">沒有符合的機關。</td></tr>';
-});
+      function setBusy(b) {
+        S.busy = b;
+        $('go').disabled = b;
+        $('more').disabled = b || S.page >= S.totalPages;
+        $('all').disabled = b || S.page >= S.totalPages;
+      }
+      function fail(e) {
+        setBusy(false);
+        $('st').innerHTML = `<span class="err">載入失敗：</span>${esc(e.message)}。可能是網路問題或 API 暫時無法使用，請稍後再試。`;
+      }
 
-$('utb').addEventListener('click', async e => {
-  const c = e.target.closest('button[data-copy]');
-  if (c) { const ok = await copy(c.dataset.copy); c.textContent = ok ? '已複製' : '請手動複製'; setTimeout(() => c.textContent = '複製代碼', 1200); return; }
-  const g = e.target.closest('button[data-go]');
-  if (g) { showTab('p-search'); $('mode').value = 'unit'; $('q').value = g.dataset.go; runQuery('listbyunit', g.dataset.go, g.dataset.name); }
-});
+      async function runQuery(mode, q, label) {
+        S = { records: [], page: 0, totalPages: 0, total: 0, mode, q, busy: false };
+        $('pick').innerHTML = '';
+        setBusy(true);
+        $('st').textContent = '搜尋中…';
+        try { await loadPage(1); } catch (err) { return fail(err); }
+        setBusy(false);
+        render();
+        if (label) $('st').textContent = `機關：${label}（${q}）。` + $('st').textContent;
+      }
 
-/* ===== 標案查詢 ===== */
-let S = { records: [], page: 0, totalPages: 0, total: 0, mode: '', q: '', busy: false };
-const https = u => String(u || '').replace(/^http:\/\//i, 'https://');
-// 全文檢索：用標案案號查，查到後在結果按「檢視」。招標、決標公告都適用。
-function searchUrl(r) {
-  if (!r.job_number) return '';
-  const status = /決標/.test(r.brief?.type || '') ? '決標' : '招標';
-  const roc = Number(String(r.date).slice(0, 4)) - 1911;
-  return `https://web.pcc.gov.tw/prkms/tender/common/bulletion/readBulletion?querySentence=${encodeURIComponent(r.job_number)}&tenderStatusType=${encodeURIComponent(status)}&sortCol=TENDER_NOTICE_DATE&timeRange=${roc}&pageSize=10`;
-}
-// 詳細資料 API：用機關代碼＋標案案號自行組網址（一律 https）
-function detailUrl(r) {
-  if (r.unit_id && r.job_number) return `${API}/tender?unit_id=${encodeURIComponent(r.unit_id)}&job_number=${encodeURIComponent(r.job_number)}`;
-  return https(r.tender_api_url);
-}
-const yearOf = r => String(r.date).slice(0, 4);
-const fmtDate = d => { d = String(d); return d.length === 8 ? `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6)}` : d; };
-const tagCls = t => /招標/.test(t) ? 't' : /決標/.test(t) ? 'a' : '';
+      $('f').addEventListener('submit', async e => {
+        e.preventDefault();
+        const mode = $('mode').value, q = $('q').value.trim();
+        if (!q) return;
+        if (mode !== 'unit') return runQuery(mode, q);
+        if (/^[\d.]+$/.test(q)) return runQuery('listbyunit', q, UNITS.get(q) || '');
+        $('st').textContent = '正在比對機關名稱…';
+        try { await loadUnits(); } catch (err) {
+          $('st').innerHTML = `<span class="err">${esc(err.message)}。</span>請改用機關代碼，或選「標案名稱」搜尋。`;
+          return;
+        }
+        const hits = findUnits(q);
+        if (!hits.length) { $('st').textContent = '找不到符合的機關，請換個名稱。'; return; }
+        if (hits.length === 1) return runQuery('listbyunit', hits[0][0], hits[0][1]);
+        const exact = hits.find(h => h[1] === q);
+        if (exact) return runQuery('listbyunit', exact[0], exact[1]);
+        $('st').textContent = `有 ${hits.length} 個機關符合，請選一個${hits.length > 40 ? '（只顯示前 40 個，可輸入更完整的名稱）' : ''}：`;
+        $('pick').innerHTML = `<div class="pick">${hits.slice(0, 40).map(([id, name]) =>
+          `<button class="chip-btn" data-id="${esc(id)}" data-name="${esc(name)}">${esc(name)}　${esc(id)}</button>`).join('')}</div>`;
+      });
 
-function apiUrl(mode, q, page) {
-  return `${API}/${mode}?${mode === 'listbyunit' ? 'unit_id' : 'query'}=${encodeURIComponent(q)}&page=${page}`;
-}
+      $('pick').addEventListener('click', e => {
+        const b = e.target.closest('button[data-id]');
+        if (b) runQuery('listbyunit', b.dataset.id, b.dataset.name);
+      });
 
-async function loadPage(page) {
-  const res = await fetch(apiUrl(S.mode, S.q, page));
-  if (!res.ok) throw new Error('伺服器回應 ' + res.status);
-  const j = await res.json();
-  S.totalPages = j.total_pages || 1;
-  S.total = j.total_records ?? S.total;
-  S.page = page;
-  S.records.push(...(j.records || []));
-  // 把看到的機關補進對照表
-  S.records.forEach(r => { if (r.unit_id && r.unit_name) UNITS.set(r.unit_id, r.unit_name); });
-}
+      $('more').onclick = async () => {
+        setBusy(true);
+        try { await loadPage(S.page + 1); } catch (err) { return fail(err); }
+        setBusy(false); render();
+      };
+      $('all').onclick = async () => {
+        setBusy(true);
+        try {
+          const last = Math.min(S.totalPages, 20);
+          while (S.page < last) {
+            await loadPage(S.page + 1);
+            $('st').textContent = `載入中… ${S.page} / ${last} 頁`;
+            await new Promise(r => setTimeout(r, 400));
+          }
+        } catch (err) { return fail(err); }
+        setBusy(false); render();
+      };
+      ['ftype', 'fyear', 'funit'].forEach(id => $(id).addEventListener('input', render));
 
-function setBusy(b) {
-  S.busy = b;
-  $('go').disabled = b;
-  $('more').disabled = b || S.page >= S.totalPages;
-  $('all').disabled = b || S.page >= S.totalPages;
-}
-function fail(e) {
-  setBusy(false);
-  $('st').innerHTML = `<span class="err">載入失敗：</span>${esc(e.message)}。可能是網路問題或 API 暫時無法使用，請稍後再試。`;
-}
+      function filtered() {
+        const t = $('ftype').value, y = $('fyear').value, u = $('funit').value.trim();
+        return S.records.filter(r =>
+          (!t || (r.brief?.type || '').includes(t)) &&
+          (!y || yearOf(r) === y) &&
+          (!u || (r.unit_name || '').includes(u)));
+      }
 
-async function runQuery(mode, q, label) {
-  S = { records: [], page: 0, totalPages: 0, total: 0, mode, q, busy: false };
-  $('pick').innerHTML = '';
-  setBusy(true);
-  $('st').textContent = '搜尋中…';
-  try { await loadPage(1); } catch (err) { return fail(err); }
-  setBusy(false);
-  render();
-  if (label) $('st').textContent = `機關：${label}（${q}）。` + $('st').textContent;
-}
+      function render() {
+        const years = [...new Set(S.records.map(yearOf))].sort().reverse();
+        const cur = $('fyear').value;
+        $('fyear').innerHTML = '<option value="">全部</option>' + years.map(y => `<option ${y === cur ? 'selected' : ''}>${y}</option>`).join('');
+        const rows = filtered();
+        if (!S.busy) {
+          $('st').textContent = S.records.length
+            ? `共 ${S.total} 筆，已載入 ${S.records.length} 筆（第 ${S.page} / ${S.totalPages} 頁），目前顯示 ${rows.length} 筆。`
+            : '沒有找到符合的公告，請換個關鍵字試試。';
+        }
+        setBusy(S.busy);
 
-$('f').addEventListener('submit', async e => {
-  e.preventDefault();
-  const mode = $('mode').value, q = $('q').value.trim();
-  if (!q) return;
-  if (mode !== 'unit') return runQuery(mode, q);
-  if (/^[\d.]+$/.test(q)) return runQuery('listbyunit', q, UNITS.get(q) || '');
-  $('st').textContent = '正在比對機關名稱…';
-  try { await loadUnits(); } catch (err) {
-    $('st').innerHTML = `<span class="err">${esc(err.message)}。</span>請改用機關代碼，或選「標案名稱」搜尋。`;
-    return;
-  }
-  const hits = findUnits(q);
-  if (!hits.length) { $('st').textContent = '找不到符合的機關，請換個名稱。'; return; }
-  if (hits.length === 1) return runQuery('listbyunit', hits[0][0], hits[0][1]);
-  const exact = hits.find(h => h[1] === q);
-  if (exact) return runQuery('listbyunit', exact[0], exact[1]);
-  $('st').textContent = `有 ${hits.length} 個機關符合，請選一個${hits.length > 40 ? '（只顯示前 40 個，可輸入更完整的名稱）' : ''}：`;
-  $('pick').innerHTML = `<div class="pick">${hits.slice(0, 40).map(([id, name]) =>
-    `<button class="chip-btn" data-id="${esc(id)}" data-name="${esc(name)}">${esc(name)}　${esc(id)}</button>`).join('')}</div>`;
-});
+        $('tb').innerHTML = rows.length ? rows.map(r => {
+          const b = r.brief || {};
+          const cos = b.companies?.names?.length ? `<div class="sm">廠商：${esc(b.companies.names.join('、'))}</div>` : '';
+          const su = searchUrl(r);
+          const link = su ? `<a href="${esc(su)}" target="_blank" rel="noopener" title="用標案案號在採購網查詢，結果頁按「檢視」">案號查詢</a>` : '';
+          return `<tr><td class="d">${fmtDate(r.date)}</td>
+            <td><span class="tag ${tagCls(b.type || '')}">${esc(b.type || '—')}</span></td>
+            <td>${esc(r.unit_name)}<div class="code">${esc(r.unit_id)}</div></td>
+            <td>${esc(b.title)}${cos}</td>
+            <td class="acts"><button data-i="${S.records.indexOf(r)}">詳細</button>${link}</td></tr>`;
+        }).join('') : '<tr><td colspan="5" class="sm">沒有符合條件的公告。</td></tr>';
+        renderStats(rows);
+      }
 
-$('pick').addEventListener('click', e => {
-  const b = e.target.closest('button[data-id]');
-  if (b) runQuery('listbyunit', b.dataset.id, b.dataset.name);
-});
+      function renderStats(rows) {
+        const by = {};
+        rows.forEach(r => {
+          const y = yearOf(r), t = r.brief?.type || '';
+          by[y] ??= { t: 0, a: 0 };
+          if (t.includes('招標')) by[y].t++; else if (t.includes('決標')) by[y].a++;
+        });
+        const ys = Object.keys(by).sort().reverse();
+        const max = Math.max(1, ...ys.map(y => Math.max(by[y].t, by[y].a)));
+        $('bars').innerHTML = ys.length ? ys.map(y => `<div class="bar"><b>${y}</b><div class="track">
+          <div class="seg t" style="width:${by[y].t / max * 80}%"><span>${by[y].t}</span></div>
+          <div class="seg a" style="width:${by[y].a / max * 80}%"><span>${by[y].a}</span></div></div></div>`).join('')
+          : '<p class="sm">尚無資料。</p>';
+      }
 
-$('more').onclick = async () => {
-  setBusy(true);
-  try { await loadPage(S.page + 1); } catch (err) { return fail(err); }
-  setBusy(false); render();
-};
-$('all').onclick = async () => {
-  setBusy(true);
-  try {
-    const last = Math.min(S.totalPages, 20);
-    while (S.page < last) {
-      await loadPage(S.page + 1);
-      $('st').textContent = `載入中… ${S.page} / ${last} 頁`;
-      await new Promise(r => setTimeout(r, 400));
-    }
-  } catch (err) { return fail(err); }
-  setBusy(false); render();
-};
-['ftype', 'fyear', 'funit'].forEach(id => $(id).addEventListener('input', render));
-
-function filtered() {
-  const t = $('ftype').value, y = $('fyear').value, u = $('funit').value.trim();
-  return S.records.filter(r =>
-    (!t || (r.brief?.type || '').includes(t)) &&
-    (!y || yearOf(r) === y) &&
-    (!u || (r.unit_name || '').includes(u)));
-}
-
-function render() {
-  const years = [...new Set(S.records.map(yearOf))].sort().reverse();
-  const cur = $('fyear').value;
-  $('fyear').innerHTML = '<option value="">全部</option>' + years.map(y => `<option ${y === cur ? 'selected' : ''}>${y}</option>`).join('');
-  const rows = filtered();
-  if (!S.busy) {
-    $('st').textContent = S.records.length
-      ? `共 ${S.total} 筆，已載入 ${S.records.length} 筆（第 ${S.page} / ${S.totalPages} 頁），目前顯示 ${rows.length} 筆。`
-      : '沒有找到符合的公告，請換個關鍵字試試。';
-  }
-  setBusy(S.busy);
-
-  $('tb').innerHTML = rows.length ? rows.map(r => {
-    const b = r.brief || {};
-    const cos = b.companies?.names?.length ? `<div class="sm">廠商：${esc(b.companies.names.join('、'))}</div>` : '';
-    const su = searchUrl(r);
-    const link = su ? `<a href="${esc(su)}" target="_blank" rel="noopener" title="用標案案號在採購網查詢，結果頁按「檢視」">案號查詢</a>` : '';
-    return `<tr><td class="d">${fmtDate(r.date)}</td>
-      <td><span class="tag ${tagCls(b.type || '')}">${esc(b.type || '—')}</span></td>
-      <td>${esc(r.unit_name)}<div class="code">${esc(r.unit_id)}</div></td>
-      <td>${esc(b.title)}${cos}</td>
-      <td class="acts"><button data-i="${S.records.indexOf(r)}">詳細</button>${link}</td></tr>`;
-  }).join('') : '<tr><td colspan="5" class="sm">沒有符合條件的公告。</td></tr>';
-  renderStats(rows);
-}
-
-function renderStats(rows) {
-  const by = {};
-  rows.forEach(r => {
-    const y = yearOf(r), t = r.brief?.type || '';
-    by[y] ??= { t: 0, a: 0 };
-    if (t.includes('招標')) by[y].t++; else if (t.includes('決標')) by[y].a++;
-  });
-  const ys = Object.keys(by).sort().reverse();
-  const max = Math.max(1, ...ys.map(y => Math.max(by[y].t, by[y].a)));
-  $('bars').innerHTML = ys.length ? ys.map(y => `<div class="bar"><b>${y}</b><div class="track">
-    <div class="seg t" style="width:${by[y].t / max * 80}%"><span>${by[y].t}</span></div>
-    <div class="seg a" style="width:${by[y].a / max * 80}%"><span>${by[y].a}</span></div></div></div>`).join('')
-    : '<p class="sm">尚無資料。</p>';
-}
-
-/* ===== 詳細資料 ===== */
-$('tb').addEventListener('click', async e => {
-  const btn = e.target.closest('button[data-i]');
-  if (!btn) return;
-  const r = S.records[+btn.dataset.i];
-  $('dbody').innerHTML = `<h2>${esc(r.brief?.title)}</h2><p class="sm">載入詳細資料中…</p>`;
-  $('dlg').showModal();
-  try {
-    const res = await fetch(detailUrl(r));
-    if (!res.ok) throw new Error('伺服器回應 ' + res.status);
-    const j = await res.json();
-    const want = /預算金額|總決標金額|決標金額|截止投標|開標時間|決標日期|招標方式|決標方式|得標廠商名稱|履約地點/;
-    $('dbody').innerHTML = `<h2>${esc(r.brief?.title)}</h2><p class="sm">${esc(r.unit_name)}　<span class="code">${esc(r.unit_id)}</span></p>` +
-      ((j.records || []).slice(0, 4).map(x => {
-        const items = Object.entries(x.detail || {}).filter(([k, v]) => want.test(k) && typeof v === 'string' && v).slice(0, 12);
-        return `<p><span class="tag ${tagCls(x.brief?.type || '')}">${esc(x.brief?.type)}</span> ${fmtDate(x.date)}</p>` +
-          (items.length ? `<dl>${items.map(([k, v]) => `<dt>${esc(k.split(':').slice(-2).join(' ‧ '))}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : '<p class="sm">此公告沒有可摘要的欄位，請至官網查看。</p>');
-      }).join('') || '<p class="sm">查無詳細資料。</p>');
-  } catch (err) {
-    $('dbody').innerHTML = `<h2>${esc(r.brief?.title)}</h2><p><span class="err">詳細資料載入失敗：</span>${esc(err.message)}。請改用「官網」連結查看。</p>`;
-  }
-});
-$('dclose').onclick = () => $('dlg').close();
-</script>
-</body>
+      /* ===== 詳細資料 ===== */
+      $('tb').addEventListener('click', async e => {
+        const btn = e.target.closest('button[data-i]');
+        if (!btn) return;
+        const r = S.records[+btn.dataset.i];
+        $('dbody').innerHTML = `<h2>${esc(r.brief?.title)}</h2><p class="sm">載入詳細資料中…</p>`;
+        $('dlg').showModal();
+        try {
+          const res = await fetch(detailUrl(r));
+          if (!res.ok) throw new Error('伺服器回應 ' + res.status);
+          const j = await res.json();
+          const want = /預算金額|總決標金額|決標金額|截止投標|開標時間|決標日期|招標方式|決標方式|得標廠商名稱|履約地點/;
+          $('dbody').innerHTML = `<h2>${esc(r.brief?.title)}</h2><p class="sm">${esc(r.unit_name)}　<span class="code">${esc(r.unit_id)}</span></p>` +
+            ((j.records || []).slice(0, 4).map(x => {
+              const items = Object.entries(x.detail || {}).filter(([k, v]) => want.test(k) && typeof v === 'string' && v).slice(0, 12);
+              return `<p><span class="tag ${tagCls(x.brief?.type || '')}">${esc(x.brief?.type)}</span> ${fmtDate(x.date)}</p>` +
+                (items.length ? `<dl>${items.map(([k, v]) => `<dt>${esc(k.split(':').slice(-2).join(' ‧ '))}</dt><dd>${esc(v)}</dd>`).join('')}</dl>` : '<p class="sm">此公告沒有可摘要的欄位，請至官網查看。</p>');
+            }).join('') || '<p class="sm">查無詳細資料。</p>');
+        } catch (err) {
+          $('dbody').innerHTML = `<h2>${esc(r.brief?.title)}</h2><p><span class="err">詳細資料載入失敗：</span>${esc(err.message)}。請改用「官網」連結查看。</p>`;
+        }
+      });
+      $('dclose').onclick = () => $('dlg').close();
+    </script>
+  </body>
 </html>
