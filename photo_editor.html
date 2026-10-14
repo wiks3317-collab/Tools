@@ -208,6 +208,39 @@
       .opt.on {
         display: block;
       }
+      #ed > div:nth-child(2) > section > h2 {
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      #ed > div:nth-child(2) > section > h2::after {
+        content: '▾';
+        color: var(--mut);
+        font-size: 12px;
+        transition: transform 0.15s;
+      }
+      #ed > div:nth-child(2) > section.collapsed > h2 {
+        margin-bottom: 0;
+      }
+      #ed > div:nth-child(2) > section.collapsed > h2::after {
+        transform: rotate(-90deg);
+      }
+      #ed > div:nth-child(2) > section.collapsed > :not(h2) {
+        display: none !important;
+      }
+      .sec-tools {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .sec-tools button {
+        padding: 3px 10px;
+        font-size: 12px;
+      }
     </style>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -1019,6 +1052,56 @@
           +$('q').value / 100
         );
       };
+
+      // ---- 右側工具窗格：可摺疊（狀態記在 localStorage） ----
+      (function () {
+        const col = document.querySelector('#ed > div:nth-child(2)');
+        const secs = [...col.querySelectorAll(':scope > section')];
+        const KEY = 'photo-editor-collapsed';
+        let saved = [];
+        try {
+          saved = JSON.parse(localStorage.getItem(KEY) || '[]');
+        } catch (e) {}
+        const save = () => {
+          try {
+            localStorage.setItem(KEY, JSON.stringify(secs.filter(x => x.classList.contains('collapsed')).map(x => x.querySelector('h2').textContent.trim())));
+          } catch (e) {}
+        };
+        const setC = (sec, c) => {
+          sec.classList.toggle('collapsed', c);
+          sec.querySelector('h2').setAttribute('aria-expanded', String(!c));
+        };
+        secs.forEach(sec => {
+          const h = sec.querySelector('h2');
+          if (!h) return;
+          h.tabIndex = 0;
+          h.setAttribute('role', 'button');
+          const toggle = () => {
+            setC(sec, !sec.classList.contains('collapsed'));
+            save();
+          };
+          h.addEventListener('click', toggle);
+          h.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggle();
+            }
+          });
+          setC(sec, saved.includes(h.textContent.trim()));
+        });
+        const bar = document.createElement('div');
+        bar.className = 'sec-tools';
+        bar.innerHTML = '<button type="button" id="secOpen">全部展開</button><button type="button" id="secClose">全部摺疊</button>';
+        col.insertBefore(bar, col.firstChild);
+        bar.querySelector('#secOpen').onclick = () => {
+          secs.forEach(x => setC(x, false));
+          save();
+        };
+        bar.querySelector('#secClose').onclick = () => {
+          secs.forEach(x => setC(x, true));
+          save();
+        };
+      })();
     </script>
   </body>
 </html>

@@ -96,7 +96,7 @@
       applyTheme(d.theme, { broadcast: false });
     } else if (d.type === 'tools-iframe-height' && Number.isFinite(d.height)) {
       const frame = frames().find(f => f.contentWindow === e.source);
-      if (frame && !frame.classList.contains('fill')) frame.style.height = Math.max(420, Math.min(30000, Math.ceil(d.height))) + 'px';
+      if (frame && !frame.classList.contains('fill')) frame.style.height = Math.max(frame.classList.contains('auto') ? 80 : 420, Math.min(30000, Math.ceil(d.height))) + 'px';
     }
   });
 

@@ -1,0 +1,1684 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>程式碼美化與排版工具</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="referrer" content="no-referrer" />
+    <!-- 隱私防線：瀏覽器只允許本頁對下列 CDN 發出 fetch／XHR 連線，並禁止表單送出。新增 CDN 時請同步修改這裡與下方 CDN 設定。 -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="connect-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://esm.sh; form-action 'none'; base-uri 'self'"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B9%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="common.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.6 'Noto Sans TC',
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 1180px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 16px clamp(12px, 2vw, 24px) 56px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .back {
+        display: block;
+        color: var(--mut);
+        font-size: 12px;
+        text-decoration: none;
+      }
+      .back:hover {
+        color: var(--pri);
+      }
+      section {
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+      }
+      h2 {
+        font-size: 14px;
+        margin: 0 0 8px;
+      }
+      .privacy {
+        padding: 8px 12px;
+        background: var(--gut);
+        border-left: 3px solid var(--pri);
+        font-size: 12px;
+        margin: 12px 0;
+        color: var(--mut);
+      }
+      .privacy b {
+        color: var(--fg);
+      }
+      button,
+      .btn {
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 5px 12px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--pri);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .pri {
+        background: var(--pri);
+        border-color: var(--pri);
+        color: var(--prifg);
+      }
+      select {
+        font: inherit;
+        font-size: 13px;
+        padding: 5px 8px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        background: var(--card);
+        color: var(--fg);
+      }
+      option {
+        background: var(--card);
+        color: var(--fg);
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+      .row label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--mut);
+        font-size: 13px;
+      }
+      .badge {
+        font-size: 11.5px;
+        color: var(--mut);
+        border: 1px solid var(--bd);
+        border-radius: 999px;
+        padding: 2px 9px;
+      }
+      .msg,
+      .hint {
+        color: var(--mut);
+        font-size: 12px;
+      }
+      #status {
+        margin: 8px 2px;
+        min-height: 22px;
+        font-size: 13px;
+        color: var(--mut);
+      }
+      #status.good {
+        color: #2f855a;
+      }
+      #status.error {
+        color: #bf616a;
+      }
+
+      /* ===== 左右編輯區 ===== */
+      .editors {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 800px) {
+        .editors {
+          grid-template-columns: 1fr;
+        }
+      }
+      section.panel {
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        min-width: 0;
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--bd);
+      }
+      .panel-head b {
+        font-weight: 500;
+        font-size: 13.5px;
+      }
+      section.panel > textarea {
+        display: block;
+        width: 100%;
+        height: min(58vh, 640px);
+        min-height: 240px;
+        resize: vertical;
+        border: 0;
+        border-radius: 0;
+        outline: none;
+        padding: 10px 12px;
+        background: transparent;
+        color: var(--fg);
+        font:
+          13px/1.65 ui-monospace,
+          Menlo,
+          Consolas,
+          'Noto Sans TC',
+          monospace;
+        white-space: pre;
+        tab-size: 2;
+        overflow: auto;
+        box-shadow: none;
+      }
+
+      /* ===== 差異比對 ===== */
+      #diffSection {
+        display: none;
+      }
+      .legend {
+        display: inline-flex;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .legend i {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        margin-right: 4px;
+        vertical-align: -1px;
+      }
+      .legend .d i {
+        background: color-mix(in srgb, #d73a49 55%, var(--card));
+      }
+      .legend .a i {
+        background: color-mix(in srgb, #2ea043 55%, var(--card));
+      }
+      .ga,
+      .gd,
+      .gc {
+        font-size: 12.5px;
+        padding: 1px 8px;
+        border-radius: 6px;
+      }
+      .ga {
+        background: var(--add);
+      }
+      .gd {
+        background: var(--del);
+      }
+      .gc {
+        background: var(--gut);
+      }
+      #diffBody {
+        position: relative;
+        max-height: 70vh;
+        min-height: 60px;
+        overflow: auto;
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        font:
+          12.5px/1.6 ui-monospace,
+          Menlo,
+          Consolas,
+          'Noto Sans TC',
+          monospace;
+      }
+      .dr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .dr + .dr {
+        border-top: 1px solid var(--line);
+      }
+      .dc {
+        display: flex;
+        min-width: 0;
+      }
+      .dc + .dc {
+        border-left: 1px solid var(--bd);
+      }
+      .ln {
+        flex: none;
+        width: 46px;
+        padding-right: 8px;
+        text-align: right;
+        color: var(--mut);
+        background: var(--gut);
+        user-select: none;
+      }
+      .tx {
+        flex: 1;
+        min-width: 0;
+        padding-left: 8px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        tab-size: 2;
+      }
+      .dc.del {
+        background: var(--del);
+      }
+      .dc.add {
+        background: var(--add);
+      }
+      .dc.emp {
+        background: repeating-linear-gradient(135deg, var(--emp), var(--emp) 6px, transparent 6px, transparent 12px);
+      }
+      mark {
+        color: inherit;
+        border-radius: 2px;
+      }
+      mark.d {
+        background: color-mix(in srgb, #d73a49 42%, transparent);
+      }
+      mark.a {
+        background: color-mix(in srgb, #2ea043 42%, transparent);
+      }
+      .dr.skip {
+        grid-template-columns: 1fr;
+        background: var(--gut);
+        color: var(--mut);
+        padding: 3px 12px;
+        font-size: 12px;
+      }
+      .dr.skip button {
+        padding: 0 8px;
+        margin-left: 8px;
+        font-size: 12px;
+      }
+      .dr.cur .ln {
+        box-shadow: inset 4px 0 0 var(--pri);
+        color: var(--fg);
+        font-weight: 600;
+      }
+
+      /* ===== 語法檢查 Console ===== */
+      #consoleSummary {
+        font-size: 13px;
+        color: var(--mut);
+        margin: 2px 0 8px;
+      }
+      #consoleOutput {
+        min-height: 80px;
+        max-height: 340px;
+        overflow: auto;
+        border-top: 1px solid var(--bd);
+        padding-top: 8px;
+        font-size: 13px;
+      }
+      .it {
+        display: flex;
+        gap: 8px;
+        padding: 6px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .it:last-child {
+        border-bottom: 0;
+      }
+      .it > div {
+        min-width: 0;
+        flex: 1;
+      }
+      .it.ii,
+      .it.iw {
+        color: var(--mut);
+      }
+      .loc {
+        padding: 0 8px;
+        margin-right: 6px;
+        font-size: 12px;
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        color: var(--pri);
+      }
+      pre.frame {
+        margin: 4px 0 0;
+        padding: 6px 10px;
+        background: var(--gut);
+        border-radius: 6px;
+        overflow: auto;
+        font:
+          12px/1.5 ui-monospace,
+          Menlo,
+          Consolas,
+          'Noto Sans TC',
+          monospace;
+        color: var(--fg);
+      }
+      pre.frame b {
+        color: #bf616a;
+      }
+
+      /* ===== CDN 表 ===== */
+      table.cdn {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+      .cdn th,
+      .cdn td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      .st-ok {
+        color: #2f855a;
+      }
+      .st-fail {
+        color: #bf616a;
+      }
+      .st-load,
+      .st-idle {
+        color: var(--mut);
+      }
+      details > summary {
+        cursor: pointer;
+        font-weight: 500;
+      }
+      details ul,
+      details ol,
+      section ol {
+        margin: 6px 0 0;
+        padding-left: 20px;
+        font-size: 13px;
+        color: var(--mut);
+      }
+      li {
+        margin: 3px 0;
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <a class="back" href="index.html">← 返回小工具集首頁</a>
+          <h1>程式碼美化與排版工具</h1>
+          <p class="tagline">
+            貼上舊版程式碼，統一縮排、空格、換行與格式；格式化前後可逐行對照，並附帶語法檢查（含行號與欄位）。
+          </p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
+
+      <div class="privacy">
+        <b>隱私：</b>程式碼只在你的瀏覽器內處理，本頁不會把程式碼上傳到任何伺服器，也沒有自建後端。格式化與檢查引擎是公開的程式庫，會在第一次用到時從
+        <b>unpkg.com、cdn.jsdelivr.net、esm.sh</b> 下載（CDN 看得到你的 IP 與請求的套件檔名，看不到程式碼內容）；本頁以 CSP
+        限制只能連線到這三個 CDN。各引擎的來源與載入狀態見下方「外部 CDN 依賴」。
+      </div>
+
+      <section>
+        <div class="row">
+          <label
+            >程式語言
+            <select id="language"></select>
+          </label>
+          <label
+            >縮排
+            <select id="indent">
+              <option value="2">2 個空格</option>
+              <option value="4">4 個空格</option>
+              <option value="tab">Tab</option>
+            </select>
+          </label>
+          <label
+            >每行最大寬度
+            <select id="width">
+              <option value="80">80</option>
+              <option value="100" selected>100</option>
+              <option value="120">120</option>
+              <option value="140">140</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" id="optRow">
+          <label data-o="semi"><input id="semis" type="checkbox" checked /> 加分號（JS／TS）</label>
+          <label data-o="quote"><input id="single" type="checkbox" /> 優先單引號</label>
+          <label data-o="trailing"><input id="trailing" type="checkbox" checked /> 尾逗號</label>
+          <label data-o="sql"
+            >SQL 方言
+            <select id="sqld">
+              <option value="sql">標準 SQL</option>
+              <option value="mysql">MySQL</option>
+              <option value="mariadb">MariaDB</option>
+              <option value="postgresql">PostgreSQL</option>
+              <option value="transactsql">SQL Server（T-SQL）</option>
+              <option value="plsql">Oracle（PL/SQL）</option>
+              <option value="sqlite">SQLite</option>
+            </select>
+          </label>
+          <label data-o="clang"
+            >排版風格
+            <select id="cstyle">
+              <option value="Google">Google</option>
+              <option value="LLVM">LLVM</option>
+              <option value="Chromium">Chromium</option>
+              <option value="Mozilla">Mozilla</option>
+              <option value="WebKit">WebKit</option>
+              <option value="Microsoft">Microsoft（Allman 大括號）</option>
+              <option value="GNU">GNU</option>
+            </select>
+          </label>
+          <label data-o="clang"><input id="force" type="checkbox" /> 語法檢查未通過仍嘗試格式化</label>
+        </div>
+        <div class="row">
+          <button class="pri" id="formatBtn">格式化程式碼</button>
+          <button id="copyBtn">複製格式化結果</button>
+          <button id="replaceBtn">將結果放回左側</button>
+          <button id="downloadBtn">下載結果</button>
+          <button id="clearBtn">清除</button>
+          <button id="themeBtn" type="button">切換深色模式</button>
+          <span class="badge" id="engineStatus">尚未載入引擎</span>
+        </div>
+      </section>
+
+      <div class="editors">
+        <section class="panel">
+          <div class="panel-head"><b>原始程式碼</b><span class="badge" id="inputCount">0 字元</span></div>
+          <textarea
+            id="source"
+            spellcheck="false"
+            autocapitalize="off"
+            autocomplete="off"
+            placeholder="請在此貼上原始程式碼…"
+          ></textarea>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><b>格式化結果</b><span class="badge" id="outputCount">0 字元</span></div>
+          <textarea id="result" spellcheck="false" readonly placeholder="格式化後的程式碼會顯示在這裡…"></textarea>
+        </section>
+      </div>
+      <div id="status" role="status" aria-live="polite">請貼上程式碼並選擇語言。</div>
+
+      <section id="diffSection">
+        <div class="row" style="margin-top: 0">
+          <h2 style="margin: 0">格式化前後差異</h2>
+          <span class="legend"><span class="d"><i></i>紅色：移除／變更前</span><span class="a"><i></i>綠色：新增／變更後</span></span>
+          <span id="diffStat" style="margin-left: auto"></span>
+        </div>
+        <div class="row">
+          <label><input type="checkbox" id="dOnly" checked /> 只顯示差異（前後各保留 3 行）</label>
+          <label><input type="checkbox" id="dWs" /> 忽略空白／縮排差異</label>
+          <button id="dPrev" disabled>▲ 上一處</button>
+          <span id="dCnt" class="msg">0 / 0</span>
+          <button id="dNext" disabled>下一處 ▼</button>
+          <span class="msg">左：格式化前　右：格式化後（與按下「格式化」當下的原始碼比對）</span>
+        </div>
+        <div id="diffBody"></div>
+      </section>
+
+      <section>
+        <div class="row" style="margin-top: 0">
+          <h2 style="margin: 0">語法檢查 Console</h2>
+          <button id="checkBtn" type="button">檢查語法</button>
+          <button id="clearConsoleBtn" type="button">清除訊息</button>
+        </div>
+        <div id="consoleSummary">尚未執行檢查。</div>
+        <div id="consoleOutput"><span class="msg">等待檢查結果…</span></div>
+      </section>
+
+      <section>
+        <details>
+          <summary>外部 CDN 依賴與載入狀態</summary>
+          <p class="hint">
+            引擎只在第一次用到（或切換到該語言）時才下載。下載的是程式庫本身；你的程式碼不會傳給 CDN，也不會傳給其他伺服器。若某引擎載入失敗，格式化會停止，語法檢查會退回「基本括號與字串檢查」。
+          </p>
+          <div style="overflow: auto">
+            <table class="cdn">
+              <thead>
+                <tr>
+                  <th>元件</th>
+                  <th>用途</th>
+                  <th>來源 CDN</th>
+                  <th>狀態</th>
+                </tr>
+              </thead>
+              <tbody id="cdnBody"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section>
+        <h2>使用說明與限制</h2>
+        <ol>
+          <li>先選擇正確的程式語言，再按「格式化程式碼」。語法有誤時會中止並在 Console 顯示行號與欄位，點「第 N 行 第 M 欄」可跳到原始碼對應位置。</li>
+          <li>
+            引擎：HTML／JS／TS／CSS／JSON／YAML／Markdown／JSX／SCSS／Less／Vue／Angular 使用 Prettier；SQL 使用 sql-formatter；Python 使用
+            Ruff（Rust 編譯成 WebAssembly，格式接近 Black）；Java／C／C++／C# 使用 clang-format（WebAssembly）。
+          </li>
+          <li>
+            語法檢查：Python 用 Ruff 的瀏覽器端解析器；Java／C／C++／C# 用 tree-sitter 解析器（只判斷「語法」，不檢查型別、符號或語意）；Prettier
+            支援的語言直接取用其解析器的錯誤位置。這些都不能取代 python、javac、GCC／Clang、dotnet 等真正的編譯器。
+          </li>
+          <li>C／C++ 的巨集與條件編譯、C# 較新的語法，可能被誤判為語法錯誤；此時可勾選「語法檢查未通過仍嘗試格式化」。clang-format 對 C# 的支援比 C／C++／Java 陽春。</li>
+          <li>clang-format 已設定不重排 #include／import／using，只調整排版；格式化只改版面，不保證功能完全不變，請先看差異並實際編譯測試。</li>
+          <li>SQL 方言差異很大，請選對方言；格式化不會連線資料庫，也無法確認資料表或欄位是否存在。</li>
+        </ol>
+      </section>
+    </div>
+
+    <script>
+      (() => {
+        'use strict';
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+        const source = $('source');
+        const result = $('result');
+
+        // =====================================================================
+        // 外部 CDN 設定（全部集中在這裡；新增或更換 CDN 時，請同步修改檔頭的 CSP）
+        // =====================================================================
+        const PRETTIER = 'https://unpkg.com/prettier@3.3.3/';
+        const CDN = {
+          sql: 'https://cdn.jsdelivr.net/npm/sql-formatter@15.6.2/+esm',
+          // 依序嘗試，第一個成功的為準
+          ruff: [
+            'https://cdn.jsdelivr.net/npm/@astral-sh/ruff-wasm-web@0.14.9/ruff_wasm.js',
+            'https://cdn.jsdelivr.net/npm/@astral-sh/ruff-wasm-web@0.14/ruff_wasm.js',
+          ],
+          clang: [
+            { mod: 'https://cdn.jsdelivr.net/npm/@wasm-fmt/clang-format@22/clang-format-web.js' },
+            {
+              mod: 'https://esm.sh/@wasm-fmt/clang-format@22/web',
+              wasm: 'https://cdn.jsdelivr.net/npm/@wasm-fmt/clang-format@22/clang-format.wasm',
+            },
+          ],
+          tree: [
+            {
+              script: 'https://cdn.jsdelivr.net/npm/web-tree-sitter@0.20.8/tree-sitter.js',
+              wasm: 'https://cdn.jsdelivr.net/npm/web-tree-sitter@0.20.8/tree-sitter.wasm',
+              grammars: 'https://cdn.jsdelivr.net/npm/tree-sitter-wasms@0.1.11/out/',
+            },
+            {
+              script: 'https://cdn.jsdelivr.net/npm/web-tree-sitter@0.22.6/tree-sitter.js',
+              wasm: 'https://cdn.jsdelivr.net/npm/web-tree-sitter@0.22.6/tree-sitter.wasm',
+              grammars: 'https://cdn.jsdelivr.net/npm/tree-sitter-wasms@0.1.11/out/',
+            },
+          ],
+        };
+        const RES = [
+          { id: 'prettier', name: 'Prettier 3.3.3', use: 'HTML／JS／TS／CSS／JSON／YAML／Markdown／JSX／SCSS／Less／Vue／Angular 的格式化與語法檢查', host: 'unpkg.com' },
+          { id: 'sql', name: 'sql-formatter 15.6.2', use: 'SQL 格式化與語法錯誤位置', host: 'cdn.jsdelivr.net' },
+          { id: 'ruff', name: 'Ruff WASM（@astral-sh/ruff-wasm-web）', use: 'Python 格式化與語法解析', host: 'cdn.jsdelivr.net' },
+          { id: 'clang', name: 'clang-format WASM（@wasm-fmt/clang-format）', use: 'Java／C／C++／C# 格式化', host: 'cdn.jsdelivr.net（備援：esm.sh）' },
+          { id: 'tree', name: 'tree-sitter（web-tree-sitter＋tree-sitter-wasms）', use: 'Java／C／C++／C# 語法解析', host: 'cdn.jsdelivr.net' },
+        ];
+        $('cdnBody').innerHTML = RES.map(
+          r => `<tr><td>${esc(r.name)}</td><td>${esc(r.use)}</td><td>${esc(r.host)}</td><td id="res-${r.id}" class="st-idle">尚未載入</td></tr>`
+        ).join('');
+        function setRes(id, state, note) {
+          const el = $('res-' + id);
+          if (!el) return;
+          const t = { loading: ['載入中…', 'st-load'], ok: ['已載入', 'st-ok'], fail: ['載入失敗', 'st-fail'] }[state];
+          el.className = t[1];
+          el.textContent = t[0] + (note ? `（${String(note).slice(0, 90)}）` : '');
+        }
+
+        const cache = {};
+        const memo = (k, fn) => (cache[k] ||= fn().catch(e => { delete cache[k]; throw e; }));
+        async function firstOk(id, list, loader, label) {
+          setRes(id, 'loading');
+          let last;
+          for (const c of list) {
+            try {
+              const r = await loader(c);
+              setRes(id, 'ok', label(c));
+              return r;
+            } catch (e) {
+              last = e;
+            }
+          }
+          setRes(id, 'fail', last && last.message);
+          throw last || new Error('載入失敗');
+        }
+        function loadScript(src) {
+          return new Promise((ok, no) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = ok;
+            s.onerror = () => no(new Error('無法載入 ' + src));
+            document.head.appendChild(s);
+          });
+        }
+
+        // =====================================================================
+        // 語言表
+        // =====================================================================
+        const JSOPT = ['semi', 'quote', 'trailing'];
+        const LANGS = {
+          html: { label: 'HTML', ext: 'html', eng: 'prettier', parser: 'html', plugins: ['html'], opts: [] },
+          javascript: { label: 'JavaScript', ext: 'js', eng: 'prettier', parser: 'babel', plugins: ['babel', 'estree'], opts: JSOPT },
+          typescript: { label: 'TypeScript', ext: 'ts', eng: 'prettier', parser: 'typescript', plugins: ['typescript', 'estree'], opts: JSOPT },
+          css: { label: 'CSS', ext: 'css', eng: 'prettier', parser: 'css', plugins: ['postcss'], opts: ['quote'] },
+          json: { label: 'JSON', ext: 'json', eng: 'prettier', parser: 'json', plugins: ['babel', 'estree'], opts: [] },
+          yaml: { label: 'YAML', ext: 'yaml', eng: 'prettier', parser: 'yaml', plugins: ['yaml'], opts: ['quote'] },
+          markdown: { label: 'Markdown', ext: 'md', eng: 'prettier', parser: 'markdown', plugins: ['markdown'], opts: [] },
+          babel: { label: 'JSX / React', ext: 'jsx', eng: 'prettier', parser: 'babel', plugins: ['babel', 'estree'], opts: JSOPT },
+          scss: { label: 'SCSS', ext: 'scss', eng: 'prettier', parser: 'scss', plugins: ['postcss'], opts: ['quote'] },
+          less: { label: 'Less', ext: 'less', eng: 'prettier', parser: 'less', plugins: ['postcss'], opts: ['quote'] },
+          vue: { label: 'Vue', ext: 'vue', eng: 'prettier', parser: 'vue', plugins: ['html', 'babel', 'estree', 'postcss'], opts: JSOPT },
+          angular: { label: 'Angular / HTML template', ext: 'html', eng: 'prettier', parser: 'angular', plugins: ['angular', 'babel', 'estree'], opts: JSOPT },
+          python: { label: 'Python', ext: 'py', eng: 'ruff', opts: ['quote'] },
+          java: { label: 'Java', ext: 'java', eng: 'clang', file: 'main.java', ts: 'java', style: 'Google', opts: ['clang'] },
+          cpp: { label: 'C / C++', ext: 'cpp', eng: 'clang', file: 'main.cpp', ts: 'cpp', style: 'Google', opts: ['clang'] },
+          csharp: { label: 'C#', ext: 'cs', eng: 'clang', file: 'main.cs', ts: 'c_sharp', style: 'Microsoft', opts: ['clang'] },
+          sql: { label: 'SQL', ext: 'sql', eng: 'sql', opts: ['sql'] },
+        };
+        const ENGINE_NAME = { prettier: 'Prettier', sql: 'sql-formatter', ruff: 'Ruff（WASM）', clang: 'clang-format（WASM）＋tree-sitter' };
+        $('language').innerHTML = Object.entries(LANGS)
+          .map(([k, v]) => `<option value="${k}">${esc(v.label)}</option>`)
+          .join('');
+        $('language').value = 'html';
+
+        const lang = () => $('language').value;
+        const tabsOn = () => $('indent').value === 'tab';
+        const tabW = () => (tabsOn() ? 2 : Number($('indent').value));
+        const tabW4 = () => (tabsOn() ? 4 : Number($('indent').value));
+
+        function setStatus(message, type = '') {
+          $('status').textContent = message;
+          $('status').className = type;
+        }
+        function updateCounts() {
+          $('inputCount').textContent = source.value.length.toLocaleString() + ' 字元';
+          $('outputCount').textContent = result.value.length.toLocaleString() + ' 字元';
+        }
+
+        // =====================================================================
+        // 引擎載入
+        // =====================================================================
+        const ensurePrettier = () =>
+          memo('prettier', async () => {
+            setRes('prettier', 'loading');
+            try {
+              const m = await import(PRETTIER + 'standalone.mjs');
+              setRes('prettier', 'ok', 'unpkg.com');
+              return m;
+            } catch (e) {
+              setRes('prettier', 'fail', e.message);
+              throw e;
+            }
+          });
+        const loadPlugin = n => memo('pp:' + n, () => import(PRETTIER + 'plugins/' + n + '.mjs'));
+        const ensureSql = () =>
+          memo('sql', async () => {
+            setRes('sql', 'loading');
+            try {
+              const m = await import(CDN.sql);
+              setRes('sql', 'ok', 'cdn.jsdelivr.net');
+              return m;
+            } catch (e) {
+              setRes('sql', 'fail', e.message);
+              throw e;
+            }
+          });
+        const ensureRuff = () =>
+          memo('ruff', () =>
+            firstOk(
+              'ruff',
+              CDN.ruff,
+              async u => {
+                const m = await import(u);
+                await m.default();
+                return m;
+              },
+              u => u.replace('https://cdn.jsdelivr.net/npm/', '')
+            )
+          );
+        const ensureClang = () =>
+          memo('clang', () =>
+            firstOk(
+              'clang',
+              CDN.clang,
+              async c => {
+                const m = await import(c.mod);
+                await (c.wasm ? m.default(c.wasm) : m.default());
+                return m;
+              },
+              c => new URL(c.mod).host
+            )
+          );
+        const ensureTree = () =>
+          memo('tree', () =>
+            firstOk(
+              'tree',
+              CDN.tree,
+              async c => {
+                await loadScript(c.script);
+                const P = window.TreeSitter;
+                if (!P) throw new Error('web-tree-sitter 未提供 TreeSitter');
+                await P.init({ locateFile: () => c.wasm });
+                const env = { P, c, langs: {} };
+                // 先確認語法檔相容，不相容就換下一組版本
+                await treeLang(env, 'java');
+                return env;
+              },
+              c => c.script.replace('https://cdn.jsdelivr.net/npm/', '')
+            )
+          );
+        async function treeLang(env, name) {
+          if (!env.langs[name]) env.langs[name] = await env.P.Language.load(env.c.grammars + `tree-sitter-${name}.wasm`);
+          return env.langs[name];
+        }
+
+        function setBadge(text) {
+          $('engineStatus').textContent = text;
+        }
+        async function warm(l) {
+          const cfg = LANGS[l];
+          const name = ENGINE_NAME[cfg.eng];
+          setBadge(`${name}：載入中…`);
+          const jobs = {
+            prettier: () => Promise.all([ensurePrettier(), ...cfg.plugins.map(loadPlugin)]),
+            sql: () => ensureSql(),
+            ruff: () => ensureRuff(),
+            clang: () => Promise.all([ensureClang(), ensureTree().catch(() => null)]),
+          }[cfg.eng];
+          try {
+            await jobs();
+            if (lang() === l) setBadge(`${name}：已就緒`);
+          } catch (e) {
+            if (lang() === l) setBadge(`${name}：載入失敗（見下方 CDN 狀態）`);
+          }
+        }
+
+        // =====================================================================
+        // 格式化
+        // =====================================================================
+        function prettierOpts(l) {
+          const cfg = LANGS[l];
+          return {
+            parser: cfg.parser,
+            tabWidth: tabW(),
+            useTabs: tabsOn(),
+            printWidth: Number($('width').value),
+            semi: $('semis').checked,
+            singleQuote: $('single').checked,
+            trailingComma: $('trailing').checked ? 'all' : 'none',
+            endOfLine: 'lf',
+          };
+        }
+        async function prettierFormat(text, l) {
+          const p = await ensurePrettier();
+          const plugins = await Promise.all(LANGS[l].plugins.map(loadPlugin));
+          return p.format(text, { ...prettierOpts(l), plugins });
+        }
+        async function sqlFormat(text) {
+          const m = await ensureSql();
+          return m.format(text, {
+            language: $('sqld').value,
+            tabWidth: tabW(),
+            useTabs: tabsOn(),
+            keywordCase: 'upper',
+            linesBetweenQueries: 2,
+          });
+        }
+        function ruffWorkspace(mod) {
+          const settings = {
+            'line-length': Number($('width').value),
+            'indent-width': tabW4(),
+            lint: { select: ['F'] },
+            format: { 'indent-style': tabsOn() ? 'tab' : 'space', 'quote-style': $('single').checked ? 'single' : 'double' },
+          };
+          const enc = mod.PositionEncoding;
+          if (enc) {
+            const k = Object.keys(enc).find(x => /^utf-?32$/i.test(x)) || Object.keys(enc).find(x => /^utf-?16$/i.test(x));
+            if (k !== undefined) {
+              try {
+                return new mod.Workspace(settings, enc[k]);
+              } catch (e) {}
+            }
+          }
+          return new mod.Workspace(settings);
+        }
+        function clangStyle() {
+          return JSON.stringify({
+            BasedOnStyle: $('cstyle').value,
+            IndentWidth: tabW4(),
+            TabWidth: tabW4(),
+            UseTab: tabsOn() ? 'Always' : 'Never',
+            ColumnLimit: Number($('width').value),
+            SortIncludes: 'Never',
+            SortUsingDeclarations: 'Never',
+          });
+        }
+
+        let diagText = '';
+        async function formatCode() {
+          const text = source.value;
+          if (!text.trim()) {
+            setStatus('請先貼上要格式化的程式碼。', 'error');
+            return;
+          }
+          const l = lang();
+          const cfg = LANGS[l];
+          $('formatBtn').disabled = true;
+          setStatus('正在格式化…');
+          try {
+            let out;
+            if (cfg.eng === 'prettier') out = await prettierFormat(text, l);
+            else if (cfg.eng === 'sql') out = await sqlFormat(text);
+            else if (cfg.eng === 'ruff') {
+              const mod = await ensureRuff();
+              const d = await diagnose(l, text);
+              if (d.errors.length) return abortWithDiag(d, text, l);
+              out = ruffWorkspace(mod).format(text);
+            } else {
+              const d = await diagnose(l, text);
+              if (d.errors.length && !$('force').checked) return abortWithDiag(d, text, l);
+              const clang = await ensureClang();
+              out = clang.format(text, cfg.file, clangStyle());
+            }
+            result.value = out;
+            updateCounts();
+            showDiff(text, out);
+            setStatus(
+              out === text
+                ? '格式化完成：內容與原始碼相同（已是標準格式）。'
+                : cfg.eng === 'sql'
+                  ? 'SQL 格式化完成。不同資料庫的 SQL 方言可能有差異，請再執行資料庫端驗證。'
+                  : '格式化完成。請檢查下方差異，並在正式使用前測試程式功能。',
+              'good'
+            );
+          } catch (err) {
+            const d = errToDiag(err, l, text);
+            if (d.errors.length) abortWithDiag(d, text, l);
+            else if (isNetErr(err))
+              setStatus('無法載入格式化引擎（CDN 連線失敗或被封鎖），請檢查網路後重試；各引擎狀態見下方「外部 CDN 依賴」。', 'error');
+            else setStatus('格式化失敗：' + (err && err.message ? err.message : String(err)) + '。請確認語言選擇與程式語法。', 'error');
+          } finally {
+            $('formatBtn').disabled = false;
+          }
+        }
+        function abortWithDiag(d, text, l) {
+          renderDiag(d, text, l);
+          const e = d.errors[0];
+          setStatus(
+            `格式化已中止：發現 ${d.errors.length} 項語法錯誤` + (e && e.line ? `（第一項在第 ${e.line} 行 第 ${e.col || '?'} 欄）` : '') + '，詳見下方 Console。',
+            'error'
+          );
+        }
+
+        // =====================================================================
+        // 語法檢查
+        // =====================================================================
+        const mkDiag = engine => ({ errors: [], warnings: [], infos: [], engine });
+        function posToLC(text, pos) {
+          const before = text.slice(0, Math.max(0, pos));
+          const line = before.split('\n').length;
+          return { line, col: pos - before.lastIndexOf('\n') };
+        }
+        // 嚴格 JSON 驗證（各瀏覽器 JSON.parse 的錯誤位置不一致，這裡自己找位置）
+        function jsonCheck(t) {
+          let i = 0;
+          const n = t.length;
+          const err = (msg, pos = i) => {
+            throw { pos, msg };
+          };
+          const ws = () => {
+            while (i < n && ' \t\n\r'.includes(t[i])) i++;
+          };
+          const num = /-?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)?/y;
+          function str() {
+            const s = i;
+            i++;
+            while (i < n) {
+              const c = t[i];
+              if (c === '"') {
+                i++;
+                return;
+              }
+              if (c === '\\') {
+                const e = t[i + 1];
+                if (e === 'u') {
+                  if (!/^[0-9a-fA-F]{4}$/.test(t.substr(i + 2, 4))) err('無效的 \\u 跳脫序列', i);
+                  i += 6;
+                } else if (e !== undefined && '"\\/bfnrt'.includes(e)) i += 2;
+                else err('無效的跳脫字元', i);
+              } else if (c < ' ') err('字串內不可直接換行或控制字元', i);
+              else i++;
+            }
+            err('字串沒有結尾的雙引號', s);
+          }
+          function val(depth) {
+            if (depth > 500) err('巢狀層數過深');
+            ws();
+            const c = t[i];
+            if (c === '{') {
+              i++;
+              ws();
+              if (t[i] === '}') return void i++;
+              for (;;) {
+                ws();
+                if (t[i] !== '"') err('物件的屬性名稱必須是雙引號字串');
+                str();
+                ws();
+                if (t[i] !== ':') err('屬性名稱後面缺少「:」');
+                i++;
+                val(depth + 1);
+                ws();
+                if (t[i] === ',') {
+                  i++;
+                  continue;
+                }
+                if (t[i] === '}') return void i++;
+                err('物件缺少「,」或「}」');
+              }
+            }
+            if (c === '[') {
+              i++;
+              ws();
+              if (t[i] === ']') return void i++;
+              for (;;) {
+                val(depth + 1);
+                ws();
+                if (t[i] === ',') {
+                  i++;
+                  continue;
+                }
+                if (t[i] === ']') return void i++;
+                err('陣列缺少「,」或「]」');
+              }
+            }
+            if (c === '"') return str();
+            for (const lit of ['true', 'false', 'null']) if (t.startsWith(lit, i)) return void (i += lit.length);
+            num.lastIndex = i;
+            const m = num.exec(t);
+            if (m) return void (i += m[0].length);
+            err(i >= n ? '內容意外結束' : `非預期的字元「${c}」`);
+          }
+          val(0);
+          ws();
+          if (i < n) err('JSON 結尾有多餘內容');
+        }
+        const isNetErr = e =>
+          !(e && e.loc) && /Failed to fetch|NetworkError|dynamically imported|module script failed|Load failed|無法載入|Importing/i.test(String(e && e.message));
+        function prettierErr(e) {
+          let line, col;
+          const loc = e && e.loc;
+          if (loc) {
+            const s = loc.start || loc;
+            line = s.line;
+            col = s.column;
+          }
+          const raw = (e && e.message ? e.message : String(e)).split('\n')[0];
+          if (!line) {
+            const m = /\((\d+):(\d+)\)/.exec(raw);
+            if (m) {
+              line = +m[1];
+              col = +m[2];
+            }
+          }
+          return { line, col, msg: raw.replace(/\s*\(\d+:\d+\)\s*$/, '') };
+        }
+        function sqlErr(e) {
+          const raw = (e && e.message ? e.message : String(e)).split('\n')[0];
+          const m = /line (\d+) column (\d+)/i.exec(raw);
+          return { line: m ? +m[1] : undefined, col: m ? +m[2] : undefined, msg: raw.replace(/\s+at line \d+ column \d+\.?/i, '') };
+        }
+        // 格式化時丟出的例外 → 有位置資訊的診斷
+        function errToDiag(err, l, text) {
+          const d = mkDiag(ENGINE_NAME[LANGS[l].eng]);
+          const cfg = LANGS[l];
+          if (isNetErr(err)) return d;
+          if (cfg.eng === 'prettier') d.errors.push(prettierErr(err));
+          else if (cfg.eng === 'sql') d.errors.push(sqlErr(err));
+          else if (cfg.eng === 'ruff') {
+            const m = /(\d+):(\d+)/.exec(err && err.message ? err.message : '');
+            d.errors.push({ line: m ? +m[1] : undefined, col: m ? +m[2] : undefined, msg: String(err && err.message ? err.message : err) });
+          } else return d;
+          return d;
+        }
+
+        // 基本括號／字串檢查（引擎不可用時的備援，附行號與欄位）
+        function basicCheck(text, l) {
+          const out = [];
+          const stack = [];
+          const pairs = { ')': '(', ']': '[', '}': '{' };
+          const sql = l === 'sql';
+          const cLike = ['java', 'cpp', 'csharp', 'javascript', 'typescript', 'babel', 'css', 'scss', 'less'].includes(l);
+          const blk = cLike || sql;
+          const py = l === 'python';
+          let quote = null,
+            qpos = null,
+            esc1 = false,
+            line = 1,
+            col = 0,
+            lc = false,
+            bc = null;
+          for (let i = 0; i < text.length; i++) {
+            const c = text[i],
+              n = text[i + 1];
+            if (c === '\n') {
+              line++;
+              col = 0;
+              lc = false;
+              continue;
+            }
+            col++;
+            if (lc) continue;
+            if (bc) {
+              if (c === '*' && n === '/') {
+                bc = null;
+                i++;
+                col++;
+              }
+              continue;
+            }
+            if (quote) {
+              if (esc1) {
+                esc1 = false;
+                continue;
+              }
+              if (c === '\\' && quote !== '`' && !sql) {
+                esc1 = true;
+                continue;
+              }
+              if (quote.length === 3) {
+                if (text.startsWith(quote, i)) {
+                  i += 2;
+                  col += 2;
+                  quote = null;
+                }
+              } else if (c === quote) quote = null;
+              continue;
+            }
+            if (cLike && c === '/' && n === '/') {
+              lc = true;
+              continue;
+            }
+            if (blk && c === '/' && n === '*') {
+              bc = { line, col };
+              i++;
+              col++;
+              continue;
+            }
+            if ((py && c === '#') || (sql && c === '-' && n === '-')) {
+              lc = true;
+              continue;
+            }
+            if (py && (text.startsWith('"""', i) || text.startsWith("'''", i))) {
+              quote = text.substr(i, 3);
+              qpos = { line, col };
+              i += 2;
+              col += 2;
+              continue;
+            }
+            if (c === '"' || c === "'" || (c === '`' && cLike)) {
+              quote = c;
+              qpos = { line, col };
+              continue;
+            }
+            if ('([{'.includes(c)) stack.push({ c, line, col });
+            else if (pairs[c]) {
+              const top = stack.pop();
+              if (!top) out.push({ line, col, msg: `括號「${c}」沒有對應的開括號` });
+              else if (top.c !== pairs[c]) out.push({ line, col, msg: `括號「${c}」與第 ${top.line} 行第 ${top.col} 欄的「${top.c}」不成對` });
+            }
+          }
+          if (quote) out.push({ line: qpos.line, col: qpos.col, msg: `字串沒有結尾（起始符號：${quote}）` });
+          if (bc) out.push({ line: bc.line, col: bc.col, msg: '註解 /* 沒有對應的 */' });
+          for (const s of stack) out.push({ line: s.line, col: s.col, msg: `「${s.c}」沒有對應的閉括號` });
+          return out;
+        }
+
+        function hasErr(n) {
+          return typeof n.hasError === 'function' ? n.hasError() : n.hasError;
+        }
+        function isMissing(n) {
+          return typeof n.isMissing === 'function' ? n.isMissing() : n.isMissing;
+        }
+        function collectTree(node, out) {
+          if (out.length >= 30 || !hasErr(node)) return;
+          if (node.type === 'ERROR') {
+            out.push(node);
+            return;
+          }
+          if (isMissing(node)) {
+            out.push(node);
+            return;
+          }
+          for (const ch of node.children) collectTree(ch, out);
+        }
+
+        async function diagnose(l, text) {
+          const cfg = LANGS[l];
+          const d = mkDiag('');
+          const fallback = why => {
+            d.engine = '基本括號與字串檢查（備援）';
+            if (why) d.warnings.push({ msg: why });
+            const r = basicCheck(text, l);
+            r.forEach(x => d.errors.push(x));
+            if (!r.length) d.infos.push({ msg: '基本括號與字串結構檢查通過。' });
+            return d;
+          };
+          try {
+            if (l === 'json') {
+              d.engine = '內建嚴格 JSON 驗證';
+              try {
+                jsonCheck(text);
+                d.infos.push({ msg: 'JSON 語法檢查通過。' });
+              } catch (e) {
+                if (e && e.pos === undefined) throw e;
+                const p = posToLC(text, e.pos);
+                d.errors.push({ msg: e.msg, line: p.line, col: p.col });
+              }
+            } else if (cfg.eng === 'prettier') {
+              d.engine = `Prettier（${cfg.parser} 解析器）`;
+              try {
+                await prettierFormat(text, l);
+                d.infos.push({ msg: `Prettier ${cfg.parser} 解析器未回報語法錯誤。` });
+              } catch (e) {
+                if (isNetErr(e)) throw e;
+                d.errors.push(prettierErr(e));
+              }
+              if (l === 'typescript') d.warnings.push({ msg: '只檢查語法，不做 TypeScript 型別檢查；型別錯誤請用 tsc 或 IDE。' });
+              if (l === 'html' || l === 'vue' || l === 'angular') d.warnings.push({ msg: '只檢查標籤結構；Vue／Angular 的語意與綁定表達式請用各自的工具鏈驗證。' });
+              if (l === 'markdown') d.infos.push({ msg: 'Markdown 沒有嚴格的語法錯誤；連結、表格及嵌入 HTML 是否正確未檢查。' });
+              if (l === 'css' || l === 'scss' || l === 'less') d.warnings.push({ msg: '只檢查語法；屬性名稱／值是否有效、變數與 mixin 的語意未檢查。' });
+            } else if (cfg.eng === 'sql') {
+              d.engine = 'sql-formatter 解析器＋括號檢查';
+              try {
+                await sqlFormat(text);
+                d.infos.push({ msg: 'sql-formatter 可解析此 SQL。' });
+              } catch (e) {
+                if (isNetErr(e)) throw e;
+                d.errors.push(sqlErr(e));
+              }
+              basicCheck(text, l).forEach(x => !d.errors.some(y => y.line === x.line) && d.errors.push(x));
+              d.warnings.push({ msg: '未連線資料庫，無法確認語法是否符合特定方言、資料表或欄位是否存在。' });
+            } else if (cfg.eng === 'ruff') {
+              d.engine = 'Ruff 解析器（WebAssembly）';
+              const mod = await ensureRuff();
+              const items = ruffWorkspace(mod).check(text) || [];
+              let lint = 0;
+              for (const it of items) {
+                const s = it.start_location || it.location || { row: it.row, column: it.column };
+                const e = it.end_location || {};
+                const syn = it.code === 'invalid-syntax' || it.code == null || /^SyntaxError/.test(it.message || '');
+                const rec = { line: s.row, col: s.column, endLine: e.row, endCol: e.column };
+                if (syn) d.errors.push({ ...rec, msg: String(it.message).replace(/^SyntaxError:\s*/, '') });
+                else if (lint++ < 30) d.warnings.push({ ...rec, msg: `${it.code ? it.code + '：' : ''}${it.message}` });
+              }
+              if (!d.errors.length) d.infos.push({ msg: 'Ruff 解析器未回報語法錯誤（不會執行程式）。' });
+              d.warnings.push({ msg: '提醒清單只含 Ruff 的 F 類規則（如未使用的 import、未定義名稱）；語意與執行期錯誤請用 python 實際執行或測試。' });
+            } else {
+              d.engine = 'tree-sitter 解析器（WebAssembly）';
+              let env;
+              try {
+                env = await ensureTree();
+              } catch (e) {
+                return fallback('tree-sitter 解析器載入失敗，已改用基本括號檢查（見「外部 CDN 依賴」）。');
+              }
+              const parser = new env.P();
+              parser.setLanguage(await treeLang(env, cfg.ts));
+              const tree = parser.parse(text);
+              const bad = [];
+              collectTree(tree.rootNode, bad);
+              for (const n of bad) {
+                const s = n.startPosition,
+                  e = n.endPosition;
+                const rec = { line: s.row + 1, col: s.column + 1, endLine: e.row + 1, endCol: e.column + 1 };
+                if (n.type === 'ERROR') {
+                  const snip = n.text ? n.text.replace(/\s+/g, ' ').slice(0, 40) : '';
+                  d.errors.push({ ...rec, msg: `語法錯誤：此處無法依 ${cfg.label} 文法解析` + (snip ? `（附近：${snip}）` : '') });
+                } else d.errors.push({ ...rec, msg: `缺少「${n.type}」` });
+              }
+              if (typeof tree.delete === 'function') tree.delete();
+              if (!d.errors.length) d.infos.push({ msg: `tree-sitter 未回報 ${cfg.label} 語法錯誤。` });
+              d.warnings.push({
+                msg:
+                  '只檢查語法，不檢查型別、符號與語意；' +
+                  (l === 'cpp' ? 'C／C++ 巨集與條件編譯可能造成誤報，' : '') +
+                  '正式驗證請用 ' +
+                  { java: 'javac', cpp: 'GCC／Clang', csharp: 'dotnet build' }[l] +
+                  '。',
+              });
+            }
+          } catch (e) {
+            return fallback(`${ENGINE_NAME[cfg.eng]} 引擎無法使用（${e && e.message ? e.message : e}），已改用基本括號檢查。`);
+          }
+          return d;
+        }
+
+        // ---- Console 呈現 ----
+        function frameHtml(lines, line, col) {
+          if (!line || lines[line - 1] === undefined) return '';
+          const disp = s => s.replace(/\t/g, '  ');
+          const w = String(line + 1).length;
+          let html = '';
+          const row = (n, t) => `${String(n).padStart(w)} | ${esc(t)}\n`;
+          if (line > 1) html += row(line - 1, disp(lines[line - 2]).slice(0, 160));
+          const ln = lines[line - 1];
+          const off = Math.max(0, (col || 1) - 1 - 60);
+          const shown = (off ? '…' : '') + disp(ln.slice(off, off + 160));
+          html += row(line, shown);
+          if (col) {
+            const pad = ' '.repeat(w) + ' | ' + ' '.repeat(disp(ln.slice(off, col - 1)).length + (off ? 1 : 0));
+            html += `${pad}<b>^</b>\n`;
+          }
+          return `<pre class="frame">${html.replace(/\n$/, '')}</pre>`;
+        }
+        function renderDiag(d, text, l) {
+          diagText = text;
+          const lines = text.split('\n');
+          const item = (kind, icon, x) =>
+            `<div class="it ${kind}"><span>${icon}</span><div>` +
+            (x.line ? `<button class="loc" type="button" data-l="${x.line}" data-c="${x.col || 1}">第 ${x.line} 行 第 ${x.col || '?'} 欄</button>` : '') +
+            `<span>${esc(x.msg)}</span>` +
+            (kind === 'ie' ? frameHtml(lines, x.line, x.col) : '') +
+            '</div></div>';
+          const e = d.errors.length,
+            w = d.warnings.length;
+          $('consoleSummary').textContent =
+            `語言：${LANGS[l].label}　引擎：${d.engine}　` +
+            (e ? `檢查完成：${e} 項錯誤、${w} 項提醒。` : w ? `檢查完成：未發現語法錯誤，另有 ${w} 項限制／提醒。` : '檢查完成：未發現問題。');
+          $('consoleSummary').style.color = e ? '#bf616a' : '';
+          $('consoleOutput').innerHTML =
+            d.errors.map(x => item('ie', '❌', x)).join('') +
+            d.warnings.map(x => item('iw', '⚠️', x)).join('') +
+            d.infos.map(x => item('ii', e ? 'ℹ️' : '✅', x)).join('') +
+            '<div class="it ii"><span>ℹ️</span><div>通過檢查不代表程式一定可編譯、可執行或符合業務邏輯。</div></div>';
+        }
+        async function checkSyntax() {
+          const text = source.value;
+          if (!text.trim()) {
+            $('consoleSummary').textContent = '沒有可檢查的程式碼。';
+            $('consoleOutput').innerHTML = '<span class="msg">請先在左側貼上程式碼。</span>';
+            return;
+          }
+          $('checkBtn').disabled = true;
+          $('consoleSummary').textContent = '檢查中…（第一次使用某語言會先下載解析器）';
+          try {
+            renderDiag(await diagnose(lang(), text), text, lang());
+          } finally {
+            $('checkBtn').disabled = false;
+          }
+        }
+        function jumpTo(line, col) {
+          const lines = source.value.split('\n');
+          let off = 0;
+          for (let i = 0; i < line - 1 && i < lines.length; i++) off += lines[i].length + 1;
+          off += Math.min(Math.max(0, col - 1), (lines[line - 1] || '').length);
+          source.focus();
+          source.setSelectionRange(off, Math.min(source.value.length, off + 1));
+          const lh = parseFloat(getComputedStyle(source).lineHeight) || 21;
+          source.scrollTop = Math.max(0, (line - 4) * lh);
+          source.scrollIntoView({ block: 'nearest' });
+        }
+        $('consoleOutput').addEventListener('click', e => {
+          const b = e.target.closest('button.loc');
+          if (b) jumpTo(+b.dataset.l, +b.dataset.c);
+        });
+
+        // =====================================================================
+        // 差異比對（行級 LCS ＋ 行內字詞標示）
+        // =====================================================================
+        function diffLines(a, b, ka, kb) {
+          let s = 0;
+          while (s < a.length && s < b.length && ka[s] === kb[s]) s++;
+          let ea = a.length,
+            eb = b.length;
+          while (ea > s && eb > s && ka[ea - 1] === kb[eb - 1]) {
+            ea--;
+            eb--;
+          }
+          const ops = [];
+          for (let i = 0; i < s; i++) ops.push(['=', i, i]);
+          const n = ea - s,
+            m = eb - s,
+            W = m + 1;
+          if (n * m > 16e6) {
+            // 太大時退回「依序對齊相同行」的有界記憶體做法
+            const positions = new Map();
+            for (let j = s; j < eb; j++) {
+              if (!positions.has(kb[j])) positions.set(kb[j], []);
+              positions.get(kb[j]).push(j);
+            }
+            const used = new Map(),
+              matches = [];
+            let last = s - 1;
+            for (let i = s; i < ea; i++) {
+              const arr = positions.get(ka[i]);
+              if (!arr) continue;
+              let p = used.get(ka[i]) || 0;
+              while (p < arr.length && arr[p] <= last) p++;
+              if (p < arr.length) {
+                used.set(ka[i], p + 1);
+                matches.push([i, arr[p]]);
+                last = arr[p];
+              }
+            }
+            let ai = s,
+              bj = s;
+            for (const [mi, mj] of matches) {
+              while (ai < mi) ops.push(['-', ai++, -1]);
+              while (bj < mj) ops.push(['+', -1, bj++]);
+              ops.push(['=', mi, mj]);
+              ai = mi + 1;
+              bj = mj + 1;
+            }
+            while (ai < ea) ops.push(['-', ai++, -1]);
+            while (bj < eb) ops.push(['+', -1, bj++]);
+            ops.big = true;
+          } else {
+            const L = new Uint32Array((n + 1) * W);
+            for (let i = n - 1; i >= 0; i--)
+              for (let j = m - 1; j >= 0; j--)
+                L[i * W + j] = ka[s + i] === kb[s + j] ? L[(i + 1) * W + j + 1] + 1 : Math.max(L[(i + 1) * W + j], L[i * W + j + 1]);
+            let i = 0,
+              j = 0;
+            while (i < n && j < m) {
+              if (ka[s + i] === kb[s + j]) {
+                ops.push(['=', s + i, s + j]);
+                i++;
+                j++;
+              } else if (L[(i + 1) * W + j] >= L[i * W + j + 1]) ops.push(['-', s + i++, -1]);
+              else ops.push(['+', -1, s + j++]);
+            }
+            while (i < n) ops.push(['-', s + i++, -1]);
+            while (j < m) ops.push(['+', -1, s + j++]);
+          }
+          for (let k = 0; k < a.length - ea; k++) ops.push(['=', ea + k, eb + k]);
+          return ops;
+        }
+        const TOK = /\s+|[A-Za-z0-9_$]+|[\u3400-\u9fff]|[^\sA-Za-z0-9_$\u3400-\u9fff]/g;
+        function inlineDiff(a, b) {
+          const ta = a.match(TOK) || [],
+            tb = b.match(TOK) || [];
+          if (ta.length > 300 || tb.length > 300) return null;
+          const n = ta.length,
+            m = tb.length,
+            W = m + 1,
+            L = new Uint16Array((n + 1) * W);
+          for (let i = n - 1; i >= 0; i--)
+            for (let j = m - 1; j >= 0; j--)
+              L[i * W + j] = ta[i] === tb[j] ? L[(i + 1) * W + j + 1] + 1 : Math.max(L[(i + 1) * W + j], L[i * W + j + 1]);
+          const ma = new Set(),
+            mb = new Set();
+          let i = 0,
+            j = 0,
+            hit = 0;
+          while (i < n && j < m) {
+            if (ta[i] === tb[j]) {
+              ma.add(i);
+              mb.add(j);
+              if (/\S/.test(ta[i])) hit++;
+              i++;
+              j++;
+            } else if (L[(i + 1) * W + j] >= L[i * W + j + 1]) i++;
+            else j++;
+          }
+          const nonWs = t => t.filter(x => /\S/.test(x)).length;
+          if (hit / Math.max(1, nonWs(ta), nonWs(tb)) < 0.3 && nonWs(ta) + nonWs(tb) > 0) return null; // 幾乎不相同：整行標示即可
+          const build = (toks, matched, cls) => {
+            let html = '',
+              run = '';
+            const flush = () => {
+              if (run) html += `<mark class="${cls}">${esc(run)}</mark>`;
+              run = '';
+            };
+            toks.forEach((t, k) => {
+              if (matched.has(k)) {
+                flush();
+                html += esc(t);
+              } else run += t;
+            });
+            flush();
+            return html;
+          };
+          return { a: build(ta, ma, 'd'), b: build(tb, mb, 'a') };
+        }
+
+        let diffState = null;
+        function buildRows(A, B, ignoreWs) {
+          const norm = l => (ignoreWs ? l.replace(/\s+/g, ' ').trim() : l);
+          const ops = diffLines(A, B, A.map(norm), B.map(norm));
+          const rows = [];
+          let i = 0,
+            inl = 0;
+          while (i < ops.length) {
+            const [op, x, y] = ops[i];
+            if (op === '=') {
+              rows.push({ t: 'eq', a: x + 1, b: y + 1, ha: esc(A[x]), hb: esc(B[y]) });
+              i++;
+              continue;
+            }
+            const dels = [],
+              adds = [];
+            while (i < ops.length && ops[i][0] !== '=') (ops[i][0] === '-' ? dels : adds).push(ops[i++]);
+            const k = Math.min(dels.length, adds.length);
+            for (let q = 0; q < k; q++) {
+              const ia = dels[q][1],
+                ib = adds[q][2];
+              const r = inl++ < 400 ? inlineDiff(A[ia], B[ib]) : null;
+              rows.push({ t: 'chg', a: ia + 1, b: ib + 1, ha: r ? r.a : esc(A[ia]), hb: r ? r.b : esc(B[ib]) });
+            }
+            for (let q = k; q < dels.length; q++) rows.push({ t: 'del', a: dels[q][1] + 1, ha: esc(A[dels[q][1]]) });
+            for (let q = k; q < adds.length; q++) rows.push({ t: 'add', b: adds[q][2] + 1, hb: esc(B[adds[q][2]]) });
+          }
+          rows.big = ops.big;
+          return rows;
+        }
+        const splitLines = t => {
+          const a = t === '' ? [] : t.split(/\r\n|\r|\n/);
+          if (a.length && a[a.length - 1] === '') a.pop(); // 結尾換行不當成多一行
+          return a;
+        };
+        function showDiff(before, after) {
+          diffState = { before, after, open: new Set(), cur: -1 };
+          $('diffSection').style.display = 'block';
+          renderDiff(true);
+        }
+        function renderDiff(rebuild) {
+          const st = diffState;
+          if (!st) return;
+          if (rebuild || st.ws !== $('dWs').checked) {
+            st.ws = $('dWs').checked;
+            st.rows = buildRows(splitLines(st.before), splitLines(st.after), st.ws);
+            st.open = new Set();
+            st.cur = -1;
+          }
+          st.cur = -1;
+          const rows = st.rows,
+            n = rows.length;
+          let add = 0,
+            del = 0,
+            chg = 0;
+          rows.forEach(r => (r.t === 'add' ? add++ : r.t === 'del' ? del++ : r.t === 'chg' ? chg++ : 0));
+          $('diffStat').innerHTML =
+            add + del + chg === 0
+              ? '<span class="gc">前後完全相同</span>' + (st.ws ? ' <span class="msg">（已忽略空白差異）</span>' : '')
+              : `<span class="gd">移除 ${del} 行</span> <span class="gc">變更 ${chg} 行</span> <span class="ga">新增 ${add} 行</span>` +
+                (rows.big ? ' <span class="msg">（檔案過大，已簡化比對）</span>' : '');
+          const only = $('dOnly').checked,
+            C = 3,
+            show = new Uint8Array(n);
+          if (!only) show.fill(1);
+          else
+            for (let i = 0; i < n; i++)
+              if (rows[i].t !== 'eq') for (let j = Math.max(0, i - C); j <= Math.min(n - 1, i + C); j++) show[j] = 1;
+          const cell = (cls, no, html) => `<div class="dc ${cls}"><span class="ln">${no || ''}</span><span class="tx">${html || ''}</span></div>`;
+          let html = '',
+            emitted = 0,
+            block = -1,
+            prevDiff = false,
+            cut = false;
+          const emit = (r, i) => {
+            const isDiff = r.t !== 'eq';
+            const bAttr = isDiff && !prevDiff ? ` data-b="${++block}"` : '';
+            prevDiff = isDiff;
+            const L = r.t === 'del' || r.t === 'chg' ? 'del' : r.t === 'add' ? 'emp' : '';
+            const R = r.t === 'add' || r.t === 'chg' ? 'add' : r.t === 'del' ? 'emp' : '';
+            html += `<div class="dr"${bAttr}>${cell(L, r.a, r.ha)}${cell(R, r.b, r.hb)}</div>`;
+            emitted++;
+          };
+          for (let i = 0; i < n; ) {
+            if (emitted >= 3000) {
+              cut = true;
+              break;
+            }
+            if (show[i]) {
+              emit(rows[i], i);
+              i++;
+              continue;
+            }
+            let j = i;
+            while (j < n && !show[j]) j++;
+            if (st.open.has(i)) for (let k = i; k < j && emitted < 3000; k++) emit(rows[k], k);
+            else {
+              html += `<div class="dr skip"><div>⋯ 已摺疊 ${j - i} 行未變更的內容<button type="button" data-f="${i}">展開</button></div></div>`;
+              prevDiff = false;
+            }
+            i = j;
+          }
+          if (cut) html += '<div class="dr skip"><div>已超過 3000 列，其餘內容未顯示。請改用「只顯示差異」，或到「文件比對工具」查看完整差異。</div></div>';
+          if (!rows.length) html = '<div class="dr skip"><div>沒有內容。</div></div>';
+          $('diffBody').innerHTML = html;
+          const nb = $('diffBody').querySelectorAll('[data-b]').length;
+          $('dPrev').disabled = $('dNext').disabled = !nb;
+          $('dCnt').textContent = nb ? `0 / ${nb}` : '0 / 0';
+        }
+        function diffGo(d) {
+          const els = [...$('diffBody').querySelectorAll('[data-b]')];
+          if (!els.length) return;
+          const st = diffState;
+          st.cur = st.cur < 0 ? (d > 0 ? 0 : els.length - 1) : (st.cur + d + els.length) % els.length;
+          $('diffBody')
+            .querySelectorAll('.dr.cur')
+            .forEach(x => x.classList.remove('cur'));
+          const el = els[st.cur];
+          el.classList.add('cur');
+          $('diffBody').scrollTop = Math.max(0, el.offsetTop - $('diffBody').clientHeight / 3);
+          $('dCnt').textContent = `${st.cur + 1} / ${els.length}`;
+        }
+        $('dOnly').addEventListener('change', () => renderDiff(false));
+        $('dWs').addEventListener('change', () => renderDiff(false));
+        $('dPrev').addEventListener('click', () => diffGo(-1));
+        $('dNext').addEventListener('click', () => diffGo(1));
+        $('diffBody').addEventListener('click', e => {
+          const b = e.target.closest('button[data-f]');
+          if (!b) return;
+          diffState.open.add(+b.dataset.f);
+          renderDiff(false);
+        });
+
+        // =====================================================================
+        // 其他功能：複製、放回左側、下載、清除、深色模式
+        // =====================================================================
+        $('formatBtn').addEventListener('click', formatCode);
+        $('checkBtn').addEventListener('click', checkSyntax);
+        $('clearConsoleBtn').addEventListener('click', () => {
+          $('consoleSummary').textContent = '已清除檢查結果。';
+          $('consoleOutput').innerHTML = '<span class="msg">等待檢查結果…</span>';
+        });
+        source.addEventListener('input', updateCounts);
+        result.addEventListener('input', updateCounts);
+        $('copyBtn').addEventListener('click', async () => {
+          if (!result.value) return setStatus('目前沒有可複製的格式化結果。', 'error');
+          try {
+            await navigator.clipboard.writeText(result.value);
+            setStatus('已複製格式化結果。', 'good');
+          } catch {
+            result.focus();
+            result.select();
+            setStatus('瀏覽器未允許自動複製，已選取結果，請按 Ctrl+C 複製。');
+          }
+        });
+        $('replaceBtn').addEventListener('click', () => {
+          if (!result.value) return setStatus('目前沒有格式化結果可放回左側。', 'error');
+          source.value = result.value;
+          updateCounts();
+          setStatus('已將結果放回左側；原始版本已被覆蓋（下方差異仍保留格式化前的內容），若要保留請先複製或下載。');
+        });
+        $('downloadBtn').addEventListener('click', () => {
+          if (!result.value) return setStatus('目前沒有可下載的格式化結果。', 'error');
+          const url = URL.createObjectURL(new Blob([result.value], { type: 'text/plain;charset=utf-8' }));
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'formatted-code.' + LANGS[lang()].ext;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+          setStatus('已開始下載格式化結果。', 'good');
+        });
+        $('clearBtn').addEventListener('click', () => {
+          source.value = '';
+          result.value = '';
+          diffState = null;
+          $('diffSection').style.display = 'none';
+          $('consoleSummary').textContent = '尚未執行檢查。';
+          $('consoleOutput').innerHTML = '<span class="msg">等待檢查結果…</span>';
+          updateCounts();
+          setStatus('已清除內容。');
+          source.focus();
+        });
+
+        // 深色模式：沿用全站主題色票（common.js），這個按鈕只是淺／深之間的快速切換
+        const DARK = ['dark', 'ocean', 'dracula'];
+        const isDark = () => {
+          const t = document.documentElement.dataset.theme;
+          return t ? DARK.includes(t) : matchMedia('(prefers-color-scheme: dark)').matches;
+        };
+        const syncThemeBtn = () => ($('themeBtn').textContent = isDark() ? '切換淺色模式' : '切換深色模式');
+        $('themeBtn').addEventListener('click', () => {
+          const sw = document.querySelector(`.sw[data-t="${isDark() ? 'light' : 'dark'}"]`);
+          if (sw) sw.click();
+        });
+        new MutationObserver(syncThemeBtn).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeBtn);
+
+        // 切換語言：顯示對應選項、預載該語言的引擎
+        function onLang() {
+          const l = lang(),
+            cfg = LANGS[l];
+          document.querySelectorAll('[data-o]').forEach(el => (el.hidden = !cfg.opts.includes(el.dataset.o)));
+          if (cfg.style) $('cstyle').value = cfg.style;
+          setBadge(`${ENGINE_NAME[cfg.eng]}：尚未載入`);
+          warm(l);
+        }
+        $('language').addEventListener('change', onLang);
+        syncThemeBtn();
+        onLang();
+        updateCounts();
+      })();
+    </script>
+  </body>
+</html>

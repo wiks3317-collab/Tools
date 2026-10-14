@@ -744,11 +744,14 @@ tr.row:hover {
 }
 
 /* ===== 分頁容器與內嵌模式（搭配 common.js） ===== */
-.pane {
+section.pane {
   display: none;
 }
-.pane.on {
+section.pane.on {
   display: block;
+}
+[hidden] {
+  display: none !important;
 }
 .tool-frame {
   display: block;
@@ -758,6 +761,9 @@ tr.row:hover {
   background: var(--bg);
   color: var(--fg);
 }
+.tool-frame.auto {
+  min-height: 0;
+}
 .tool-frame.fill {
   height: calc(100vh - 230px);
   min-height: 480px;
@@ -765,6 +771,9 @@ tr.row:hover {
 @media (max-width: 640px) {
   .tool-frame {
     min-height: 700px;
+  }
+  .tool-frame.auto {
+    min-height: 0;
   }
   .tool-frame.fill {
     min-height: 480px;

@@ -193,9 +193,11 @@
         <b>重要：</b
         >請使用黑色或其他不透明色塊遮蔽；不要以半透明、模糊或馬賽克代替真正遮蔽。匯出後請重新開啟檔案逐頁檢查，確認沒有漏掉個資。
       </div>
-      <label class="drop" id="drop" for="file"
-        >點擊選擇或拖曳圖片／PDF 到這裡<input id="file" type="file" accept="image/*,.pdf,application/pdf"
-      /></label>
+      <section id="dropBox">
+        <label class="drop" id="drop" for="file"
+          >點擊選擇或拖曳圖片／PDF 到這裡<input id="file" type="file" accept="image/*,.pdf,application/pdf"
+        /></label>
+      </section>
       <section id="editor" hidden>
         <div class="row"><b id="fileName">尚未載入</b><span class="msg" id="info"></span></div>
         <div class="row" id="pdfNav" hidden>
@@ -427,7 +429,7 @@
         boxes = new Map();
         $('fileName').textContent = f.name;
         $('info').textContent = `${(f.size / 1024 / 1024).toFixed(2)} MB`;
-        $('drop').hidden = true;
+        $('dropBox').hidden = true;
         $('editor').hidden = false;
         setStatus('讀取檔案中…');
         try {
@@ -461,7 +463,7 @@
           pdfDoc = null;
           baseCanvas = null;
           $('editor').hidden = true;
-          $('drop').hidden = false;
+          $('dropBox').hidden = false;
           setStatus('');
           alert('無法讀取檔案：' + (e.message || e));
         }
@@ -626,7 +628,7 @@
         previewFit = true;
         previewScale = 1;
         $('editor').hidden = true;
-        $('drop').hidden = false;
+        $('dropBox').hidden = false;
         setStatus('');
         $('fileName').textContent = '尚未載入';
       };
