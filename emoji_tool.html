@@ -3814,5 +3814,22 @@
       };
       render();
     </script>
+      <script>
+      // 被 emoji_suite 以 iframe 嵌入時，回報內容高度給外層，讓外層撐開 iframe（只保留外層捲軸）
+      (function () {
+        if (window.parent === window) return;
+        document.documentElement.style.overflow = 'hidden';
+        var last = 0;
+        function send() {
+          var h = Math.ceil(document.body.getBoundingClientRect().height);
+          if (!h || h === last) return;
+          last = h;
+          parent.postMessage({ type: 'embed-height', height: h }, '*');
+        }
+        if (window.ResizeObserver) new ResizeObserver(send).observe(document.body);
+        window.addEventListener('load', send);
+        send();
+      })();
+    </script>
   </body>
 </html>

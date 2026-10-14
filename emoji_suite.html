@@ -106,6 +106,15 @@
         color: var(--mut);
         margin: 0;
       }
+      /* 只保留外層捲軸：iframe 高度由內容決定（由下方 script 依子頁回報的高度設定） */
+      .tool-frame {
+        display: block;
+        width: 100%;
+        border: 0;
+        height: 800px; /* 初始值，載入後會被內容高度取代 */
+        min-height: 0 !important;
+        max-height: none !important;
+      }
       @media (max-width: 600px) {
         .wrap {
           padding-top: 12px;
@@ -137,11 +146,21 @@
         ><button type="button" role="tab" aria-selected="false" data-pane="symbol">特殊符號圖庫</button>
       </nav>
       <section class="pane on" id="pane-emoji">
-        <iframe class="tool-frame fill" id="emojiFrame" title="Emoji 圖庫" src="emoji_tool.html"></iframe>
+        <iframe class="tool-frame fill" id="emojiFrame" scrolling="no" title="Emoji 圖庫" src="emoji_tool.html"></iframe>
       </section>
       <section class="pane" id="pane-symbol">
-        <iframe class="tool-frame fill" id="symbolFrame" title="特殊符號圖庫" src="symbol_tool.html" loading="lazy"></iframe>
+        <iframe class="tool-frame fill" id="symbolFrame" scrolling="no" title="特殊符號圖庫" src="symbol_tool.html" loading="lazy"></iframe>
       </section>
     </div>
+      <script>
+      // 接收子頁回報的內容高度，撐開對應的 iframe
+      window.addEventListener('message', function (e) {
+        var d = e.data;
+        if (!d || d.type !== 'embed-height' || !(d.height > 0)) return;
+        document.querySelectorAll('iframe.tool-frame').forEach(function (f) {
+          if (f.contentWindow === e.source) f.style.height = d.height + 'px';
+        });
+      });
+    </script>
   </body>
 </html>
