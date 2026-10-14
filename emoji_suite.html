@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Emoji／特殊符號圖庫</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="referrer" content="no-referrer" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%98%80%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="common.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.6 'Noto Sans TC',
+          system-ui,
+          sans-serif;
+      }
+      a {
+        color: var(--pri);
+      }
+      .wrap {
+        max-width: 1180px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 16px clamp(12px, 2vw, 24px) 56px;
+      }
+      header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .back {
+        display: block;
+        color: var(--mut);
+        font-size: 12px;
+        text-decoration: none;
+      }
+      h1 {
+        font-size: 21px;
+        margin: 1px 0;
+      }
+      .tagline {
+        color: var(--mut);
+        font-size: 12px;
+        margin: 4px 0 12px;
+      }
+      .themes {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .sw {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        padding: 0;
+        border: 2px solid var(--bd);
+        cursor: pointer;
+      }
+      .sw.on {
+        outline: 2px solid var(--pri);
+        outline-offset: 2px;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--bd);
+        margin: 16px 0 12px;
+        padding-bottom: 10px;
+      }
+      .tabs button {
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--bd);
+        border-radius: 7px;
+        padding: 8px 14px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .tabs button.on {
+        background: var(--pri);
+        color: var(--prifg);
+        border-color: var(--pri);
+      }
+      .note {
+        font-size: 12px;
+        color: var(--mut);
+        margin: 0;
+      }
+      @media (max-width: 600px) {
+        .wrap {
+          padding-top: 12px;
+        }
+        .themes {
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .tabs button {
+          flex: 1 1 100%;
+          text-align: left;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <a class="back" href="index.html">← 返回小工具集首頁</a>
+          <h1>Emoji／特殊符號圖庫</h1>
+          <p class="tagline">依分類或關鍵字搜尋 emoji 與特殊符號，點一下就複製，也能組合多個一次複製。</p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
+      <nav class="tabs" role="tablist" aria-label="圖庫選擇">
+        <button class="on" type="button" role="tab" aria-selected="true" data-pane="emoji">Emoji 圖庫</button
+        ><button type="button" role="tab" aria-selected="false" data-pane="symbol">特殊符號圖庫</button>
+      </nav>
+      <section class="pane on" id="pane-emoji">
+        <iframe class="tool-frame fill" id="emojiFrame" title="Emoji 圖庫" src="emoji_tool.html"></iframe>
+      </section>
+      <section class="pane" id="pane-symbol">
+        <iframe class="tool-frame fill" id="symbolFrame" title="特殊符號圖庫" src="symbol_tool.html" loading="lazy"></iframe>
+      </section>
+    </div>
+  </body>
+</html>

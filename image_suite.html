@@ -1,31 +1,148 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>圖片處理與編輯</title>
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex"><meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet"><meta name="referrer" content="no-referrer">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%96%BC%EF%B8%8F%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
-<style>
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,sans-serif}a{color:var(--pri)}.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}h1{font-size:21px;margin:1px 0}.tagline{color:var(--mut);font-size:12px;margin:4px 0 12px}.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}.sw.on{outline:2px solid var(--pri);outline-offset:2px}.tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--bd);margin:16px 0 12px;padding-bottom:10px}.tabs button{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:7px;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer}.tabs button.on{background:var(--pri);color:var(--prifg);border-color:var(--pri)}.pane{display:none}.pane.on{display:block}iframe{display:block;border:0;width:100%;min-height:520px;background:var(--bg);color:var(--fg)}.note{font-size:12px;color:var(--mut);margin:0}
-@media(max-width:600px){.wrap{padding-top:12px}.themes{width:100%;justify-content:flex-start}.tabs button{flex:1 1 100%;text-align:left}iframe{min-height:700px}}
-</style>
-<link rel="stylesheet" href="style.css">
-</head>
-<body><main class="wrap">
-<a class="back" href="index.html">← 回到小工具首頁</a>
-<header><div><h1>圖片處理與編輯</h1><p class="tagline">批次轉檔、壓縮、旋轉與縮放，或進一步編輯、去背、裁切、調色及加上浮水印。</p></div><div class="themes" id="themes">主題：</div></header>
-<nav class="tabs" role="tablist" aria-label="圖片工具選擇"><button class="on" type="button" role="tab" aria-selected="true" data-pane="batch">批次處理／轉檔</button><button type="button" role="tab" aria-selected="false" data-pane="edit">圖片編輯／去背</button></nav>
-<section class="pane on" id="pane-batch"><iframe id="batchFrame" title="圖片批次處理工具" src="image_tool.html"></iframe></section>
-<section class="pane" id="pane-edit"><iframe id="editFrame" title="圖片編輯與去背工具" src="photo_editor.html"></iframe></section>
-<p class="note">圖片處理主要在瀏覽器本機執行。AI 去背、HEIC 轉檔及部分 PDF／字型資源需連線下載第三方元件。</p>
-</main>
-<script>
-const $=id=>document.getElementById(id);const THEMES=[['auto','跟隨系統','#ffffff','#2b313c'],['light','淺色','#f5f6f7','#4f729b'],['dark','深色','#232831','#88c0d0'],['sepia','護眼米黃','#f3efe7','#8c6a43'],['forest','森林綠','#eff2ee','#4f7a62'],['ocean','深海藍','#1b2631','#7fb7cc'],['dracula','紫夜','#252833','#a8a0d6']];
-function applyTheme(t){if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;try{localStorage.setItem('tools-theme',t)}catch(e){}document.querySelectorAll('.sw').forEach(b=>b.classList.toggle('on',b.dataset.t===t));document.querySelectorAll('iframe').forEach(f=>{try{f.contentWindow.postMessage({type:'tools-theme',theme:t},'*')}catch(e){}})}
-THEMES.forEach(([id,name,c1,c2])=>{const b=document.createElement('button');b.className='sw';b.dataset.t=id;b.title=name;b.setAttribute('aria-label',name);b.style.background=`linear-gradient(135deg,${c1} 50%,${c2} 50%)`;b.onclick=()=>applyTheme(id);$('themes').appendChild(b)});applyTheme(document.documentElement.dataset.theme||'auto');
-document.querySelectorAll('[data-pane]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-pane]').forEach(x=>{const active=x===b;x.classList.toggle('on',active);x.setAttribute('aria-selected',String(active))});document.querySelectorAll('.pane').forEach(x=>x.classList.toggle('on',x.id==='pane-'+b.dataset.pane));const f=b.dataset.pane==='batch'?$('batchFrame'):$('editFrame');try{f.contentWindow.postMessage({type:'tools-theme',theme:document.documentElement.dataset.theme||'auto'},'*')}catch(e){}});
-window.addEventListener('message',e=>{if(!['batchFrame','editFrame'].some(id=>$(id).contentWindow===e.source))return;if(e.data?.type==='tools-iframe-height'&&Number.isFinite(e.data.height)){const fr=$('batchFrame').contentWindow===e.source?$('batchFrame'):$('editFrame');fr.style.height=Math.max(420,Math.min(30000,Math.ceil(e.data.height)))+'px'}});
-window.addEventListener('load',()=>applyTheme(document.documentElement.dataset.theme||'auto'));
-</script></body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>圖片處理與編輯</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="referrer" content="no-referrer" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%96%BC%EF%B8%8F%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="common.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.6 'Noto Sans TC',
+          system-ui,
+          sans-serif;
+      }
+      a {
+        color: var(--pri);
+      }
+      .wrap {
+        max-width: 1180px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 16px clamp(12px, 2vw, 24px) 56px;
+      }
+      header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .back {
+        display: block;
+        color: var(--mut);
+        font-size: 12px;
+        text-decoration: none;
+      }
+      h1 {
+        font-size: 21px;
+        margin: 1px 0;
+      }
+      .tagline {
+        color: var(--mut);
+        font-size: 12px;
+        margin: 4px 0 12px;
+      }
+      .themes {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .sw {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        padding: 0;
+        border: 2px solid var(--bd);
+        cursor: pointer;
+      }
+      .sw.on {
+        outline: 2px solid var(--pri);
+        outline-offset: 2px;
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--bd);
+        margin: 16px 0 12px;
+        padding-bottom: 10px;
+      }
+      .tabs button {
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--bd);
+        border-radius: 7px;
+        padding: 8px 14px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .tabs button.on {
+        background: var(--pri);
+        color: var(--prifg);
+        border-color: var(--pri);
+      }
+      .note {
+        font-size: 12px;
+        color: var(--mut);
+        margin: 0;
+      }
+      @media (max-width: 600px) {
+        .wrap {
+          padding-top: 12px;
+        }
+        .themes {
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .tabs button {
+          flex: 1 1 100%;
+          text-align: left;
+        }
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <a class="back" href="index.html">← 返回小工具集首頁</a>
+          <h1>圖片處理與編輯</h1>
+          <p class="tagline">批次轉檔、壓縮、旋轉與縮放，或進一步編輯、去背、裁切、調色及加上浮水印。</p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
+      <nav class="tabs" role="tablist" aria-label="圖片工具選擇">
+        <button class="on" type="button" role="tab" aria-selected="true" data-pane="batch">批次處理／轉檔</button
+        ><button type="button" role="tab" aria-selected="false" data-pane="edit">圖片編輯／去背</button>
+      </nav>
+      <section class="pane on" id="pane-batch">
+        <iframe class="tool-frame" id="batchFrame" title="圖片批次處理工具" src="image_tool.html"></iframe>
+      </section>
+      <section class="pane" id="pane-edit">
+        <iframe class="tool-frame" id="editFrame" loading="lazy" title="圖片編輯與去背工具" src="photo_editor.html"></iframe>
+      </section>
+      <p class="note">圖片處理主要在瀏覽器本機執行。AI 去背、HEIC 轉檔及部分 PDF／字型資源需連線下載第三方元件。</p>
+    </div>
+  </body>
+</html>

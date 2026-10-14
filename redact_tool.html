@@ -1,84 +1,635 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>圖片／PDF 個資遮蔽工具</title>
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex"><meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet"><meta name="referrer" content="no-referrer">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A1%EF%B8%8F%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
-<style>
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,sans-serif}a{color:var(--pri)}.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}h1{font-size:20px;margin:4px 0}.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.hint,.msg{color:var(--mut);font-size:12px}.privacy,.warn{padding:8px 10px;background:var(--gut);border-left:3px solid var(--pri);font-size:12px;margin:12px 0}.warn{border-color:#b8693f}section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin:12px 0}button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}button:disabled{opacity:.45;cursor:default}.pri{background:var(--pri);color:var(--prifg);border-color:var(--pri)}input[type=file]{display:none}select,input[type=color]{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:5px;padding:5px} .drop{display:block;padding:28px;text-align:center;border:2px dashed var(--bd);border-radius:8px;cursor:pointer;color:var(--mut)}.drop.over{background:var(--gut);border-color:var(--pri)}.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}.stage{background:var(--gut);border:1px solid var(--bd);border-radius:8px;padding:10px;display:block;min-height:240px;max-height:75vh;overflow:auto}#view{display:block;max-width:none;max-height:none;margin:0 auto;touch-action:none;cursor:crosshair;flex:none}
-.zoom-controls input[type=range],.watermark-controls input[type=range]{width:min(220px,40vw);accent-color:var(--pri)}
-.watermark-controls input[type=text]{width:min(520px,100%);min-width:220px;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:5px;padding:6px 8px;font:inherit}
-.watermark-controls .row{margin:7px 0} .watermark-controls label{display:flex;align-items:center;gap:6px;flex-wrap:wrap}label{font-size:13px}footer{margin-top:20px;color:var(--mut);font-size:12px;text-align:center}
-</style>
-<link rel="stylesheet" href="style.css">
-</head>
-<body><main class="wrap">
-<a class="back" href="index.html">← 回到小工具集</a><h1>圖片／PDF 個資遮蔽工具</h1>
-<p>框選姓名、電話、地址、身分證字號、條碼等敏感區域，再匯出遮蔽後的新檔。</p>
-<div class="privacy">處理在瀏覽器本機執行，檔案內容不會上傳。本工具採不透明色塊實際覆蓋像素，匯出 PDF 會將頁面攤平成圖片，不保留原始文字層。</div>
-<div class="warn"><b>重要：</b>請使用黑色或其他不透明色塊遮蔽；不要以半透明、模糊或馬賽克代替真正遮蔽。匯出後請重新開啟檔案逐頁檢查，確認沒有漏掉個資。</div>
-<label class="drop" id="drop" for="file">點擊選擇或拖曳圖片／PDF 到這裡<input id="file" type="file" accept="image/*,.pdf,application/pdf"></label>
-<section id="editor" hidden>
-<div class="row"><b id="fileName">尚未載入</b><span class="msg" id="info"></span></div>
-<div class="row" id="pdfNav" hidden><button id="prev">上一頁</button><span id="pageInfo"></span><button id="next">下一頁</button><label>前往頁次 <select id="pageSelect"></select></label></div>
-<div class="stage" id="previewStage"><canvas id="view"></canvas></div>
-<div class="row zoom-controls" aria-label="預覽縮放控制"><button id="zoomOut" type="button" title="縮小預覽">－</button><label for="zoomRange">預覽縮放</label><input id="zoomRange" type="range" min="1" max="300" value="100"><output id="zoomLabel">適合視窗</output><button id="zoomIn" type="button" title="放大預覽">＋</button><button id="zoomFit" type="button">適合視窗</button><button id="zoomActual" type="button">原始尺寸</button></div>
-<div class="row"><label>遮蔽色 <select id="maskColor"><option value="#000000">黑色（建議）</option><option value="#ffffff">白色</option><option value="#b91c1c">深紅色</option></select></label><button id="undo">復原上一個框</button><button id="clearPage">清除此頁框選</button><button id="clearAll">清除全部框選</button></div>
-<p class="hint">用滑鼠或觸控在畫面拖曳框選。框選會記錄成相對座標，縮放預覽時仍會對準原本位置。</p>
-<section class="watermark-controls">
-<h2>斜向半透明浮水印</h2>
-<div class="row"><label><input type="checkbox" id="wmEnabled" checked> 匯出時加入浮水印</label><label>文字 <input type="text" id="wmText" maxlength="160" value="僅供XX公司申請XX服務使用" aria-label="浮水印文字"></label></div>
-<div class="row"><label>文字顏色 <input type="color" id="wmColor" value="#c62828"></label><label>透明度 <input type="range" id="wmAlpha" min="5" max="60" value="22"><output id="wmAlphaOut">22%</output></label><label>字體大小 <input type="range" id="wmSize" min="2" max="12" value="6"><output id="wmSizeOut">6%</output></label><label>傾斜角度 <input type="range" id="wmAngle" min="-60" max="-15" value="-30"><output id="wmAngleOut">-30°</output></label></div>
-<p class="hint">浮水印會顯示於預覽，並實際寫入匯出的圖片及 PDF。若不需要，可取消勾選。建議匯出後重新開啟檔案確認遮蔽及浮水印效果。</p>
-</section>
-<div class="row"><button class="pri" id="export">匯出遮蔽結果</button><button id="replace">更換檔案</button><span class="msg" id="status" aria-live="polite"></span></div>
-</section>
-<footer>提醒：遮蔽是不可逆的像素覆蓋；請保存原始檔備份。</footer>
-</main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-'use strict';
-const $=id=>document.getElementById(id), view=$('view'), ctx=view.getContext('2d');
-if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-const MAX_FILE_BYTES=100*1024*1024,MAX_PDF_PAGES=200;
-let sourceFile=null,kind='',pdfDoc=null,pageNo=1,pageCount=1,baseCanvas=null,boxes=new Map(),start=null,draft=null,busy=false;
-let previewScale=1,previewFit=true;
-const boxList=()=>boxes.get(pageNo)||[];
-const setBoxes=a=>boxes.set(pageNo,a);
-function setStatus(s){$('status').textContent=s||''}
-function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-function pageKey(){return kind==='pdf'?pageNo:1}
-function point(e){const r=view.getBoundingClientRect();return{x:clamp((e.clientX-r.left)*view.width/r.width,0,view.width),y:clamp((e.clientY-r.top)*view.height/r.height,0,view.height)}}
-function normBox(a,b){const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);if(w<3||h<3)return null;return{x:x/view.width,y:y/view.height,w:w/view.width,h:h/view.height}}
-function fitScale(){if(!baseCanvas)return 1;const stage=$('previewStage');const usableW=Math.max(120,stage.clientWidth-24);const usableH=Math.max(180,Math.min(window.innerHeight*.62,stage.clientHeight||window.innerHeight*.62));return Math.max(.01,Math.min(1,usableW/baseCanvas.width,usableH/baseCanvas.height))}
-function updatePreviewZoom(forceFit=false){if(!baseCanvas)return;if(forceFit||previewFit)previewScale=fitScale();view.style.width=Math.max(1,Math.round(baseCanvas.width*previewScale))+'px';view.style.height=Math.max(1,Math.round(baseCanvas.height*previewScale))+'px';$('zoomRange').value=String(clamp(Math.round(previewScale*100),1,300));$('zoomLabel').textContent=`${Math.round(previewScale*100)}%${previewFit?'（適合）':''}`}
-function setPreviewScale(scale,fit=false){previewFit=fit;previewScale=clamp(scale,.01,3);updatePreviewZoom(fit)}
-$('zoomRange').oninput=e=>setPreviewScale((+e.target.value||100)/100,false);$('zoomIn').onclick=()=>setPreviewScale(Math.min(3,previewScale*1.2),false);$('zoomOut').onclick=()=>setPreviewScale(Math.max(.01,previewScale/1.2),false);$('zoomFit').onclick=()=>setPreviewScale(fitScale(),true);$('zoomActual').onclick=()=>setPreviewScale(1,false);window.addEventListener('resize',()=>{if(previewFit)updatePreviewZoom(true)});
-function paintDiagonalWatermark(target,w,h){if(!$('wmEnabled').checked)return;const text=$('wmText').value.trim();if(!text)return;const pct=+$('wmSize').value/100;const fontSize=Math.max(12,Math.min(w,h)*pct);target.save();target.globalAlpha=+$('wmAlpha').value/100;target.fillStyle=$('wmColor').value;target.font=`600 ${fontSize}px "Noto Sans TC",system-ui,sans-serif`;target.textAlign='center';target.textBaseline='middle';const textW=target.measureText(text).width;const gapX=Math.max(textW+fontSize*2.5,fontSize*7),gapY=fontSize*4.2;target.translate(w/2,h/2);target.rotate((+$('wmAngle').value)*Math.PI/180);for(let y=-h*1.5;y<=h*1.5;y+=gapY){for(let x=-w*1.5;x<=w*1.5;x+=gapX){target.fillText(text,x,y)}}target.restore()}
-function paint(){if(!baseCanvas)return;view.width=baseCanvas.width;view.height=baseCanvas.height;ctx.clearRect(0,0,view.width,view.height);ctx.drawImage(baseCanvas,0,0);const all=boxList();for(const b of all){ctx.fillStyle=$('maskColor').value;ctx.globalAlpha=1;ctx.fillRect(b.x*view.width,b.y*view.height,b.w*view.width,b.h*view.height);ctx.strokeStyle='#2b7fff';ctx.lineWidth=Math.max(2,view.width/800);ctx.strokeRect(b.x*view.width,b.y*view.height,b.w*view.width,b.h*view.height)}if(draft){ctx.strokeStyle='#2b7fff';ctx.setLineDash([7,5]);ctx.lineWidth=Math.max(2,view.width/800);ctx.strokeRect(draft.x*view.width,draft.y*view.height,draft.w*view.width,draft.h*view.height);ctx.setLineDash([])}paintDiagonalWatermark(ctx,view.width,view.height);updatePreviewZoom()}
-function bitmapCanvas(bm,maxEdge=3600){const s=Math.min(1,maxEdge/Math.max(bm.width,bm.height),Math.sqrt(12000000/(bm.width*bm.height)));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(bm.width*s));c.height=Math.max(1,Math.round(bm.height*s));c.getContext('2d').drawImage(bm,0,0,c.width,c.height);return c}
-async function renderPdfPage(n,scale=null){const p=await pdfDoc.getPage(n),one=p.getViewport({scale:1});const sc=scale||Math.min(2,3000/Math.max(one.width,one.height));const vp=p.getViewport({scale:sc});const c=document.createElement('canvas');c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;return{canvas:c,page:p,unitWidth:one.width,unitHeight:one.height}}
-async function showPage(n){if(kind!=='pdf'){pageNo=1;return}pageNo=clamp(n,1,pageCount);setStatus('載入第 '+pageNo+' 頁…');const r=await renderPdfPage(pageNo);baseCanvas=r.canvas;$('pageInfo').textContent=`第 ${pageNo}／${pageCount} 頁`;$('pageSelect').value=String(pageNo);$('prev').disabled=pageNo<=1;$('next').disabled=pageNo>=pageCount;paint();setStatus('框選區域 '+boxList().length+' 處')}
-async function loadFile(f){if(!f)return;if(f.size>MAX_FILE_BYTES){alert('檔案超過 100 MB 上限，請先縮小或分割檔案。');return}setStatus('');previewFit=true;previewScale=1;sourceFile=f;kind='';pdfDoc=null;pageNo=1;pageCount=1;baseCanvas=null;boxes=new Map();$('fileName').textContent=f.name;$('info').textContent=`${(f.size/1024/1024).toFixed(2)} MB`;$('drop').hidden=true;$('editor').hidden=false;setStatus('讀取檔案中…');
- try{if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){if(!window.pdfjsLib||!window.jspdf)throw Error('PDF 元件載入失敗，請確認網路連線後重新整理');kind='pdf';pdfDoc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;pageCount=pdfDoc.numPages;if(pageCount>MAX_PDF_PAGES)throw Error(`PDF 超過 ${MAX_PDF_PAGES} 頁上限，請先分割檔案`);$('pdfNav').hidden=false;$('pageSelect').innerHTML='';for(let i=1;i<=pageCount;i++){const o=document.createElement('option');o.value=i;o.textContent=String(i);$('pageSelect').appendChild(o)}await showPage(1);setStatus(`PDF 共 ${pageCount} 頁。請逐頁框選需要遮蔽的內容。`)}else if(f.type.startsWith('image/')||/\.(jpe?g|png|webp|gif|bmp|tiff?)$/i.test(f.name)){kind='image';$('pdfNav').hidden=true;const bm=await createImageBitmap(f,{imageOrientation:'from-image'});baseCanvas=bitmapCanvas(bm);paint();setStatus('圖片已載入。框選區域 '+boxList().length+' 處')}else throw Error('不支援的檔案格式，請選取圖片或 PDF')}catch(e){sourceFile=null;kind='';pdfDoc=null;baseCanvas=null;$('editor').hidden=true;$('drop').hidden=false;setStatus('');alert('無法讀取檔案：'+(e.message||e))}}
-$('file').addEventListener('change',e=>{loadFile(e.target.files[0]);e.target.value=''});
-$('drop').addEventListener('dragover',e=>{e.preventDefault();$('drop').classList.add('over')});$('drop').addEventListener('dragleave',()=> $('drop').classList.remove('over'));$('drop').addEventListener('drop',e=>{e.preventDefault();$('drop').classList.remove('over');loadFile(e.dataTransfer.files[0])});
-view.addEventListener('pointerdown',e=>{if(!baseCanvas||busy)return;e.preventDefault();start=point(e);draft=null;view.setPointerCapture(e.pointerId)});
-view.addEventListener('pointermove',e=>{if(!start)return;const p=point(e);draft=normBox(start,p);paint()});
-function endBox(e){if(!start)return;const p=point(e),b=normBox(start,p);start=null;draft=null;if(b){setBoxes([...boxList(),b]);setStatus('此頁已框選 '+boxList().length+' 處')}paint()}
-view.addEventListener('pointerup',endBox);view.addEventListener('pointercancel',endBox);
-$('maskColor').addEventListener('change',paint);
-$('wmEnabled').addEventListener('change',paint);$('wmText').addEventListener('input',paint);$('wmColor').addEventListener('input',paint);$('wmAlpha').addEventListener('input',()=>{$('wmAlphaOut').textContent=$('wmAlpha').value+'%';paint()});$('wmSize').addEventListener('input',()=>{$('wmSizeOut').textContent=$('wmSize').value+'%';paint()});$('wmAngle').addEventListener('input',()=>{$('wmAngleOut').textContent=$('wmAngle').value+'°';paint()});$('undo').onclick=()=>{const a=boxList().slice(0,-1);setBoxes(a);paint();setStatus('此頁已框選 '+a.length+' 處')};$('clearPage').onclick=()=>{setBoxes([]);paint();setStatus('已清除此頁框選')};$('clearAll').onclick=()=>{if(confirm('確定清除所有頁面的框選？')){boxes=new Map();paint();setStatus('已清除全部框選')}};
-$('prev').onclick=()=>showPage(pageNo-1);$('next').onclick=()=>showPage(pageNo+1);$('pageSelect').onchange=e=>showPage(+e.target.value);
-function applyMasks(canvas,n){const c=canvas.getContext('2d');c.fillStyle=$('maskColor').value;c.globalAlpha=1;for(const b of (boxes.get(n)||[]))c.fillRect(b.x*canvas.width,b.y*canvas.height,b.w*canvas.width,b.h*canvas.height);return canvas}
-function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),10000)}
-function canvasBlob(canvas,type='image/png',quality=.94){return new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('無法產生輸出檔案')),type,quality))}
-async function blobDataUrl(blob){return await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob)})}
-$('export').onclick=async()=>{if(!sourceFile||busy)return;busy=true;$('export').disabled=true;try{if(kind==='image'){const c=document.createElement('canvas');c.width=baseCanvas.width;c.height=baseCanvas.height;c.getContext('2d').drawImage(baseCanvas,0,0);applyMasks(c,1);paintDiagonalWatermark(c,c.width,c.height);const type=/\.jpe?g$/i.test(sourceFile.name)?'image/jpeg':'image/png';const b=await canvasBlob(c,type,.95);downloadBlob(b,sourceFile.name.replace(/\.[^.]+$/,'')+'_redacted.'+(type==='image/jpeg'?'jpg':'png'));setStatus('已匯出圖片。請重新開啟檔案檢查遮蔽結果。')}else{let doc=null;for(let n=1;n<=pageCount;n++){setStatus(`正在匯出第 ${n}/${pageCount} 頁…`);const r=await renderPdfPage(n);applyMasks(r.canvas,n);paintDiagonalWatermark(r.canvas,r.canvas.width,r.canvas.height);const w=Math.max(1,r.unitWidth),h=Math.max(1,r.unitHeight);if(!doc)doc=new jspdf.jsPDF({orientation:w>h?'landscape':'portrait',unit:'pt',format:[w,h],compress:true});else doc.addPage([w,h],w>h?'landscape':'portrait');const blob=await canvasBlob(r.canvas,'image/jpeg',.94),url=await blobDataUrl(blob);doc.addImage(url,'JPEG',0,0,w,h,undefined,'FAST');r.canvas.width=1;r.canvas.height=1}const out=doc.output('blob');downloadBlob(out,sourceFile.name.replace(/\.pdf$/i,'')+'_redacted.pdf');setStatus('已匯出遮蔽 PDF。輸出為圖片式 PDF，不保留原始文字層。')} }catch(e){console.error(e);setStatus('匯出失敗：'+(e.message||e))}finally{busy=false;$('export').disabled=false}};
-$('replace').onclick=()=>{sourceFile=null;pdfDoc=null;baseCanvas=null;boxes=new Map();previewFit=true;previewScale=1;$('editor').hidden=true;$('drop').hidden=false;setStatus('');$('fileName').textContent='尚未載入'};
-if(window.self!==window.top){document.body.classList.add('embedded');window.addEventListener('message',e=>{if(e.data?.type==='tools-theme'){try{if(e.data.theme==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=e.data.theme;localStorage.setItem('tools-theme',e.data.theme)}catch(_){}}});const sendHeight=()=>window.parent.postMessage({type:'tools-iframe-height',height:document.documentElement.scrollHeight},'*');new ResizeObserver(sendHeight).observe(document.body);window.addEventListener('load',sendHeight);window.addEventListener('resize',sendHeight)}
-</script><style>body.embedded>.wrap{max-width:none;padding:8px 0 18px}body.embedded>.wrap>.back,body.embedded>.wrap>h1,body.embedded>.wrap>p:not(.privacy),body.embedded>.wrap>.privacy{display:none!important}</style></body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>圖片／PDF 個資遮蔽工具</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="referrer" content="no-referrer" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%A1%EF%B8%8F%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="common.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.6 'Noto Sans TC',
+          system-ui,
+          sans-serif;
+      }
+      a {
+        color: var(--pri);
+      }
+      .wrap {
+        max-width: 1180px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 16px clamp(12px, 2vw, 24px) 56px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 4px 0;
+      }
+      .back {
+        display: block;
+        color: var(--mut);
+        font-size: 12px;
+        text-decoration: none;
+      }
+      .hint,
+      .msg {
+        color: var(--mut);
+        font-size: 12px;
+      }
+      .privacy,
+      .warn {
+        padding: 8px 10px;
+        background: var(--gut);
+        border-left: 3px solid var(--pri);
+        font-size: 12px;
+        margin: 12px 0;
+      }
+      .warn {
+        border-color: #b8693f;
+      }
+      section {
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 12px 0;
+      }
+      button,
+      .btn {
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 6px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .pri {
+        background: var(--pri);
+        color: var(--prifg);
+        border-color: var(--pri);
+      }
+      input[type='file'] {
+        display: none;
+      }
+      select,
+      input[type='color'] {
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--bd);
+        border-radius: 5px;
+        padding: 5px;
+      }
+      .drop {
+        display: block;
+        padding: 28px;
+        text-align: center;
+        border: 2px dashed var(--bd);
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--mut);
+      }
+      .drop.over {
+        background: var(--gut);
+        border-color: var(--pri);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+      .stage {
+        background: var(--gut);
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        padding: 10px;
+        display: block;
+        min-height: 240px;
+        max-height: 75vh;
+        overflow: auto;
+      }
+      #view {
+        display: block;
+        max-width: none;
+        max-height: none;
+        margin: 0 auto;
+        touch-action: none;
+        cursor: crosshair;
+        flex: none;
+      }
+      .zoom-controls input[type='range'],
+      .watermark-controls input[type='range'] {
+        width: min(220px, 40vw);
+        accent-color: var(--pri);
+      }
+      .watermark-controls input[type='text'] {
+        width: min(520px, 100%);
+        min-width: 220px;
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--bd);
+        border-radius: 5px;
+        padding: 6px 8px;
+        font: inherit;
+      }
+      .watermark-controls .row {
+        margin: 7px 0;
+      }
+      .watermark-controls label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      label {
+        font-size: 13px;
+      }
+      footer {
+        margin-top: 20px;
+        color: var(--mut);
+        font-size: 12px;
+        text-align: center;
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <a class="back" href="index.html">← 返回小工具集首頁</a>
+          <h1>圖片／PDF 個資遮蔽工具</h1>
+          <p class="tagline">框選姓名、電話、地址、身分證字號、條碼等敏感區域，再匯出遮蔽後的新檔。</p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
+      <div class="privacy">
+        處理在瀏覽器本機執行，檔案內容不會上傳。本工具採不透明色塊實際覆蓋像素，匯出 PDF 會將頁面攤平成圖片，不保留原始文字層。
+      </div>
+      <div class="warn">
+        <b>重要：</b
+        >請使用黑色或其他不透明色塊遮蔽；不要以半透明、模糊或馬賽克代替真正遮蔽。匯出後請重新開啟檔案逐頁檢查，確認沒有漏掉個資。
+      </div>
+      <label class="drop" id="drop" for="file"
+        >點擊選擇或拖曳圖片／PDF 到這裡<input id="file" type="file" accept="image/*,.pdf,application/pdf"
+      /></label>
+      <section id="editor" hidden>
+        <div class="row"><b id="fileName">尚未載入</b><span class="msg" id="info"></span></div>
+        <div class="row" id="pdfNav" hidden>
+          <button id="prev">上一頁</button><span id="pageInfo"></span><button id="next">下一頁</button
+          ><label
+            >前往頁次
+            <select id="pageSelect"></select
+          ></label>
+        </div>
+        <div class="stage" id="previewStage"><canvas id="view"></canvas></div>
+        <div class="row zoom-controls" aria-label="預覽縮放控制">
+          <button id="zoomOut" type="button" title="縮小預覽">－</button><label for="zoomRange">預覽縮放</label
+          ><input id="zoomRange" type="range" min="1" max="300" value="100" /><output id="zoomLabel">適合視窗</output
+          ><button id="zoomIn" type="button" title="放大預覽">＋</button><button id="zoomFit" type="button">適合視窗</button
+          ><button id="zoomActual" type="button">原始尺寸</button>
+        </div>
+        <div class="row">
+          <label
+            >遮蔽色
+            <select id="maskColor">
+              <option value="#000000">黑色（建議）</option>
+              <option value="#ffffff">白色</option>
+              <option value="#b91c1c">深紅色</option>
+            </select></label
+          ><button id="undo">復原上一個框</button><button id="clearPage">清除此頁框選</button><button id="clearAll">清除全部框選</button>
+        </div>
+        <p class="hint">用滑鼠或觸控在畫面拖曳框選。框選會記錄成相對座標，縮放預覽時仍會對準原本位置。</p>
+        <section class="watermark-controls">
+          <h2>斜向半透明浮水印</h2>
+          <div class="row">
+            <label><input type="checkbox" id="wmEnabled" checked /> 匯出時加入浮水印</label
+            ><label>文字 <input type="text" id="wmText" maxlength="160" value="僅供XX公司申請XX服務使用" aria-label="浮水印文字" /></label>
+          </div>
+          <div class="row">
+            <label>文字顏色 <input type="color" id="wmColor" value="#c62828" /></label
+            ><label>透明度 <input type="range" id="wmAlpha" min="5" max="60" value="22" /><output id="wmAlphaOut">22%</output></label
+            ><label>字體大小 <input type="range" id="wmSize" min="2" max="12" value="6" /><output id="wmSizeOut">6%</output></label
+            ><label
+              >傾斜角度 <input type="range" id="wmAngle" min="-60" max="-15" value="-30" /><output id="wmAngleOut">-30°</output></label
+            >
+          </div>
+          <p class="hint">
+            浮水印會顯示於預覽，並實際寫入匯出的圖片及 PDF。若不需要，可取消勾選。建議匯出後重新開啟檔案確認遮蔽及浮水印效果。
+          </p>
+        </section>
+        <div class="row">
+          <button class="pri" id="export">匯出遮蔽結果</button><button id="replace">更換檔案</button
+          ><span class="msg" id="status" aria-live="polite"></span>
+        </div>
+      </section>
+      <footer>提醒：遮蔽是不可逆的像素覆蓋；請保存原始檔備份。</footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+      'use strict';
+      const $ = id => document.getElementById(id),
+        view = $('view'),
+        ctx = view.getContext('2d');
+      if (window.pdfjsLib)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const MAX_FILE_BYTES = 100 * 1024 * 1024,
+        MAX_PDF_PAGES = 200;
+      let sourceFile = null,
+        kind = '',
+        pdfDoc = null,
+        pageNo = 1,
+        pageCount = 1,
+        baseCanvas = null,
+        boxes = new Map(),
+        start = null,
+        draft = null,
+        busy = false;
+      let previewScale = 1,
+        previewFit = true;
+      const boxList = () => boxes.get(pageNo) || [];
+      const setBoxes = a => boxes.set(pageNo, a);
+      function setStatus(s) {
+        $('status').textContent = s || '';
+      }
+      function clamp(v, a, b) {
+        return Math.max(a, Math.min(b, v));
+      }
+      function pageKey() {
+        return kind === 'pdf' ? pageNo : 1;
+      }
+      function point(e) {
+        const r = view.getBoundingClientRect();
+        return {
+          x: clamp(((e.clientX - r.left) * view.width) / r.width, 0, view.width),
+          y: clamp(((e.clientY - r.top) * view.height) / r.height, 0, view.height),
+        };
+      }
+      function normBox(a, b) {
+        const x = Math.min(a.x, b.x),
+          y = Math.min(a.y, b.y),
+          w = Math.abs(a.x - b.x),
+          h = Math.abs(a.y - b.y);
+        if (w < 3 || h < 3) return null;
+        return { x: x / view.width, y: y / view.height, w: w / view.width, h: h / view.height };
+      }
+      function fitScale() {
+        if (!baseCanvas) return 1;
+        const stage = $('previewStage');
+        const usableW = Math.max(120, stage.clientWidth - 24);
+        const usableH = Math.max(180, Math.min(window.innerHeight * 0.62, stage.clientHeight || window.innerHeight * 0.62));
+        return Math.max(0.01, Math.min(1, usableW / baseCanvas.width, usableH / baseCanvas.height));
+      }
+      function updatePreviewZoom(forceFit = false) {
+        if (!baseCanvas) return;
+        if (forceFit || previewFit) previewScale = fitScale();
+        view.style.width = Math.max(1, Math.round(baseCanvas.width * previewScale)) + 'px';
+        view.style.height = Math.max(1, Math.round(baseCanvas.height * previewScale)) + 'px';
+        $('zoomRange').value = String(clamp(Math.round(previewScale * 100), 1, 300));
+        $('zoomLabel').textContent = `${Math.round(previewScale * 100)}%${previewFit ? '（適合）' : ''}`;
+      }
+      function setPreviewScale(scale, fit = false) {
+        previewFit = fit;
+        previewScale = clamp(scale, 0.01, 3);
+        updatePreviewZoom(fit);
+      }
+      $('zoomRange').oninput = e => setPreviewScale((+e.target.value || 100) / 100, false);
+      $('zoomIn').onclick = () => setPreviewScale(Math.min(3, previewScale * 1.2), false);
+      $('zoomOut').onclick = () => setPreviewScale(Math.max(0.01, previewScale / 1.2), false);
+      $('zoomFit').onclick = () => setPreviewScale(fitScale(), true);
+      $('zoomActual').onclick = () => setPreviewScale(1, false);
+      window.addEventListener('resize', () => {
+        if (previewFit) updatePreviewZoom(true);
+      });
+      function paintDiagonalWatermark(target, w, h) {
+        if (!$('wmEnabled').checked) return;
+        const text = $('wmText').value.trim();
+        if (!text) return;
+        const pct = +$('wmSize').value / 100;
+        const fontSize = Math.max(12, Math.min(w, h) * pct);
+        target.save();
+        target.globalAlpha = +$('wmAlpha').value / 100;
+        target.fillStyle = $('wmColor').value;
+        target.font = `600 ${fontSize}px "Noto Sans TC",system-ui,sans-serif`;
+        target.textAlign = 'center';
+        target.textBaseline = 'middle';
+        const textW = target.measureText(text).width;
+        const gapX = Math.max(textW + fontSize * 2.5, fontSize * 7),
+          gapY = fontSize * 4.2;
+        target.translate(w / 2, h / 2);
+        target.rotate((+$('wmAngle').value * Math.PI) / 180);
+        for (let y = -h * 1.5; y <= h * 1.5; y += gapY) {
+          for (let x = -w * 1.5; x <= w * 1.5; x += gapX) {
+            target.fillText(text, x, y);
+          }
+        }
+        target.restore();
+      }
+      function paint() {
+        if (!baseCanvas) return;
+        view.width = baseCanvas.width;
+        view.height = baseCanvas.height;
+        ctx.clearRect(0, 0, view.width, view.height);
+        ctx.drawImage(baseCanvas, 0, 0);
+        const all = boxList();
+        for (const b of all) {
+          ctx.fillStyle = $('maskColor').value;
+          ctx.globalAlpha = 1;
+          ctx.fillRect(b.x * view.width, b.y * view.height, b.w * view.width, b.h * view.height);
+          ctx.strokeStyle = '#2b7fff';
+          ctx.lineWidth = Math.max(2, view.width / 800);
+          ctx.strokeRect(b.x * view.width, b.y * view.height, b.w * view.width, b.h * view.height);
+        }
+        if (draft) {
+          ctx.strokeStyle = '#2b7fff';
+          ctx.setLineDash([7, 5]);
+          ctx.lineWidth = Math.max(2, view.width / 800);
+          ctx.strokeRect(draft.x * view.width, draft.y * view.height, draft.w * view.width, draft.h * view.height);
+          ctx.setLineDash([]);
+        }
+        paintDiagonalWatermark(ctx, view.width, view.height);
+        updatePreviewZoom();
+      }
+      function bitmapCanvas(bm, maxEdge = 3600) {
+        const s = Math.min(1, maxEdge / Math.max(bm.width, bm.height), Math.sqrt(12000000 / (bm.width * bm.height)));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(bm.width * s));
+        c.height = Math.max(1, Math.round(bm.height * s));
+        c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
+        return c;
+      }
+      async function renderPdfPage(n, scale = null) {
+        const p = await pdfDoc.getPage(n),
+          one = p.getViewport({ scale: 1 });
+        const sc = scale || Math.min(2, 3000 / Math.max(one.width, one.height));
+        const vp = p.getViewport({ scale: sc });
+        const c = document.createElement('canvas');
+        c.width = Math.ceil(vp.width);
+        c.height = Math.ceil(vp.height);
+        await p.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        return { canvas: c, page: p, unitWidth: one.width, unitHeight: one.height };
+      }
+      async function showPage(n) {
+        if (kind !== 'pdf') {
+          pageNo = 1;
+          return;
+        }
+        pageNo = clamp(n, 1, pageCount);
+        setStatus('載入第 ' + pageNo + ' 頁…');
+        const r = await renderPdfPage(pageNo);
+        baseCanvas = r.canvas;
+        $('pageInfo').textContent = `第 ${pageNo}／${pageCount} 頁`;
+        $('pageSelect').value = String(pageNo);
+        $('prev').disabled = pageNo <= 1;
+        $('next').disabled = pageNo >= pageCount;
+        paint();
+        setStatus('框選區域 ' + boxList().length + ' 處');
+      }
+      async function loadFile(f) {
+        if (!f) return;
+        if (f.size > MAX_FILE_BYTES) {
+          alert('檔案超過 100 MB 上限，請先縮小或分割檔案。');
+          return;
+        }
+        setStatus('');
+        previewFit = true;
+        previewScale = 1;
+        sourceFile = f;
+        kind = '';
+        pdfDoc = null;
+        pageNo = 1;
+        pageCount = 1;
+        baseCanvas = null;
+        boxes = new Map();
+        $('fileName').textContent = f.name;
+        $('info').textContent = `${(f.size / 1024 / 1024).toFixed(2)} MB`;
+        $('drop').hidden = true;
+        $('editor').hidden = false;
+        setStatus('讀取檔案中…');
+        try {
+          if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
+            if (!window.pdfjsLib || !window.jspdf) throw Error('PDF 元件載入失敗，請確認網路連線後重新整理');
+            kind = 'pdf';
+            pdfDoc = await pdfjsLib.getDocument({ data: await f.arrayBuffer() }).promise;
+            pageCount = pdfDoc.numPages;
+            if (pageCount > MAX_PDF_PAGES) throw Error(`PDF 超過 ${MAX_PDF_PAGES} 頁上限，請先分割檔案`);
+            $('pdfNav').hidden = false;
+            $('pageSelect').innerHTML = '';
+            for (let i = 1; i <= pageCount; i++) {
+              const o = document.createElement('option');
+              o.value = i;
+              o.textContent = String(i);
+              $('pageSelect').appendChild(o);
+            }
+            await showPage(1);
+            setStatus(`PDF 共 ${pageCount} 頁。請逐頁框選需要遮蔽的內容。`);
+          } else if (f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|tiff?)$/i.test(f.name)) {
+            kind = 'image';
+            $('pdfNav').hidden = true;
+            const bm = await createImageBitmap(f, { imageOrientation: 'from-image' });
+            baseCanvas = bitmapCanvas(bm);
+            paint();
+            setStatus('圖片已載入。框選區域 ' + boxList().length + ' 處');
+          } else throw Error('不支援的檔案格式，請選取圖片或 PDF');
+        } catch (e) {
+          sourceFile = null;
+          kind = '';
+          pdfDoc = null;
+          baseCanvas = null;
+          $('editor').hidden = true;
+          $('drop').hidden = false;
+          setStatus('');
+          alert('無法讀取檔案：' + (e.message || e));
+        }
+      }
+      $('file').addEventListener('change', e => {
+        loadFile(e.target.files[0]);
+        e.target.value = '';
+      });
+      $('drop').addEventListener('dragover', e => {
+        e.preventDefault();
+        $('drop').classList.add('over');
+      });
+      $('drop').addEventListener('dragleave', () => $('drop').classList.remove('over'));
+      $('drop').addEventListener('drop', e => {
+        e.preventDefault();
+        $('drop').classList.remove('over');
+        loadFile(e.dataTransfer.files[0]);
+      });
+      view.addEventListener('pointerdown', e => {
+        if (!baseCanvas || busy) return;
+        e.preventDefault();
+        start = point(e);
+        draft = null;
+        view.setPointerCapture(e.pointerId);
+      });
+      view.addEventListener('pointermove', e => {
+        if (!start) return;
+        const p = point(e);
+        draft = normBox(start, p);
+        paint();
+      });
+      function endBox(e) {
+        if (!start) return;
+        const p = point(e),
+          b = normBox(start, p);
+        start = null;
+        draft = null;
+        if (b) {
+          setBoxes([...boxList(), b]);
+          setStatus('此頁已框選 ' + boxList().length + ' 處');
+        }
+        paint();
+      }
+      view.addEventListener('pointerup', endBox);
+      view.addEventListener('pointercancel', endBox);
+      $('maskColor').addEventListener('change', paint);
+      $('wmEnabled').addEventListener('change', paint);
+      $('wmText').addEventListener('input', paint);
+      $('wmColor').addEventListener('input', paint);
+      $('wmAlpha').addEventListener('input', () => {
+        $('wmAlphaOut').textContent = $('wmAlpha').value + '%';
+        paint();
+      });
+      $('wmSize').addEventListener('input', () => {
+        $('wmSizeOut').textContent = $('wmSize').value + '%';
+        paint();
+      });
+      $('wmAngle').addEventListener('input', () => {
+        $('wmAngleOut').textContent = $('wmAngle').value + '°';
+        paint();
+      });
+      $('undo').onclick = () => {
+        const a = boxList().slice(0, -1);
+        setBoxes(a);
+        paint();
+        setStatus('此頁已框選 ' + a.length + ' 處');
+      };
+      $('clearPage').onclick = () => {
+        setBoxes([]);
+        paint();
+        setStatus('已清除此頁框選');
+      };
+      $('clearAll').onclick = () => {
+        if (confirm('確定清除所有頁面的框選？')) {
+          boxes = new Map();
+          paint();
+          setStatus('已清除全部框選');
+        }
+      };
+      $('prev').onclick = () => showPage(pageNo - 1);
+      $('next').onclick = () => showPage(pageNo + 1);
+      $('pageSelect').onchange = e => showPage(+e.target.value);
+      function applyMasks(canvas, n) {
+        const c = canvas.getContext('2d');
+        c.fillStyle = $('maskColor').value;
+        c.globalAlpha = 1;
+        for (const b of boxes.get(n) || []) c.fillRect(b.x * canvas.width, b.y * canvas.height, b.w * canvas.width, b.h * canvas.height);
+        return canvas;
+      }
+      function downloadBlob(blob, name) {
+        const u = URL.createObjectURL(blob),
+          a = document.createElement('a');
+        a.href = u;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(u), 10000);
+      }
+      function canvasBlob(canvas, type = 'image/png', quality = 0.94) {
+        return new Promise((resolve, reject) => canvas.toBlob(b => (b ? resolve(b) : reject(Error('無法產生輸出檔案'))), type, quality));
+      }
+      async function blobDataUrl(blob) {
+        return await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = reject;
+          r.readAsDataURL(blob);
+        });
+      }
+      $('export').onclick = async () => {
+        if (!sourceFile || busy) return;
+        busy = true;
+        $('export').disabled = true;
+        try {
+          if (kind === 'image') {
+            const c = document.createElement('canvas');
+            c.width = baseCanvas.width;
+            c.height = baseCanvas.height;
+            c.getContext('2d').drawImage(baseCanvas, 0, 0);
+            applyMasks(c, 1);
+            paintDiagonalWatermark(c, c.width, c.height);
+            const type = /\.jpe?g$/i.test(sourceFile.name) ? 'image/jpeg' : 'image/png';
+            const b = await canvasBlob(c, type, 0.95);
+            downloadBlob(b, sourceFile.name.replace(/\.[^.]+$/, '') + '_redacted.' + (type === 'image/jpeg' ? 'jpg' : 'png'));
+            setStatus('已匯出圖片。請重新開啟檔案檢查遮蔽結果。');
+          } else {
+            let doc = null;
+            for (let n = 1; n <= pageCount; n++) {
+              setStatus(`正在匯出第 ${n}/${pageCount} 頁…`);
+              const r = await renderPdfPage(n);
+              applyMasks(r.canvas, n);
+              paintDiagonalWatermark(r.canvas, r.canvas.width, r.canvas.height);
+              const w = Math.max(1, r.unitWidth),
+                h = Math.max(1, r.unitHeight);
+              if (!doc)
+                doc = new jspdf.jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'pt', format: [w, h], compress: true });
+              else doc.addPage([w, h], w > h ? 'landscape' : 'portrait');
+              const blob = await canvasBlob(r.canvas, 'image/jpeg', 0.94),
+                url = await blobDataUrl(blob);
+              doc.addImage(url, 'JPEG', 0, 0, w, h, undefined, 'FAST');
+              r.canvas.width = 1;
+              r.canvas.height = 1;
+            }
+            const out = doc.output('blob');
+            downloadBlob(out, sourceFile.name.replace(/\.pdf$/i, '') + '_redacted.pdf');
+            setStatus('已匯出遮蔽 PDF。輸出為圖片式 PDF，不保留原始文字層。');
+          }
+        } catch (e) {
+          console.error(e);
+          setStatus('匯出失敗：' + (e.message || e));
+        } finally {
+          busy = false;
+          $('export').disabled = false;
+        }
+      };
+      $('replace').onclick = () => {
+        sourceFile = null;
+        pdfDoc = null;
+        baseCanvas = null;
+        boxes = new Map();
+        previewFit = true;
+        previewScale = 1;
+        $('editor').hidden = true;
+        $('drop').hidden = false;
+        setStatus('');
+        $('fileName').textContent = '尚未載入';
+      };
+    </script>
+  </body>
+</html>

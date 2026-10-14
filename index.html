@@ -1,159 +1,667 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>小工具集</title>
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
-<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
-<meta name="referrer" content="no-referrer">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script>try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){}</script>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.6 "Noto Sans TC",system-ui,-apple-system,sans-serif}
-a{color:var(--pri)}
-.wrap{max-width:1180px;width:100%;margin:0 auto;padding:16px clamp(12px,2vw,24px) 56px}
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-h1{margin:0;font-size:20px}
-.back{display:block;color:var(--mut);font-size:12px;text-decoration:none}.back:hover{color:var(--pri)}
-.sub,.tagline,.adv-hint,.msg{color:var(--mut);font-size:12px;margin:2px 0 0}
-.msg{font-size:13px;margin-top:8px}
-.themes{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
-.sw{width:22px;height:22px;border-radius:50%;padding:0;border:2px solid var(--bd);cursor:pointer}
-.sw.on{outline:2px solid var(--pri);outline-offset:2px}
-section{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin-bottom:12px}
-h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
-.num{width:20px;height:20px;border-radius:50%;background:var(--gut);color:var(--mut);font-size:12px;display:inline-flex;align-items:center;justify-content:center}
-.privacy,.warn{color:var(--mut);font-size:12px;border-left:3px solid var(--pri);padding:6px 10px;margin:8px 0;background:var(--gut)}
-.warn{border-left-color:#bf616a}
-button,.btn{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:5px 12px;cursor:pointer;font:inherit;font-size:13px}
-button:hover:not(:disabled),.btn:hover{border-color:var(--pri)}
-button:disabled{opacity:.4;cursor:default}
-.pri{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
-input[type=file]{display:none}
-select,input[type=text],input[type=password]{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--fg)}
-input[type=text],input[type=password]{width:100%}
-option{background:var(--card);color:var(--fg)}
-.drop-zone{border:2px dashed var(--bd);border-radius:8px;padding:28px 16px;text-align:center;cursor:pointer;color:var(--mut);transition:border-color .15s,background .15s}
-.drop-zone:hover,.drop-zone.dragover{border-color:var(--pri);color:var(--fg);background:var(--gut)}
-.drop-zone input{display:none}
-#fileList{margin-top:10px;font-size:13px;color:var(--mut);max-height:140px;overflow-y:auto}
-.file-row{border-bottom:1px dashed var(--bd);padding:2px 0}
-.clear-link{color:var(--pri);cursor:pointer;text-decoration:underline;font-size:12px}
-.field{margin-bottom:12px}
-.radio-group label{display:block;margin:6px 0;cursor:pointer}
-.radio-group input,.translate-toggle input{margin-right:6px}
-.lang-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;margin-top:6px}
-.lang-grid label{cursor:pointer;display:flex;align-items:center;gap:6px}
-.translate-toggle{display:block;margin-bottom:10px;cursor:pointer}
-#translateOptions .field{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-details.advanced{margin-top:14px;border:1px solid var(--bd);border-radius:6px}
-details.advanced summary{cursor:pointer;padding:8px 12px;font-size:13px;color:var(--mut)}
-.adv-body{padding:4px 14px 12px}
-.adv-field{margin-bottom:12px}
-.adv-field label{display:block;margin-bottom:4px;color:var(--mut)}
-.chip-btn{display:inline-block;font-size:12px;color:var(--pri);border:1px solid var(--pri);border-radius:12px;padding:1px 9px;margin:6px 6px 0 0;cursor:pointer}
-.progress-bar-bg,.item-progress-bg{background:var(--gut);border-radius:4px;overflow:hidden}
-.progress-bar-bg{height:8px}.item-progress-bg{height:4px}
-.progress-bar-fill,.item-progress-fill{height:100%;width:0;background:var(--pri);transition:width .2s}
-.item-progress-fill.error{background:#bf616a}
-#progressArea{margin-top:14px}
-#progressText{margin:8px 0;color:var(--mut);font-size:13px}
-#statusList{list-style:none;padding:0;margin:0;max-height:180px;overflow-y:auto;border:1px solid var(--bd);border-radius:6px;font-size:12.5px}
-#statusList li{padding:6px 8px;border-bottom:1px dashed var(--bd)}
-.status-label{margin-bottom:4px}
-#previewText{white-space:pre-wrap;background:var(--gut);border:1px solid var(--bd);border-radius:6px;padding:10px;max-height:260px;overflow-y:auto;margin-top:12px;color:var(--mut);font:12.5px/1.6 ui-monospace,Menlo,Consolas,"Noto Sans TC",monospace}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
-.tabs button.on{background:var(--pri);border-color:var(--pri);color:var(--prifg)}
-.panel{display:none}.panel.on{display:block}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
-.lst div{display:flex;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--bd)}
-.lst span{flex:1;word-break:break-all}
-footer{margin-top:24px;font-size:12px;color:var(--mut);text-align:center}
-.menu{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:18px}
-.tool-card{display:flex;flex-direction:column;min-width:0}.tool{display:flex;flex:1;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:16px;color:var(--fg);text-decoration:none;width:100%}
-.tool:hover,.tool:focus-visible{border-color:var(--pri);outline:2px solid transparent}.tool-card.drag{opacity:.45}
-.tool b{font-size:16px}.tool span{color:var(--mut);font-size:13px}.tool small{color:var(--mut);font-size:12px;margin-top:auto;padding-top:6px}
-.mv{display:none;gap:6px;margin-top:8px}.mv button{padding:2px 12px}
-.menu.editing .mv{display:flex}.menu.editing .tool{cursor:pointer}.menu.editing .tool-card{cursor:grab}.menu.editing .tool-card .tool{border-style:dashed}
-</style>
-<link rel="stylesheet" href="style.css">
-</head>
-<body class="home">
-<div class="wrap">
-<header class="hero"><div><h1>小工具集</h1><p class="tagline">請選擇要使用的工具。多數檔案處理在瀏覽器本機執行；啟用第三方翻譯或即時資料功能時，部分文字或請求資料可能會傳送至外部服務。</p></div><div class="themes" id="themes">主題：</div></header>
-<div class="tools-bar"><span class="msg" id="emsg"></span><button id="reset" style="display:none">恢復預設順序</button><button id="edit">調整順序</button></div>
-<nav class="menu">
-<a class="tool" href="txtcompare.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="7.5" height="16" rx="1.5"/><rect x="13.5" y="4" width="7.5" height="16" rx="1.5"/><path d="M6 9h2M6 13h2M16.5 9h2M16.5 13h2"/></svg></i><b>文件比對工具</b><span>左右對照兩份文字或程式檔，標出新增與刪除的行。</span><small>支援 txt、md、docx 與常見程式碼檔</small></a>
-<a class="tool" href="ocr_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M8 9h8M8 12h8M8 15h5"/></svg></i><b>圖片文字辨識 OCR</b><span>把圖片或 ZIP 內的圖片轉成文字，可選擇性翻譯。</span><small>支援 jpg、png、zip 等</small></a>
-<a class="tool" href="pdf_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H7.5A1.5 1.5 0 0 0 6 4.5v15A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V7z"/><path d="M14 3v4h4M9 12h6M9 15.5h6"/></svg></i><b>PDF 工具</b><span>文字辨識與 HTML 報告、合併、拆分、壓縮、解鎖、頁面管理、浮水印與頁碼、圖片互轉。</span><small>支援 pdf、圖片</small></a>
-<a class="tool" href="audio_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg></i><b>語音／影片轉文字</b><span>會議錄音、影片轉成逐字稿，可輸出 txt 與 srt 字幕。</span><small>支援 mp3、m4a、wav、mp4 等</small></a>
-<a class="tool" href="barcode_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM19 14v.01M14 19.5v.01M17.5 19.5H20V17"/></svg></i><b>QR Code／條碼</b><span>產生與掃描 QR Code、Data Matrix、PDF417、Aztec 等條碼，可批次產生。</span><small>可調格式、大小、白邊、顏色；支援相機掃描</small></a>
-<a class="tool" href="table_compare.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M3.5 14.5h17M10 4.5v15"/></svg></i><b>Excel／CSV 比對</b><span>找出兩份表格新增、刪除、修改的列，可輸出差異報告。</span><small>支援 xlsx、xls、csv，也可貼上內容</small></a>
-<a class="tool" href="emoji_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14c.9 1.4 2.1 2 3.5 2s2.6-.6 3.5-2M9 9.5v.01M15 9.5v.01"/></svg></i><b>Emoji 圖庫</b><span>依分類或關鍵字搜尋 emoji，點一下就複製，也能組合多個一次複製。</span><small>支援中英文搜尋、最近使用</small></a>
-<a class="tool" href="symbol_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 19h3.2v-1.6C6.9 16.5 5.5 14.5 5.5 12a6.5 6.5 0 0 1 13 0c0 2.5-1.4 4.5-3.7 5.4V19H18"/></svg></i><b>特殊符號圖庫</b><span>運算符號、箭頭、希臘字母、上下標、製表線、編號、標點、注音等，點一下就複製，也能組合多個一次複製。</span><small>支援中英文搜尋與 Unicode 碼位、最近使用</small></a>
-<a class="tool" href="unit_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 9h14l-3-3M20 15H6l3 3"/></svg></i><b>單位換算</b><span>長度、面積、重量、速度、力、扭力、壓力、能量、功率、溫度，以及常見貨幣即時匯率。</span><small>含坪、台斤等台灣常用單位</small></a>
-<a class="tool" href="codec_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5M13.5 5l-3 14"/></svg></i><b>編碼／解碼</b><span>Base64 與檔案互轉（圖片、PDF、音訊、執行檔等），也支援 Hex、URL、Unicode 等常用格式。</span><small>可預覽圖片、音訊、影片、PDF</small></a>
-<a class="tool" href="image_suite.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><circle cx="9" cy="10" r="1.6"/><path d="m4 18 5-5 3.5 3.5L15 14l5 5"/></svg></i><b>圖片處理與編輯</b><span>整合批次壓縮、轉檔、縮放，以及圖片編輯、AI 去背、裁切、調色與浮水印。</span><small>同一頁切換批次處理與進階編輯功能</small></a>
-<a class="tool" href="redact_tool.html"><i class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h6M14 12h6M4 17h16"/><rect x="9" y="10" width="6" height="4" rx=".8" fill="currentColor" stroke="none"/></svg></i><b>圖片／PDF 個資遮蔽</b><span>框選姓名、電話、地址與其他敏感資訊，以不透明色塊遮蔽後匯出。</span><small>支援圖片及多頁 PDF；PDF 會扁平化輸出</small></a>
-</nav>
-</div>
-<script>
-const $=id=>document.getElementById(id);
-const THEMES = [['auto','跟隨系統','#ffffff','#2b313c'],['light','淺色','#f5f6f7','#4f729b'],['dark','深色','#232831','#88c0d0'],
-  ['sepia','護眼米黃','#f3efe7','#8c6a43'],['forest','森林綠','#eff2ee','#4f7a62'],['ocean','深海藍','#1b2631','#7fb7cc'],['dracula','紫夜','#252833','#a8a0d6']];
-function applyTheme(t){
-  if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
-  try { localStorage.setItem('tools-theme', t); } catch(e){}
-  document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.t === t));
-}
-THEMES.forEach(([id, name, c1, c2]) => {
-  const b = document.createElement('button');
-  b.className = 'sw'; b.dataset.t = id; b.title = name;
-  b.style.background = `linear-gradient(135deg,${c1} 50%,${c2} 50%)`;
-  b.onclick = () => applyTheme(id);
-  $('themes').appendChild(b);
-});
-applyTheme(document.documentElement.dataset.theme || 'auto');
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>小工具集</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="referrer" content="no-referrer" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%B0%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="common.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.6 'Noto Sans TC',
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      a {
+        color: var(--pri);
+      }
+      .wrap {
+        max-width: 1180px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 16px clamp(12px, 2vw, 24px) 56px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .back {
+        display: block;
+        color: var(--mut);
+        font-size: 12px;
+        text-decoration: none;
+      }
+      .back:hover {
+        color: var(--pri);
+      }
+      .sub,
+      .tagline,
+      .adv-hint,
+      .msg {
+        color: var(--mut);
+        font-size: 12px;
+        margin: 2px 0 0;
+      }
+      .msg {
+        font-size: 13px;
+        margin-top: 8px;
+      }
+      .themes {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .sw {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        padding: 0;
+        border: 2px solid var(--bd);
+        cursor: pointer;
+      }
+      .sw.on {
+        outline: 2px solid var(--pri);
+        outline-offset: 2px;
+      }
+      section {
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+      }
+      h2 {
+        font-size: 15px;
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .num {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--gut);
+        color: var(--mut);
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .privacy,
+      .warn {
+        color: var(--mut);
+        font-size: 12px;
+        border-left: 3px solid var(--pri);
+        padding: 6px 10px;
+        margin: 8px 0;
+        background: var(--gut);
+      }
+      .warn {
+        border-left-color: #bf616a;
+      }
+      button,
+      .btn {
+        background: var(--card);
+        color: var(--fg);
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 5px 12px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+      }
+      button:hover:not(:disabled),
+      .btn:hover {
+        border-color: var(--pri);
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .pri {
+        background: var(--pri);
+        border-color: var(--pri);
+        color: var(--prifg);
+      }
+      input[type='file'] {
+        display: none;
+      }
+      select,
+      input[type='text'],
+      input[type='password'] {
+        font: inherit;
+        font-size: 13px;
+        padding: 5px 8px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        background: var(--card);
+        color: var(--fg);
+      }
+      input[type='text'],
+      input[type='password'] {
+        width: 100%;
+      }
+      option {
+        background: var(--card);
+        color: var(--fg);
+      }
+      .drop-zone {
+        border: 2px dashed var(--bd);
+        border-radius: 8px;
+        padding: 28px 16px;
+        text-align: center;
+        cursor: pointer;
+        color: var(--mut);
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .drop-zone:hover,
+      .drop-zone.dragover {
+        border-color: var(--pri);
+        color: var(--fg);
+        background: var(--gut);
+      }
+      .drop-zone input {
+        display: none;
+      }
+      #fileList {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--mut);
+        max-height: 140px;
+        overflow-y: auto;
+      }
+      .file-row {
+        border-bottom: 1px dashed var(--bd);
+        padding: 2px 0;
+      }
+      .clear-link {
+        color: var(--pri);
+        cursor: pointer;
+        text-decoration: underline;
+        font-size: 12px;
+      }
+      .field {
+        margin-bottom: 12px;
+      }
+      .radio-group label {
+        display: block;
+        margin: 6px 0;
+        cursor: pointer;
+      }
+      .radio-group input,
+      .translate-toggle input {
+        margin-right: 6px;
+      }
+      .lang-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px 12px;
+        margin-top: 6px;
+      }
+      .lang-grid label {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .translate-toggle {
+        display: block;
+        margin-bottom: 10px;
+        cursor: pointer;
+      }
+      #translateOptions .field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      details.advanced {
+        margin-top: 14px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+      }
+      details.advanced summary {
+        cursor: pointer;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: var(--mut);
+      }
+      .adv-body {
+        padding: 4px 14px 12px;
+      }
+      .adv-field {
+        margin-bottom: 12px;
+      }
+      .adv-field label {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--mut);
+      }
+      .chip-btn {
+        display: inline-block;
+        font-size: 12px;
+        color: var(--pri);
+        border: 1px solid var(--pri);
+        border-radius: 12px;
+        padding: 1px 9px;
+        margin: 6px 6px 0 0;
+        cursor: pointer;
+      }
+      .progress-bar-bg,
+      .item-progress-bg {
+        background: var(--gut);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .progress-bar-bg {
+        height: 8px;
+      }
+      .item-progress-bg {
+        height: 4px;
+      }
+      .progress-bar-fill,
+      .item-progress-fill {
+        height: 100%;
+        width: 0;
+        background: var(--pri);
+        transition: width 0.2s;
+      }
+      .item-progress-fill.error {
+        background: #bf616a;
+      }
+      #progressArea {
+        margin-top: 14px;
+      }
+      #progressText {
+        margin: 8px 0;
+        color: var(--mut);
+        font-size: 13px;
+      }
+      #statusList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 180px;
+        overflow-y: auto;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        font-size: 12.5px;
+      }
+      #statusList li {
+        padding: 6px 8px;
+        border-bottom: 1px dashed var(--bd);
+      }
+      .status-label {
+        margin-bottom: 4px;
+      }
+      #previewText {
+        white-space: pre-wrap;
+        background: var(--gut);
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+        padding: 10px;
+        max-height: 260px;
+        overflow-y: auto;
+        margin-top: 12px;
+        color: var(--mut);
+        font:
+          12.5px/1.6 ui-monospace,
+          Menlo,
+          Consolas,
+          'Noto Sans TC',
+          monospace;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 12px 0;
+      }
+      .tabs button.on {
+        background: var(--pri);
+        border-color: var(--pri);
+        color: var(--prifg);
+      }
+      .panel {
+        display: none;
+      }
+      .panel.on {
+        display: block;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+      .lst div {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 4px 0;
+        border-bottom: 1px dashed var(--bd);
+      }
+      .lst span {
+        flex: 1;
+        word-break: break-all;
+      }
+      footer {
+        margin-top: 24px;
+        font-size: 12px;
+        color: var(--mut);
+        text-align: center;
+      }
+      .menu {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+      .tool-card {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .tool {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 6px;
+        background: var(--card);
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        padding: 16px;
+        color: var(--fg);
+        text-decoration: none;
+        width: 100%;
+      }
+      .tool:hover,
+      .tool:focus-visible {
+        border-color: var(--pri);
+        outline: 2px solid transparent;
+      }
+      .tool-card.drag {
+        opacity: 0.45;
+      }
+      .tool b {
+        font-size: 16px;
+      }
+      .tool span {
+        color: var(--mut);
+        font-size: 13px;
+      }
+      .tool small {
+        color: var(--mut);
+        font-size: 12px;
+        margin-top: auto;
+        padding-top: 6px;
+      }
+      .mv {
+        display: none;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .mv button {
+        padding: 2px 12px;
+      }
+      .menu.editing .mv {
+        display: flex;
+      }
+      .menu.editing .tool {
+        cursor: pointer;
+      }
+      .menu.editing .tool-card {
+        cursor: grab;
+      }
+      .menu.editing .tool-card .tool {
+        border-style: dashed;
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="home">
+    <div class="wrap">
+      <header class="hero">
+        <div>
+          <h1>小工具集</h1>
+          <p class="tagline">
+            請選擇要使用的工具。多數檔案處理在瀏覽器本機執行；啟用第三方翻譯或即時資料功能時，部分文字或請求資料可能會傳送至外部服務。
+          </p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
+      <div class="tools-bar">
+        <span class="msg" id="emsg"></span><button id="reset" style="display: none">恢復預設順序</button><button id="edit">調整順序</button>
+      </div>
+      <nav class="menu">
+        <a class="tool" href="txtcompare.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <rect x="3" y="4" width="7.5" height="16" rx="1.5" />
+              <rect x="13.5" y="4" width="7.5" height="16" rx="1.5" />
+              <path d="M6 9h2M6 13h2M16.5 9h2M16.5 13h2" /></svg></i
+          ><b>文件比對工具</b><span>左右對照兩份文字或程式檔，標出新增與刪除的行。</span><small>支援 txt、md、docx 與常見程式碼檔</small></a
+        >
+        <a class="tool" href="ocr_tool.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <path
+                d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"
+              />
+              <path d="M8 9h8M8 12h8M8 15h5" /></svg></i
+          ><b>圖片文字辨識 OCR</b><span>把圖片或 ZIP 內的圖片轉成文字，可選擇性翻譯。</span><small>支援 jpg、png、zip 等</small></a
+        >
+        <a class="tool" href="pdf_tool.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <path d="M14 3H7.5A1.5 1.5 0 0 0 6 4.5v15A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V7z" />
+              <path d="M14 3v4h4M9 12h6M9 15.5h6" /></svg></i
+          ><b>PDF 工具</b><span>文字辨識與 HTML 報告、合併、拆分、壓縮、解鎖、頁面管理、浮水印與頁碼、圖片互轉、個資遮蔽。</span
+          ><small>支援 pdf、圖片</small></a
+        >
+        <a class="tool" href="audio_tool.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2" /></svg></i
+          ><b>語音／影片轉文字</b><span>會議錄音、影片轉成逐字稿，可輸出 txt 與 srt 字幕。</span
+          ><small>支援 mp3、m4a、wav、mp4 等</small></a
+        >
+        <a class="tool" href="barcode_tool.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <rect x="4" y="4" width="6" height="6" rx="1" />
+              <rect x="14" y="4" width="6" height="6" rx="1" />
+              <rect x="4" y="14" width="6" height="6" rx="1" />
+              <path d="M14 14h2.5v2.5H14zM19 14v.01M14 19.5v.01M17.5 19.5H20V17" /></svg></i
+          ><b>QR Code／條碼</b><span>產生與掃描 QR Code、Data Matrix、PDF417、Aztec 等條碼，可批次產生。</span
+          ><small>可調格式、大小、白邊、顏色；支援相機掃描</small></a
+        >
+        <a class="tool" href="table_compare.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
+              <path d="M3.5 9.5h17M3.5 14.5h17M10 4.5v15" /></svg></i
+          ><b>Excel／CSV 比對</b><span>找出兩份表格新增、刪除、修改的列，可輸出差異報告。</span
+          ><small>支援 xlsx、xls、csv，也可貼上內容</small></a
+        >
+        <a class="tool" href="emoji_suite.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M8.5 14c.9 1.4 2.1 2 3.5 2s2.6-.6 3.5-2M9 9.5v.01M15 9.5v.01" /></svg></i
+          ><b>Emoji／特殊符號圖庫</b
+          ><span
+            >依分類或關鍵字搜尋
+            emoji，以及運算符號、箭頭、希臘字母、上下標、製表線、注音等特殊符號，點一下就複製，也能組合多個一次複製。</span
+          ><small>支援中英文搜尋、Unicode 碼位、最近使用</small></a
+        >
+        <a class="tool" href="unit_tool.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24"><path d="M4 9h14l-3-3M20 15H6l3 3" /></svg></i
+          ><b>單位換算</b><span>長度、面積、重量、速度、力、扭力、壓力、能量、功率、溫度，以及常見貨幣即時匯率。</span
+          ><small>含坪、台斤等台灣常用單位</small></a
+        >
+        <a class="tool" href="codec_tool.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24"><path d="M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5M13.5 5l-3 14" /></svg></i
+          ><b>編碼／解碼</b><span>Base64 與檔案互轉（圖片、PDF、音訊、執行檔等），也支援 Hex、URL、Unicode 等常用格式。</span
+          ><small>可預覽圖片、音訊、影片、PDF</small></a
+        >
+        <a class="tool" href="image_suite.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
+              <circle cx="9" cy="10" r="1.6" />
+              <path d="m4 18 5-5 3.5 3.5L15 14l5 5" /></svg></i
+          ><b>圖片處理與編輯</b><span>整合批次壓縮、轉檔、縮放，以及圖片編輯、AI 去背、裁切、調色與浮水印。</span
+          ><small>同一頁切換批次處理與進階編輯功能</small></a
+        >
+        <a class="tool" href="pcc_tool.html"
+          ><i class="ico" aria-hidden="true"
+            ><svg viewBox="0 0 24 24"><path d="M3.5 9.5 12 4l8.5 5.5M5.5 10v7M9.5 10v7M14.5 10v7M18.5 10v7M3.5 20h17" /></svg></i
+          ><b>政府標案查詢</b><span>查詢各機關的招標、決標公告，可用機關名稱查代碼，並依年度統計。</span
+          ><small>資料來自政府電子採購網（經 g0v 標案 API），查詢時需連線</small></a
+        >
+      </nav>
+    </div>
+    <script>
+      const $ = id => document.getElementById(id);
 
-
-(function(){
-  const nav=document.querySelector('.menu'),KEY='tools-order';
-  // 每個工具卡以外層容器承載排序按鈕，避免在 <a> 裡巢狀放置 <button>。
-  const links=[...nav.querySelectorAll('a.tool')];
-  links.forEach(a=>{
-    const card=document.createElement('div');card.className='tool-card';
-    nav.insertBefore(card,a);card.appendChild(a);
-    const controls=document.createElement('div');controls.className='mv';
-    for(const [d,label] of [[-1,'往前移動'],[1,'往後移動']]){
-      const b=document.createElement('button');b.type='button';b.dataset.d=String(d);b.textContent=d<0?'←':'→';b.setAttribute('aria-label',label);controls.appendChild(b);
-    }
-    card.appendChild(controls);card.draggable=false;
-  });
-  const def=links.map(a=>a.getAttribute('href'));
-  const hrefOf=card=>card.querySelector('a.tool')?.getAttribute('href')||'';
-  const get=h=>[...nav.children].find(card=>hrefOf(card)===h);
-  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify([...nav.children].map(hrefOf)))}catch(e){}};
-  let o=[];try{o=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(o))o=[]}catch(e){}
-  [...o.filter(h=>def.includes(h)),...def.filter(h=>!o.includes(h))].forEach(h=>{const c=get(h);if(c)nav.appendChild(c)});
-  let edit=false,drag=null;
-  const setEdit=v=>{edit=v;nav.classList.toggle('editing',edit);nav.querySelectorAll('.tool-card').forEach(c=>c.draggable=edit);$('edit').textContent=edit?'完成':'調整順序';$('reset').style.display=edit?'':'none';$('emsg').textContent=edit?'拖曳工具卡，或按 ← → 移動；順序只儲存在這個瀏覽器':''};
-  $('edit').onclick=()=>setEdit(!edit);
-  $('reset').onclick=()=>{def.forEach(h=>{const c=get(h);if(c)nav.appendChild(c)});try{localStorage.removeItem(KEY)}catch(e){};};
-  nav.addEventListener('click',e=>{
-    if(!edit)return;
-    const b=e.target.closest('button[data-d]');
-    if(!b){if(e.target.closest('a.tool'))e.preventDefault();return}
-    e.preventDefault();const card=b.closest('.tool-card'),d=Number(b.dataset.d),sib=d<0?card.previousElementSibling:card.nextElementSibling;
-    if(sib){d<0?nav.insertBefore(card,sib):nav.insertBefore(sib,card);save()}
-  });
-  nav.addEventListener('dragstart',e=>{if(!edit)return;drag=e.target.closest('.tool-card');if(!drag)return;drag.classList.add('drag');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',hrefOf(drag))});
-  nav.addEventListener('dragover',e=>{if(edit&&drag&&e.target.closest('.tool-card'))e.preventDefault()});
-  nav.addEventListener('drop',e=>{if(!edit||!drag)return;e.preventDefault();const t=e.target.closest('.tool-card');if(t&&t!==drag){const cards=[...nav.children];cards.indexOf(drag)<cards.indexOf(t)?t.after(drag):t.before(drag);save()}});
-  nav.addEventListener('dragend',()=>{if(drag)drag.classList.remove('drag');drag=null});
-})();
-</script>
-</body>
+      (function () {
+        const nav = document.querySelector('.menu'),
+          KEY = 'tools-order';
+        // 每個工具卡以外層容器承載排序按鈕，避免在 <a> 裡巢狀放置 <button>。
+        const links = [...nav.querySelectorAll('a.tool')];
+        links.forEach(a => {
+          const card = document.createElement('div');
+          card.className = 'tool-card';
+          nav.insertBefore(card, a);
+          card.appendChild(a);
+          const controls = document.createElement('div');
+          controls.className = 'mv';
+          for (const [d, label] of [
+            [-1, '往前移動'],
+            [1, '往後移動'],
+          ]) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.dataset.d = String(d);
+            b.textContent = d < 0 ? '←' : '→';
+            b.setAttribute('aria-label', label);
+            controls.appendChild(b);
+          }
+          card.appendChild(controls);
+          card.draggable = false;
+        });
+        const def = links.map(a => a.getAttribute('href'));
+        const hrefOf = card => card.querySelector('a.tool')?.getAttribute('href') || '';
+        const get = h => [...nav.children].find(card => hrefOf(card) === h);
+        const save = () => {
+          try {
+            localStorage.setItem(KEY, JSON.stringify([...nav.children].map(hrefOf)));
+          } catch (e) {}
+        };
+        let o = [];
+        try {
+          o = JSON.parse(localStorage.getItem(KEY) || '[]');
+          if (!Array.isArray(o)) o = [];
+        } catch (e) {}
+        [...o.filter(h => def.includes(h)), ...def.filter(h => !o.includes(h))].forEach(h => {
+          const c = get(h);
+          if (c) nav.appendChild(c);
+        });
+        let edit = false,
+          drag = null;
+        const setEdit = v => {
+          edit = v;
+          nav.classList.toggle('editing', edit);
+          nav.querySelectorAll('.tool-card').forEach(c => (c.draggable = edit));
+          $('edit').textContent = edit ? '完成' : '調整順序';
+          $('reset').style.display = edit ? '' : 'none';
+          $('emsg').textContent = edit ? '拖曳工具卡，或按 ← → 移動；順序只儲存在這個瀏覽器' : '';
+        };
+        $('edit').onclick = () => setEdit(!edit);
+        $('reset').onclick = () => {
+          def.forEach(h => {
+            const c = get(h);
+            if (c) nav.appendChild(c);
+          });
+          try {
+            localStorage.removeItem(KEY);
+          } catch (e) {}
+        };
+        nav.addEventListener('click', e => {
+          if (!edit) return;
+          const b = e.target.closest('button[data-d]');
+          if (!b) {
+            if (e.target.closest('a.tool')) e.preventDefault();
+            return;
+          }
+          e.preventDefault();
+          const card = b.closest('.tool-card'),
+            d = Number(b.dataset.d),
+            sib = d < 0 ? card.previousElementSibling : card.nextElementSibling;
+          if (sib) {
+            d < 0 ? nav.insertBefore(card, sib) : nav.insertBefore(sib, card);
+            save();
+          }
+        });
+        nav.addEventListener('dragstart', e => {
+          if (!edit) return;
+          drag = e.target.closest('.tool-card');
+          if (!drag) return;
+          drag.classList.add('drag');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', hrefOf(drag));
+        });
+        nav.addEventListener('dragover', e => {
+          if (edit && drag && e.target.closest('.tool-card')) e.preventDefault();
+        });
+        nav.addEventListener('drop', e => {
+          if (!edit || !drag) return;
+          e.preventDefault();
+          const t = e.target.closest('.tool-card');
+          if (t && t !== drag) {
+            const cards = [...nav.children];
+            cards.indexOf(drag) < cards.indexOf(t) ? t.after(drag) : t.before(drag);
+            save();
+          }
+        });
+        nav.addEventListener('dragend', () => {
+          if (drag) drag.classList.remove('drag');
+          drag = null;
+        });
+      })();
+    </script>
+  </body>
 </html>
