@@ -15,150 +15,43 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="common.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      @font-face {
-        font-family: 'Twemoji Country Flags';
-        unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
-        src: url('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1/dist/TwemojiCountryFlags.woff2') format('woff2');
-        font-display: swap;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font:
-          14px/1.6 'Noto Sans TC',
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
-      .wrap {
-        max-width: 1180px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .back:hover {
-        color: var(--pri);
-      }
-      .sub,
       .msg {
-        color: var(--mut);
-        font-size: 12px;
         margin: 2px 0 0;
       }
-      .themes {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 12px;
-        color: var(--mut);
-      }
-      .sw {
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        padding: 0;
-        border: 2px solid var(--bd);
-        cursor: pointer;
-      }
-      .sw.on {
-        outline: 2px solid var(--pri);
-        outline-offset: 2px;
-      }
-      section {
-        background: var(--card);
-        border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin-bottom: 12px;
-      }
-      button {
-        background: var(--card);
-        color: var(--fg);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 5px 12px;
-        cursor: pointer;
-        font: inherit;
-        font-size: 13px;
-      }
-      button:hover {
-        border-color: var(--pri);
-      }
-      .pri {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
-      }
-      input[type='text'],
-      textarea {
+      input[type='text'] {
         width: 100%;
+        font: inherit;
+        font-size: 14px;
+        padding: 6px 10px;
+      }
+      textarea {
         font: inherit;
         font-size: 14px;
         padding: 6px 10px;
         border: 1px solid var(--bd);
         border-radius: 6px;
-        background: var(--card);
-        color: var(--fg);
       }
       select {
         font: inherit;
         font-size: 13px;
-        padding: 5px 8px;
         border: 1px solid var(--bd);
         border-radius: 6px;
-        background: var(--card);
-        color: var(--fg);
       }
       textarea {
         font-family: 'Twemoji Country Flags', 'Noto Sans TC', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
         font-size: 22px;
         line-height: 1.4;
-        resize: vertical;
         min-height: 56px;
-      }
-      .tabs {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin: 10px 0;
-      }
-      .tabs button.on {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
       }
       .row {
         display: flex;
-        gap: 8px;
         align-items: center;
         flex-wrap: wrap;
         margin-top: 8px;
       }
       .grid {
-        display: grid;
         grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
         gap: 6px;
       }
@@ -168,43 +61,18 @@
         padding: 10px 0;
         background: var(--gut);
         border: 1px solid transparent;
-        border-radius: 8px;
         font-family: 'Twemoji Country Flags', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
       }
       .e:hover {
         border-color: var(--pri);
       }
-      .empty {
-        color: var(--mut);
-        padding: 20px;
-        text-align: center;
-        grid-column: 1/-1;
-      }
-      #toast {
-        position: fixed;
-        left: 50%;
-        bottom: 24px;
-        transform: translateX(-50%);
-        background: var(--fg);
-        color: var(--bg);
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-size: 13px;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s;
-      }
-      #toast.on {
-        opacity: 0.92;
-      }
-      footer {
-        margin-top: 24px;
-        font-size: 12px;
-        color: var(--mut);
-        text-align: center;
+      @font-face {
+        font-family: 'Twemoji Country Flags';
+        unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+        src: url('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1/dist/TwemojiCountryFlags.woff2') format('woff2');
+        font-display: swap;
       }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="wrap">

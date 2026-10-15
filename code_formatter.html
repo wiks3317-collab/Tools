@@ -20,100 +20,25 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="common.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font:
-          14px/1.6 'Noto Sans TC',
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
-      .wrap {
-        max-width: 1180px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .back:hover {
-        color: var(--pri);
-      }
-      section {
-        background: var(--card);
-        border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin: 12px 0;
-      }
-      h2 {
-        font-size: 14px;
-        margin: 0 0 8px;
-      }
       .privacy {
-        padding: 8px 12px;
-        background: var(--gut);
-        border-left: 3px solid var(--pri);
-        font-size: 12px;
         margin: 12px 0;
-        color: var(--mut);
       }
       .privacy b {
         color: var(--fg);
       }
-      button,
-      .btn {
-        background: var(--card);
-        color: var(--fg);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 5px 12px;
-        cursor: pointer;
-        font: inherit;
-        font-size: 13px;
-      }
-      button:hover:not(:disabled) {
-        border-color: var(--pri);
-      }
-      button:disabled {
-        opacity: 0.45;
-        cursor: default;
-      }
-      .pri {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
-      }
       select {
         font: inherit;
         font-size: 13px;
-        padding: 5px 8px;
         border: 1px solid var(--bd);
         border-radius: 6px;
-        background: var(--card);
-        color: var(--fg);
       }
       option {
         background: var(--card);
-        color: var(--fg);
       }
       .row {
         display: flex;
-        gap: 10px;
         align-items: center;
         flex-wrap: wrap;
         margin: 8px 0;
@@ -132,11 +57,6 @@
         border-radius: 999px;
         padding: 2px 9px;
       }
-      .msg,
-      .hint {
-        color: var(--mut);
-        font-size: 12px;
-      }
       #status {
         margin: 8px 2px;
         min-height: 22px;
@@ -149,17 +69,10 @@
       #status.error {
         color: #bf616a;
       }
-
-      /* ===== 左右編輯區 ===== */
       .editors {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 12px;
-      }
-      @media (max-width: 800px) {
-        .editors {
-          grid-template-columns: 1fr;
-        }
       }
       section.panel {
         padding: 0;
@@ -203,23 +116,17 @@
         overflow: auto;
         box-shadow: none;
       }
-
-      /* ===== 差異比對 ===== */
       #diffSection {
         display: none;
       }
       .legend {
         display: inline-flex;
         gap: 10px;
-        font-size: 12px;
-        color: var(--mut);
       }
       .legend i {
-        display: inline-block;
         width: 11px;
         height: 11px;
         border-radius: 3px;
-        margin-right: 4px;
         vertical-align: -1px;
       }
       .legend .d i {
@@ -228,18 +135,13 @@
       .legend .a i {
         background: color-mix(in srgb, #2ea043 55%, var(--card));
       }
-      .ga,
-      .gd,
+      .ga, .gd {
+        font-size: 12.5px;
+      }
       .gc {
         font-size: 12.5px;
         padding: 1px 8px;
         border-radius: 6px;
-      }
-      .ga {
-        background: var(--add);
-      }
-      .gd {
-        background: var(--del);
       }
       .gc {
         background: var(--gut);
@@ -325,8 +227,6 @@
         color: var(--fg);
         font-weight: 600;
       }
-
-      /* ===== 語法檢查 Console ===== */
       #consoleSummary {
         font-size: 13px;
         color: var(--mut);
@@ -353,8 +253,7 @@
         min-width: 0;
         flex: 1;
       }
-      .it.ii,
-      .it.iw {
+      .it.ii, .it.iw {
         color: var(--mut);
       }
       .loc {
@@ -381,15 +280,12 @@
       pre.frame b {
         color: #bf616a;
       }
-
-      /* ===== CDN 表 ===== */
       table.cdn {
         width: 100%;
         border-collapse: collapse;
         font-size: 12.5px;
       }
-      .cdn th,
-      .cdn td {
+      .cdn th, .cdn td {
         text-align: left;
         padding: 6px 8px;
         border-bottom: 1px solid var(--line);
@@ -401,17 +297,14 @@
       .st-fail {
         color: #bf616a;
       }
-      .st-load,
-      .st-idle {
+      .st-load, .st-idle {
         color: var(--mut);
       }
       details > summary {
         cursor: pointer;
         font-weight: 500;
       }
-      details ul,
-      details ol,
-      section ol {
+      details ul, details ol, section ol {
         margin: 6px 0 0;
         padding-left: 20px;
         font-size: 13px;
@@ -420,8 +313,12 @@
       li {
         margin: 3px 0;
       }
+      @media (max-width:800px) {
+        .editors {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="wrap">

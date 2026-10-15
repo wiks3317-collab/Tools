@@ -15,435 +15,63 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="common.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font:
-          14px/1.6 'Noto Sans TC',
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
-      a {
-        color: var(--pri);
-      }
-      .wrap {
-        max-width: 1180px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .back:hover {
-        color: var(--pri);
-      }
-      .sub,
-      .tagline,
-      .adv-hint,
       .msg {
-        color: var(--mut);
-        font-size: 12px;
         margin: 2px 0 0;
       }
       .msg {
-        font-size: 13px;
         margin-top: 8px;
       }
-      .themes {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 12px;
-        color: var(--mut);
-      }
-      .sw {
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        padding: 0;
-        border: 2px solid var(--bd);
-        cursor: pointer;
-      }
-      .sw.on {
-        outline: 2px solid var(--pri);
-        outline-offset: 2px;
-      }
-      section {
-        background: var(--card);
-        border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin-bottom: 12px;
-      }
       h2 {
-        font-size: 15px;
-        margin: 0 0 10px;
         display: flex;
         align-items: center;
         gap: 8px;
       }
-      .num {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        background: var(--gut);
-        color: var(--mut);
-        font-size: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .privacy,
-      .warn {
-        color: var(--mut);
-        font-size: 12px;
-        border-left: 3px solid var(--pri);
-        padding: 6px 10px;
-        margin: 8px 0;
-        background: var(--gut);
-      }
-      .warn {
-        border-left-color: #bf616a;
-      }
-      button,
-      .btn {
-        background: var(--card);
-        color: var(--fg);
+      select {
+        font: inherit;
+        font-size: 13px;
         border: 1px solid var(--bd);
         border-radius: 6px;
-        padding: 5px 12px;
-        cursor: pointer;
+      }
+      input[type='text'], input[type='password'] {
         font: inherit;
         font-size: 13px;
       }
-      button:hover:not(:disabled),
-      .btn:hover {
-        border-color: var(--pri);
-      }
-      button:disabled {
-        opacity: 0.4;
-        cursor: default;
-      }
-      .pri {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
-      }
-      input[type='file'] {
-        display: none;
-      }
-      select,
-      input[type='text'],
-      input[type='password'] {
-        font: inherit;
-        font-size: 13px;
-        padding: 5px 8px;
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        background: var(--card);
-        color: var(--fg);
-      }
-      input[type='text'],
-      input[type='password'] {
+      input[type='text'], input[type='password'] {
         width: 100%;
       }
       option {
         background: var(--card);
-        color: var(--fg);
-      }
-      .drop-zone {
-        border: 2px dashed var(--bd);
-        border-radius: 8px;
-        padding: 28px 16px;
-        text-align: center;
-        cursor: pointer;
-        color: var(--mut);
-        transition:
-          border-color 0.15s,
-          background 0.15s;
-      }
-      .drop-zone:hover,
-      .drop-zone.dragover {
-        border-color: var(--pri);
-        color: var(--fg);
-        background: var(--gut);
-      }
-      .drop-zone input {
-        display: none;
-      }
-      #fileList {
-        margin-top: 10px;
-        font-size: 13px;
-        color: var(--mut);
-        max-height: 140px;
-        overflow-y: auto;
-      }
-      .file-row {
-        border-bottom: 1px dashed var(--bd);
-        padding: 2px 0;
-      }
-      .clear-link {
-        color: var(--pri);
-        cursor: pointer;
-        text-decoration: underline;
-        font-size: 12px;
-      }
-      .field {
-        margin-bottom: 12px;
-      }
-      .radio-group label {
-        display: block;
-        margin: 6px 0;
-        cursor: pointer;
-      }
-      .radio-group input,
-      .translate-toggle input {
-        margin-right: 6px;
-      }
-      .lang-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 4px 12px;
-        margin-top: 6px;
-      }
-      .lang-grid label {
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .translate-toggle {
-        display: block;
-        margin-bottom: 10px;
-        cursor: pointer;
-      }
-      #translateOptions .field {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      details.advanced {
-        margin-top: 14px;
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-      }
-      details.advanced summary {
-        cursor: pointer;
-        padding: 8px 12px;
-        font-size: 13px;
-        color: var(--mut);
-      }
-      .adv-body {
-        padding: 4px 14px 12px;
-      }
-      .adv-field {
-        margin-bottom: 12px;
-      }
-      .adv-field label {
-        display: block;
-        margin-bottom: 4px;
-        color: var(--mut);
-      }
-      .chip-btn {
-        display: inline-block;
-        font-size: 12px;
-        color: var(--pri);
-        border: 1px solid var(--pri);
-        border-radius: 12px;
-        padding: 1px 9px;
-        margin: 6px 6px 0 0;
-        cursor: pointer;
-      }
-      .progress-bar-bg,
-      .item-progress-bg {
-        background: var(--gut);
-        border-radius: 4px;
-        overflow: hidden;
-      }
-      .progress-bar-bg {
-        height: 8px;
-      }
-      .item-progress-bg {
-        height: 4px;
-      }
-      .progress-bar-fill,
-      .item-progress-fill {
-        height: 100%;
-        width: 0;
-        background: var(--pri);
-        transition: width 0.2s;
-      }
-      .item-progress-fill.error {
-        background: #bf616a;
-      }
-      #progressArea {
-        margin-top: 14px;
-      }
-      #progressText {
-        margin: 8px 0;
-        color: var(--mut);
-        font-size: 13px;
-      }
-      #statusList {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        max-height: 180px;
-        overflow-y: auto;
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        font-size: 12.5px;
-      }
-      #statusList li {
-        padding: 6px 8px;
-        border-bottom: 1px dashed var(--bd);
-      }
-      .status-label {
-        margin-bottom: 4px;
-      }
-      #previewText {
-        white-space: pre-wrap;
-        background: var(--gut);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 10px;
-        max-height: 260px;
-        overflow-y: auto;
-        margin-top: 12px;
-        color: var(--mut);
-        font:
-          12.5px/1.6 ui-monospace,
-          Menlo,
-          Consolas,
-          'Noto Sans TC',
-          monospace;
-      }
-      .tabs {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin: 12px 0;
-      }
-      .tabs button.on {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
       }
       .panel {
         display: none;
       }
-      .panel.on {
-        display: block;
-      }
       .row {
         display: flex;
-        gap: 8px;
         align-items: center;
         flex-wrap: wrap;
         margin: 10px 0;
       }
-      .lst div {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        padding: 4px 0;
-        border-bottom: 1px dashed var(--bd);
-      }
-      .lst span {
-        flex: 1;
-        word-break: break-all;
-      }
-      footer {
-        margin-top: 24px;
-        font-size: 12px;
-        color: var(--mut);
-        text-align: center;
-      }
-      .menu {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 14px;
-        margin-top: 18px;
-      }
-      .tool {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        background: var(--card);
-        border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 16px;
-        color: var(--fg);
-        text-decoration: none;
-      }
-      .tool:hover,
-      .tool:focus-visible {
-        border-color: var(--pri);
-        outline: none;
-      }
-      .tool b {
-        font-size: 16px;
-      }
-      .tool span {
-        color: var(--mut);
-        font-size: 13px;
-      }
-      .tool small {
-        color: var(--mut);
-        font-size: 12px;
-        margin-top: auto;
-        padding-top: 6px;
-      }
       textarea {
         display: block;
-        width: 100%;
         height: 320px;
-        resize: vertical;
         border: 1px solid var(--bd);
         border-radius: 6px;
         padding: 10px;
-        background: var(--card);
-        color: var(--fg);
         font:
           13px/1.8 'Noto Sans TC',
           system-ui,
           sans-serif;
       }
       .opt {
-        display: flex;
         gap: 16px;
         align-items: center;
         flex-wrap: wrap;
         margin: 8px 0;
       }
       .opt label {
-        display: flex;
         gap: 4px;
-        align-items: center;
-        cursor: pointer;
       }
       .steps {
         list-style: none;
@@ -469,30 +97,20 @@
       .steps li.done {
         color: var(--pri);
       }
-      .steps li.err,
-      .steps li.stop {
+      .steps li.err, .steps li.stop {
         color: #bf616a;
       }
       .progress-bar-fill.indet {
-        background-image: linear-gradient(
-          45deg,
-          rgba(255, 255, 255, 0.3) 25%,
-          transparent 25%,
-          transparent 50%,
-          rgba(255, 255, 255, 0.3) 50%,
-          rgba(255, 255, 255, 0.3) 75%,
-          transparent 75%
-        );
+        background-image: linear-gradient( 45deg, rgba(255, 255, 255, 0.3) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 75%, transparent 75% );
         background-size: 16px 16px;
         animation: mv 1s linear infinite;
       }
       @keyframes mv {
         to {
-          background-position: 16px 0;
+        background-position: 16px 0;
         }
       }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="wrap">

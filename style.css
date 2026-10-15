@@ -100,6 +100,311 @@ html[data-theme='dracula'] {
   --pri: #a8a0d6;
   --prifg: #1c1f2a;
 }
+/* ===== Base layer：各頁原本重複的基礎樣式（已集中於此；頁面專屬樣式留在各頁 <style>） ===== */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+a {
+  color: var(--pri);
+}
+.wrap {
+  margin: 0 auto;
+}
+.adv-hint {
+  margin: 2px 0 0;
+}
+.num {
+  border-radius: 50%;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.privacy, .warn {
+  margin: 8px 0;
+}
+button, .btn {
+  cursor: pointer;
+}
+button:hover:not(:disabled), .btn:hover {
+  border-color: var(--pri);
+}
+button:disabled {
+  cursor: default;
+}
+input[type='file'] {
+  display: none;
+}
+select {
+  padding: 5px 8px;
+  background: var(--card);
+  color: var(--fg);
+}
+input[type='text'], input[type='password'] {
+  padding: 5px 8px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--fg);
+}
+option {
+  color: var(--fg);
+}
+.drop-zone {
+  text-align: center;
+  cursor: pointer;
+}
+.drop-zone input {
+  display: none;
+}
+#fileList {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--mut);
+  max-height: 140px;
+  overflow-y: auto;
+}
+.file-row {
+  padding: 2px 0;
+}
+.clear-link {
+  color: var(--pri);
+  cursor: pointer;
+  font-size: 12px;
+}
+.radio-group label {
+  display: block;
+  margin: 6px 0;
+  cursor: pointer;
+}
+.radio-group input, .translate-toggle input {
+  margin-right: 6px;
+}
+.lang-grid {
+  display: grid;
+  gap: 4px 12px;
+  margin-top: 6px;
+}
+.lang-grid label {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.translate-toggle {
+  display: block;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+#translateOptions .field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+details.advanced {
+  margin-top: 14px;
+}
+details.advanced summary {
+  cursor: pointer;
+}
+.adv-field label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--mut);
+}
+.chip-btn {
+  display: inline-block;
+  color: var(--pri);
+  border-width: 1px;
+  border-style: solid;
+  margin: 6px 6px 0 0;
+  cursor: pointer;
+}
+.progress-bar-bg {
+  background: var(--gut);
+  overflow: hidden;
+}
+.item-progress-bg {
+  background: var(--gut);
+  overflow: hidden;
+  height: 4px;
+}
+.progress-bar-fill, .item-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--pri);
+  transition: width 0.2s;
+}
+#progressArea {
+  margin-top: 14px;
+}
+#progressText {
+  margin: 8px 0;
+  color: var(--mut);
+  font-size: 13px;
+}
+#statusList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  border-width: 1px;
+  border-style: solid;
+  font-size: 12.5px;
+}
+#statusList li {
+  padding: 6px 8px;
+}
+.status-label {
+  margin-bottom: 4px;
+}
+#previewText {
+  white-space: pre-wrap;
+  border: 1px solid var(--bd);
+  padding: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 12px;
+  color: var(--mut);
+  font:
+    12.5px/1.6 ui-monospace,
+    Menlo,
+    Consolas,
+    'Noto Sans TC',
+    monospace;
+}
+.panel.on {
+  display: block;
+}
+.lst div {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+}
+.lst span {
+  flex: 1;
+  word-break: break-all;
+}
+footer {
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--mut);
+  text-align: center;
+}
+.menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.tool:hover, .tool:focus-visible {
+  border-color: var(--pri);
+  outline: none;
+}
+.tool b {
+  font-size: 16px;
+}
+.tool span {
+  color: var(--mut);
+  font-size: 13px;
+}
+.tool small {
+  color: var(--mut);
+  font-size: 12px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+textarea {
+  width: 100%;
+  resize: vertical;
+  background: var(--card);
+  color: var(--fg);
+}
+.opt {
+  display: flex;
+}
+.opt label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+table {
+  border-collapse: collapse;
+}
+.grid {
+  display: grid;
+}
+input[type='number'] {
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--fg);
+}
+.legend {
+  font-size: 12px;
+  color: var(--mut);
+}
+.legend i {
+  display: inline-block;
+  margin-right: 4px;
+}
+.ga {
+  padding: 1px 8px;
+  background: var(--add);
+}
+.gd {
+  padding: 1px 8px;
+  background: var(--del);
+}
+button:hover {
+  border-color: var(--pri);
+}
+.drop {
+  text-align: center;
+  cursor: pointer;
+}
+.empty {
+  color: var(--mut);
+  padding: 20px;
+  text-align: center;
+  grid-column: 1/-1;
+}
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--fg);
+  color: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+#toast.on {
+  opacity: 0.92;
+}
 /* ===== Nordic layer：北歐簡約共用樣式 ===== */
 :root {
   --maxw: 1200px;
@@ -223,7 +528,10 @@ header > .tagline {
 .sw {
   width: 18px;
   height: 18px;
+  padding: 0;
   border: 1px solid var(--bd);
+  border-radius: 50%;
+  cursor: pointer;
   transition: transform 0.15s;
 }
 .sw:hover {

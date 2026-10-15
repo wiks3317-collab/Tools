@@ -15,85 +15,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="common.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font:
-          14px/1.6 'Noto Sans TC',
-          system-ui,
-          sans-serif;
-      }
-      a {
-        color: var(--pri);
-      }
-      .wrap {
-        max-width: 1180px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-      }
-      h1 {
-        font-size: 20px;
-        margin: 4px 0;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .hint,
-      .msg {
-        color: var(--mut);
-        font-size: 12px;
-      }
-      .privacy,
-      .warn {
-        padding: 8px 10px;
-        background: var(--gut);
-        border-left: 3px solid var(--pri);
-        font-size: 12px;
+      .privacy, .warn {
         margin: 12px 0;
       }
-      .warn {
-        border-color: #b8693f;
-      }
-      section {
-        background: var(--card);
+      select {
         border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin: 12px 0;
+        border-radius: 5px;
+        padding: 5px;
       }
-      button,
-      .btn {
-        background: var(--card);
-        color: var(--fg);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 6px 12px;
-        font: inherit;
-        font-size: 13px;
-        cursor: pointer;
-      }
-      button:disabled {
-        opacity: 0.45;
-        cursor: default;
-      }
-      .pri {
-        background: var(--pri);
-        color: var(--prifg);
-        border-color: var(--pri);
-      }
-      input[type='file'] {
-        display: none;
-      }
-      select,
       input[type='color'] {
         background: var(--card);
         color: var(--fg);
@@ -103,21 +34,10 @@
       }
       .drop {
         display: block;
-        padding: 28px;
-        text-align: center;
-        border: 2px dashed var(--bd);
-        border-radius: 8px;
-        cursor: pointer;
-        color: var(--mut);
-      }
-      .drop.over {
-        background: var(--gut);
-        border-color: var(--pri);
       }
       .row {
         display: flex;
         align-items: center;
-        gap: 8px;
         flex-wrap: wrap;
         margin: 8px 0;
       }
@@ -140,8 +60,7 @@
         cursor: crosshair;
         flex: none;
       }
-      .zoom-controls input[type='range'],
-      .watermark-controls input[type='range'] {
+      .zoom-controls input[type='range'], .watermark-controls input[type='range'] {
         width: min(220px, 40vw);
         accent-color: var(--pri);
       }
@@ -151,9 +70,10 @@
         background: var(--card);
         color: var(--fg);
         border: 1px solid var(--bd);
-        border-radius: 5px;
-        padding: 6px 8px;
-        font: inherit;
+        font-family: inherit;
+        line-height: inherit;
+        font-weight: inherit;
+        font-style: inherit;
       }
       .watermark-controls .row {
         margin: 7px 0;
@@ -169,12 +89,8 @@
       }
       footer {
         margin-top: 20px;
-        color: var(--mut);
-        font-size: 12px;
-        text-align: center;
       }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="wrap">

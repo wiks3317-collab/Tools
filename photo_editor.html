@@ -23,137 +23,43 @@
         }
       }
     </script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font:
-          14px/1.6 'Noto Sans TC',
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
-      a {
-        color: var(--pri);
-      }
-      .wrap {
-        max-width: 1180px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .back:hover {
-        color: var(--pri);
-      }
-      .tagline,
-      .msg,
-      .hint {
-        color: var(--mut);
-        font-size: 12px;
+      .msg, .hint {
         margin: 2px 0 0;
       }
-      section {
-        background: var(--card);
-        border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin-bottom: 12px;
-      }
-      h2 {
-        font-size: 14px;
-        margin: 0 0 8px;
-      }
       .privacy {
-        color: var(--mut);
-        font-size: 12px;
-        border-left: 3px solid var(--pri);
-        padding: 6px 10px;
         margin: 8px 0 12px;
-        background: var(--gut);
       }
-      button,
-      .btn {
-        background: var(--card);
-        color: var(--fg);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 5px 12px;
-        cursor: pointer;
-        font: inherit;
-        font-size: 13px;
-      }
-      button:hover:not(:disabled) {
-        border-color: var(--pri);
-      }
-      button:disabled {
-        opacity: 0.4;
-        cursor: default;
-      }
-      button.on,
-      .pri {
+      button.on {
         background: var(--pri);
         border-color: var(--pri);
         color: var(--prifg);
       }
-      input[type='file'] {
-        display: none;
-      }
-      select,
-      input[type='number'] {
+      select {
         font: inherit;
         font-size: 13px;
         padding: 4px 8px;
         border: 1px solid var(--bd);
         border-radius: 6px;
-        background: var(--card);
-        color: var(--fg);
+      }
+      input[type='number'] {
+        padding: 4px 8px;
       }
       input[type='number'] {
         width: 84px;
       }
       input[type='range'] {
         width: 100%;
-        accent-color: var(--pri);
       }
       .drop {
         display: block;
-        border: 2px dashed var(--bd);
-        border-radius: 8px;
-        padding: 48px 16px;
-        text-align: center;
-        cursor: pointer;
-        color: var(--mut);
-      }
-      .drop:hover,
-      .drop.dragover {
-        border-color: var(--pri);
-        color: var(--fg);
-        background: var(--gut);
       }
       #ed {
         display: none;
         grid-template-columns: 1fr 330px;
         gap: 14px;
         align-items: start;
-      }
-      @media (max-width: 860px) {
-        #ed {
-          grid-template-columns: 1fr;
-        }
       }
       #ed > div {
         min-width: 0;
@@ -179,7 +85,6 @@
       }
       .row {
         display: flex;
-        gap: 6px;
         align-items: center;
         flex-wrap: wrap;
         margin: 6px 0;
@@ -241,8 +146,12 @@
         padding: 3px 10px;
         font-size: 12px;
       }
+      @media (max-width:860px) {
+        #ed {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="wrap">

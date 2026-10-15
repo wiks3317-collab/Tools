@@ -15,115 +15,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script> try{const t=localStorage.getItem('tools-theme')||localStorage.getItem('diff-theme');if(t&&t!=='auto')document.documentElement.dataset.theme=t}catch(e){} </script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      * {
-        box-sizing:border-box
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font: 
-          14px/1.6 'Noto Sans TC',
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
-      a {
-        color: var(--pri);
-      }
-      .wrap {
-        max-width: 1180px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-      }
-      header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .back:hover {
-        color: var(--pri);
-      }
-      .sub,
       .msg {
-        color: var(--mut);
-        font-size: 12px;
         margin: 2px 0 0;
       }
       .msg {
-        font-size: 13px;
         margin-top: 8px;
       }
-      .themes {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 12px;
-        color: var(--mut);
-      }
-      .sw {
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        padding: 0;
-        border: 2px solid var(--bd);
-        cursor: pointer;
-      }
-      .sw.on {
-        outline: 2px solid var(--pri);
-        outline-offset: 2px;
-      }
-      section {
-        background: var(--card);
-        border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin-bottom: 12px;
-      }
-      h2 {
-        font-size: 15px;
-        margin: 0 0 10px;
-      }
-      button,
-      .btn {
-        background: var(--card);
-        color: var(--fg);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 5px 12px;
-        cursor: pointer;
-        font: inherit;
-        font-size: 13px;
-      }
-      button:hover:not(:disabled),
       .btn.hover {
         border-color: var(--pri);
       }
-      button:disabled {
-        opacity: 0.4;
-        cursor: default;
+      select {
+        font: inherit;
+        font-size: 13px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
       }
-      .pri {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
-      }
-      select,
       input[type=text] {
         font: inherit;
         font-size: 13px;
@@ -135,28 +43,12 @@
       }
       option {
         background: var(--card);
-        color: var(--fg);
-      }
-      .tabs {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin: 12px 0;
-      }
-      .tabs button.on {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
       }
       .panel {
         display: none;
       }
-      .panel.on {
-        display: block;
-      }
       .row {
         display: flex;
-        gap: 8px;
         align-items: flex-end;
         flex-wrap: wrap;
         margin: 10px 0;
@@ -175,38 +67,31 @@
       .grow input {
         width: 100%;
       }
-      .warn {
-        color: var(--mut);
-        font-size: 12px;
-        border-left: 3px solid #bf616a;
-        padding: 6px 10px;
-        margin: 8px 0;
-        background: var(--gut);
-      }
-      .err {
-        color: #bf616a;
-      }
       .tw {
         overflow-x: auto;
         border: 1px solid var(--bd);
-        border-radius: 6px;
       }
       table {
-        border-collapse: collapse;
         width: 100%;
         table-layout: fixed;
       }
-      th,td {
+      th {
         text-align: left;
         padding: 8px 10px;
         border-bottom: 1px dashed var(--bd);
         vertical-align: top;
         overflow-wrap: anywhere;
       }
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom-width: 1px;
+        border-bottom-color: var(--bd);
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
       th {
         font-size: 12px;
-        color: var(--mut);
-        font-weight: 500;
         background: var(--gut);
         white-space: nowrap;
       }
@@ -252,16 +137,14 @@
       .acts {
         white-space: normal;
       }
-      .acts button,
-      .acts a {
+      .acts button, .acts a {
         font-size: 12px;
         padding: 2px 9px;
         margin: 0 4px 4px 0;
         display: inline-block;
         line-height: 1.5;
       }
-      .t-main .acts button,
-      .t-main .acts a {
+      .t-main .acts button, .t-main .acts a {
         display: block;
         width: max-content;
         max-width: 100%;
@@ -276,15 +159,7 @@
         border-color: var(--pri);
       }
       .chip-btn {
-        display: inline-block;
-        font-size: 12px;
-        color: var(--pri);
-        border: 1px solid var(--pri);
-        border-radius: 12px;
-        padding: 1px 9px;
         margin: 4px 6px 0 0;
-        cursor: pointer;
-        background: transparent;
       }
       .pick {
         display: flex;
@@ -299,7 +174,6 @@
       .bar {
         display: grid;
         grid-template-columns: 56px 1fr;
-        gap: 10px;
         align-items: center;
       }
       .track {
@@ -314,7 +188,7 @@
         position: relative;
       }
       .seg.t {
-         background: #d08770;
+        background: #d08770;
       }
       .seg.a {
         background: var(--pri);
@@ -330,16 +204,12 @@
       .legend {
         display: flex;
         gap: 14px;
-        font-size: 12px;
-        color: var(--mut);
         margin-bottom: 10px;
       }
       .legend i {
-        display: inline-block;
         width: 10px;
         height: 10px;
         border-radius: 2px;
-        margin-right: 4px;
       }
       dialog {
         width: min(660px,92vw);
@@ -361,20 +231,37 @@
       }
       dt {
         color: var(--mut);
-        font-size: 12px}dd{margin: 0;
+        font-size: 12px;
+      }
+      dd {
+        margin: 0;
         overflow-wrap: anywhere;
       }
-      footer {
-        margin-top: 24px;
-        font-size: 12px;
-        color: var(--mut);
-        text-align: center;
+      .t-main col.c-date {
+        width: 100px;
       }
-      /* 欄寬：機關欄加寬，標案名稱吃剩餘空間 */
-      .t-main col.c-date{width: 100px}.t-main col.c-type{width: 12%}.t-main col.c-unit{width: 24%}.t-main col.c-title{width: auto}.t-main col.c-act{width: 92px}
-      .t-unit col.c-code{width: 22%}.t-unit col.c-name{width: auto}.t-unit col.c-act{width: 150px}
+      .t-main col.c-type {
+        width: 12%;
+      }
+      .t-main col.c-unit {
+        width: 24%;
+      }
+      .t-main col.c-title {
+        width: auto;
+      }
+      .t-main col.c-act {
+        width: 92px;
+      }
+      .t-unit col.c-code {
+        width: 22%;
+      }
+      .t-unit col.c-name {
+        width: auto;
+      }
+      .t-unit col.c-act {
+        width: 150px;
+      }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="wrap">

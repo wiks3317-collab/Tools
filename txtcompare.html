@@ -17,91 +17,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="common.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font:
-          14px/1.5 'Noto Sans TC',
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
       header {
         padding: 14px 20px 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-      h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .back:hover {
-        color: var(--pri);
-      }
-      .sub,
-      .note {
-        color: var(--mut);
-        font-size: 12px;
       }
       .note {
         margin-top: 8px;
       }
-      .themes {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 12px;
-        color: var(--mut);
-      }
-      .sw {
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        padding: 0;
-        border: 2px solid var(--bd);
-        cursor: pointer;
-      }
-      .sw.on {
-        outline: 2px solid var(--pri);
-        outline-offset: 2px;
-      }
       main {
-        width: 100%;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-        max-width: 1180px;
         margin: 0 auto;
       }
-      .fold {
-        margin: 6px 0 10px;
-      }
       .grid {
-        display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 14px;
-      }
-      @media (max-width: 800px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
       }
       .box {
         background: var(--card);
         border: 1px solid var(--bd);
-        border-radius: 8px;
         overflow: hidden;
         min-width: 0;
       }
@@ -109,7 +42,6 @@
         display: flex;
         gap: 8px;
         align-items: center;
-        padding: 8px 10px;
         border-bottom: 1px solid var(--bd);
         flex-wrap: wrap;
       }
@@ -120,8 +52,7 @@
         min-width: 60px;
         word-break: break-all;
       }
-      .pth,
-      .box select {
+      .pth, .box select {
         display: block;
         width: 100%;
         border: 0;
@@ -149,18 +80,14 @@
       }
       option {
         background: var(--card);
-        color: var(--fg);
       }
       textarea {
         display: block;
-        width: 100%;
         height: 220px;
         min-height: 100px;
         border: 0;
         padding: 8px 10px;
-        resize: vertical;
         background: transparent;
-        color: var(--fg);
         font:
           13px/20px ui-monospace,
           Menlo,
@@ -171,40 +98,14 @@
         overflow: auto;
         outline: none;
       }
-      button,
-      .btn {
-        background: var(--card);
-        color: var(--fg);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 5px 12px;
-        cursor: pointer;
-        font: inherit;
-        font-size: 13px;
-      }
-      button:hover,
-      .btn:hover {
-        border-color: var(--pri);
-      }
-      button:disabled {
-        opacity: 0.4;
-        cursor: default;
-      }
-      .pri {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
-      }
       .bar {
         position: sticky;
         top: 0;
         z-index: 5;
         background: var(--bg);
         display: flex;
-        gap: 10px;
         align-items: center;
         margin: 8px 0;
-        padding: 8px 0;
         flex-wrap: wrap;
       }
       .nav {
@@ -228,16 +129,6 @@
       #stat {
         margin-left: auto;
         font-size: 13px;
-      }
-      .ga {
-        background: var(--add);
-        padding: 1px 8px;
-        border-radius: 4px;
-      }
-      .gd {
-        background: var(--del);
-        padding: 1px 8px;
-        border-radius: 4px;
       }
       .dpane {
         height: max(320px, calc(100vh - 200px));
@@ -300,11 +191,12 @@
         display: none;
         scroll-margin-top: 64px;
       }
-      input[type='file'] {
-        display: none;
+      @media (max-width:800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <header>

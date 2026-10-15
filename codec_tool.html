@@ -15,114 +15,42 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="common.js"></script>
+    <link rel="stylesheet" href="style.css" />
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font:
-          14px/1.6 'Noto Sans TC',
-          system-ui,
-          -apple-system,
-          sans-serif;
-      }
-      .wrap {
-        max-width: 1180px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 16px clamp(12px, 2vw, 24px) 56px;
-      }
-      h1 {
-        margin: 0;
-        font-size: 20px;
-      }
-      .back {
-        display: block;
-        color: var(--mut);
-        font-size: 12px;
-        text-decoration: none;
-      }
-      .back:hover {
-        color: var(--pri);
-      }
-      .sub,
       .tip {
-        color: var(--mut);
-        font-size: 12px;
         margin: 2px 0 0;
       }
-      section {
-        background: var(--card);
-        border: 1px solid var(--bd);
-        border-radius: 8px;
-        padding: 12px 14px;
-        margin: 12px 0;
-      }
-      button,
-      .btn {
-        background: var(--card);
-        color: var(--fg);
-        border: 1px solid var(--bd);
-        border-radius: 6px;
-        padding: 5px 12px;
-        cursor: pointer;
-        font: inherit;
-        font-size: 13px;
+      button, .btn {
         text-decoration: none;
         display: inline-block;
-      }
-      button:hover:not(:disabled),
-      .btn:hover {
-        border-color: var(--pri);
-      }
-      button:disabled {
-        opacity: 0.4;
-        cursor: default;
-      }
-      .pri {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
-      }
-      .tabs {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin: 12px 0;
-      }
-      .tabs button.on {
-        background: var(--pri);
-        border-color: var(--pri);
-        color: var(--prifg);
       }
       .panel {
         display: none;
       }
-      .panel.on {
-        display: block;
+      select {
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 8px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
       }
-      select,
-      input[type='text'],
+      input[type='text'] {
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 8px;
+      }
       textarea {
         font: inherit;
         font-size: 13px;
         padding: 6px 8px;
         border: 1px solid var(--bd);
         border-radius: 6px;
-        background: var(--card);
-        color: var(--fg);
       }
       option {
         background: var(--card);
-        color: var(--fg);
       }
       textarea {
-        width: 100%;
         min-height: 150px;
-        resize: vertical;
         font:
           12.5px/1.5 ui-monospace,
           Menlo,
@@ -133,7 +61,6 @@
       }
       .row {
         display: flex;
-        gap: 8px;
         align-items: center;
         flex-wrap: wrap;
         margin: 10px 0;
@@ -146,43 +73,15 @@
       }
       .drop {
         display: block;
-        border: 2px dashed var(--bd);
-        border-radius: 8px;
-        padding: 26px 16px;
-        text-align: center;
-        cursor: pointer;
-        color: var(--mut);
-      }
-      .drop:hover,
-      .drop.over {
-        border-color: var(--pri);
-        color: var(--fg);
-        background: var(--gut);
-      }
-      input[type='file'] {
-        display: none;
       }
       .info {
-        background: var(--gut);
-        border-radius: 6px;
-        padding: 8px 10px;
-        font-size: 13px;
-        margin: 8px 0;
-      }
-      .warn {
-        border-left: 3px solid #bf616a;
-        background: var(--gut);
-        color: var(--mut);
-        font-size: 12px;
-        padding: 6px 10px;
         margin: 8px 0;
       }
       .prev {
         margin-top: 10px;
         text-align: center;
       }
-      .prev img,
-      .prev video {
+      .prev img, .prev video {
         max-width: 100%;
         max-height: 420px;
         border: 1px solid var(--bd);
@@ -198,11 +97,9 @@
         border-radius: 6px;
       }
       .err {
-        color: #bf616a;
         font-size: 13px;
       }
     </style>
-    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="wrap">
