@@ -213,30 +213,35 @@
         <div>
           <a class="back" href="index.html">← 返回小工具集首頁</a>
           <h1>PDF 工具</h1>
-          <p class="tagline">PDF 辨識、合併、拆分、壓縮、解鎖、頁面管理、浮水印與頁碼、圖片互轉、個資遮蔽</p>
+          <p class="tagline">PDF／圖片辨識（OCR）、合併、拆分、壓縮、解鎖、頁面管理、浮水印與頁碼、圖片互轉、個資遮蔽</p>
         </div>
         <div class="themes" id="themes">主題：</div>
       </header>
       <p class="privacy">
-        所有 PDF 處理皆在你的瀏覽器本機完成，檔案不會上傳到任何伺服器。若另外開啟「翻譯」功能，辨識出的文字才會傳送到第三方翻譯服務。
+        所有 PDF 與圖片處理皆在你的瀏覽器本機完成，檔案不會上傳到任何伺服器。若另外開啟「翻譯」功能，辨識出的文字才會傳送到第三方翻譯服務。
       </p>
       <div id="pdfApp">
 <div class="tabs">
-        <button data-t="ocr" class="on">辨識與 HTML 報告</button><button data-t="merge">合併</button><button data-t="split">拆分</button
+        <button data-t="ocr" class="on">PDF／圖片辨識與 HTML 報告</button><button data-t="merge">合併</button><button data-t="split">拆分</button
         ><button data-t="comp">壓縮</button><button data-t="unl">解鎖</button><button data-t="pages">頁面管理</button
         ><button data-t="mark">浮水印／頁碼</button><button data-t="i2p">圖片轉 PDF</button><button data-t="p2i">PDF 轉圖片</button
         ><button data-t="redact">個資遮蔽</button>
       </div>
       <div class="panel on" id="p-ocr">
         <section>
-          <h2><span class="num">1</span>加入 PDF 檔案</h2>
+          <h2><span class="num">1</span>加入 PDF、圖片或 ZIP 檔案</h2>
           <div class="drop-zone" id="dropZone">
-            拖曳 PDF 檔到這裡，或點擊選擇檔案
-            <input type="file" id="fileInput" multiple accept=".pdf,application/pdf" />
+            拖曳 PDF、圖片 / ZIP 檔到這裡，或點擊選擇檔案
+            <input
+              type="file"
+              id="fileInput"
+              multiple
+              accept=".pdf,application/pdf,image/*,.zip,.jpg,.jpeg,.png,.bmp,.gif,.webp,.tif,.tiff"
+            />
           </div>
           <div id="fileList"></div>
           <div class="adv-hint" style="margin-top: 6px">
-            PDF 會自動逐頁處理：有文字層的頁面直接擷取文字（不需 OCR，較快較準）；掃描型頁面則自動轉成圖片並用 OCR 辨識。
+            PDF 會自動逐頁處理：有文字層的頁面直接擷取文字（不需 OCR，較快較準）；掃描型頁面則自動轉成圖片並用 OCR 辨識。圖片（JPG、PNG 等）或 ZIP 內的圖片會直接用 OCR 辨識，可與 PDF 混合上傳。
           </div>
         </section>
 
@@ -268,7 +273,7 @@
           <div class="radio-group">
             輸出方式：
             <label
-              ><input type="radio" name="outputMode" value="separate" checked /> 每頁各自一個 .txt（連同頁面圖片一起打包成 .zip）</label
+              ><input type="radio" name="outputMode" value="separate" checked /> 每頁／每張圖片各自一個 .txt（PDF 會連同頁面圖片一起打包成 .zip）</label
             >
             <label><input type="radio" name="outputMode" value="merged" /> 合併成一份 .txt（純文字，不含圖片）</label>
             <label
@@ -635,6 +640,12 @@
     <script>
       const IMAGE_EXT = ['jpg', 'jpeg', 'png', 'bmp', 'gif', 'webp', 'tif', 'tiff'];
       let pendingFiles = []; // {name, blob}
+      const MAX_ZIP_IMAGES = 250;
+      const MAX_ZIP_BYTES = 128 * 1024 * 1024;
+      const MAX_PENDING_BYTES = 128 * 1024 * 1024;
+      // 上限只計算使用者加入的圖片，PDF 展開後的頁面圖不計入
+      const imageItems = () => pendingFiles.filter(x => !x.isPdfPage);
+      const imageBytes = () => imageItems().reduce((sum, x) => sum + x.blob.size, 0);
       let resultBlob = null;
       let resultFilename = '';
 
@@ -714,6 +725,42 @@
             } catch (e) {
               alert('無法解析 PDF ' + f.name + '：' + e.message);
             }
+          } else if (lowerName.endsWith('.zip')) {
+            if (f.size > MAX_ZIP_BYTES) {
+              alert('單一 ZIP 壓縮檔不可超過 128 MB，請先分割或縮小檔案。');
+              continue;
+            }
+            const beforeZip = pendingFiles.length;
+            const beforeCount = imageItems().length;
+            const beforeBytes = imageBytes();
+            try {
+              const zip = await JSZip.loadAsync(f);
+              let zipCount = 0,
+                zipBytes = 0;
+              for (const relPath in zip.files) {
+                const entry = zip.files[relPath];
+                if (entry.dir || !isImageName(relPath)) continue;
+                if (beforeCount + ++zipCount > MAX_ZIP_IMAGES) throw new Error(`ZIP 圖片數量超過 ${MAX_ZIP_IMAGES} 張上限`);
+                const expected = Number(entry._data && entry._data.uncompressedSize) || 0;
+                if (expected && (expected > MAX_ZIP_BYTES || beforeBytes + zipBytes + expected > MAX_PENDING_BYTES))
+                  throw new Error('單一 ZIP 或待處理圖片解壓後超過 128 MB 上限');
+                const blob = await entry.async('blob');
+                zipBytes += blob.size;
+                if (blob.size > MAX_ZIP_BYTES || beforeBytes + zipBytes > MAX_PENDING_BYTES)
+                  throw new Error('單一 ZIP 或待處理圖片總大小超過 128 MB 上限');
+                // 保留相對路徑，避免不同資料夾的同名圖檔輸出時互相覆蓋。
+                pendingFiles.push({ name: relPath, blob });
+              }
+            } catch (e) {
+              pendingFiles.splice(beforeZip);
+              alert('無法完整解壓縮 ' + f.name + '：' + e.message + '\n如 ZIP 含大量／超大圖片，請分批處理。');
+            }
+          } else if (f.type.startsWith('image/') || isImageName(f.name)) {
+            if (imageItems().length >= MAX_ZIP_IMAGES || imageBytes() + f.size > MAX_PENDING_BYTES) {
+              alert('待處理圖片數量上限為 250 張、總大小上限為 128 MB，請分批處理。');
+              continue;
+            }
+            pendingFiles.push({ name: f.name, blob: f });
           }
         }
         renderFileList();
@@ -726,7 +773,7 @@
           return;
         }
         fileListEl.innerHTML =
-          `已加入 ${pendingFiles.length} 頁　<span class="clear-link" id="clearLink">清除全部</span><br>` +
+          `已加入 ${pendingFiles.length} 項（PDF 頁面 ${pendingFiles.length - imageItems().length}、圖片 ${imageItems().length}）　<span class="clear-link" id="clearLink">清除全部</span><br>` +
           pendingFiles.map(f => `<div class="file-row"><span>${escapeHtml(f.name)}</span></div>`).join('');
         document.getElementById('clearLink').addEventListener('click', () => {
           pendingFiles = [];
@@ -779,17 +826,28 @@
       async function translateText(text, srcIso, tgtIso) {
         const trimmed = text.trim();
         if (!trimmed) return '';
-        const lines = trimmed.split('\n');
         const chunks = [];
         let current = '';
-        for (const line of lines) {
-          if ((current + '\n' + line).length > 450) {
-            if (current) chunks.push(current);
-            current = line;
-          } else {
-            current = current ? current + '\n' + line : line;
+        const pushLongLine = line => {
+          // Even a single source line can exceed the API limit; split it safely.
+          while (line.length > 450) {
+            let cut = line.lastIndexOf(' ', 450);
+            if (cut < 180) cut = 450;
+            const part = line.slice(0, cut);
+            if (current) {
+              chunks.push(current);
+              current = '';
+            }
+            chunks.push(part);
+            line = line.slice(cut).trimStart();
           }
-        }
+          if (current && (current + '\n' + line).length > 450) {
+            chunks.push(current);
+            current = '';
+          }
+          current = current ? current + '\n' + line : line;
+        };
+        for (const line of trimmed.split('\n')) pushLongLine(line);
         if (current) chunks.push(current);
 
         const translatedChunks = [];
@@ -893,7 +951,7 @@
 <p class="meta">產生時間：${new Date().toLocaleString('zh-TW')}</p>
 <h2 class="group-title">文字內容</h2>
 ${textSections}
-<h2 class="group-title">頁面圖片</h2>
+<h2 class="group-title">頁面／圖片</h2>
 ${imageSections}
 </body></html>`;
       }
