@@ -1,0 +1,1462 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>網路測速</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="referrer" content="no-referrer" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="common.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .tabs button {
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      select {
+        font: inherit;
+        font-size: 13px;
+        padding: 4px 8px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+      }
+      option {
+        background: var(--card);
+      }
+      input[type='text'] {
+        font: inherit;
+        font-size: 13px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+      }
+      .kv {
+        background: var(--gut);
+        border-radius: 8px;
+        padding: 10px 12px;
+        min-width: 0;
+      }
+      .kv .k {
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .kv .v {
+        font-size: 15px;
+        font-weight: 500;
+        margin-top: 2px;
+        word-break: break-all;
+        font-variant-numeric: tabular-nums;
+      }
+      .kv .v small {
+        display: block;
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--mut);
+      }
+      .kv.big .v {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        margin: 10px 0;
+      }
+      .row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+      }
+      .row .grow {
+        flex: 1;
+        min-width: 160px;
+      }
+      .live {
+        display: grid;
+        grid-template-columns: 270px 1fr;
+        gap: 16px;
+        align-items: center;
+      }
+      @media (max-width: 720px) {
+        .live {
+          grid-template-columns: 1fr;
+        }
+      }
+      .gauge svg {
+        width: 100%;
+        max-width: 280px;
+        display: block;
+        margin: 0 auto;
+      }
+      .g-track {
+        fill: none;
+        stroke: var(--bd);
+        stroke-width: 14;
+        stroke-linecap: round;
+      }
+      .g-val {
+        fill: none;
+        stroke: var(--pri);
+        stroke-width: 14;
+        stroke-linecap: round;
+        transition: stroke-dasharray 0.12s linear;
+      }
+      .g-num {
+        fill: var(--fg);
+        font-size: 34px;
+        font-weight: 700;
+        text-anchor: middle;
+        font-variant-numeric: tabular-nums;
+      }
+      .g-unit,
+      .g-lbl {
+        fill: var(--mut);
+        font-size: 12px;
+        text-anchor: middle;
+      }
+      canvas.chart {
+        width: 100%;
+        height: 190px;
+        display: block;
+        background: var(--gut);
+        border-radius: 8px;
+      }
+      .bar {
+        height: 6px;
+        background: var(--bd);
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 10px 0 4px;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--pri);
+        transition: width 0.12s linear;
+      }
+      .phase {
+        font-size: 13px;
+        color: var(--mut);
+        min-height: 20px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 1px 9px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        background: var(--emp);
+        color: var(--fg);
+      }
+      .pill.ok {
+        background: var(--add);
+      }
+      .pill.bad {
+        background: var(--del);
+      }
+      .use {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 0;
+        border-bottom: 1px solid var(--bd);
+        font-size: 14px;
+      }
+      .use:last-child {
+        border-bottom: 0;
+      }
+      .use small {
+        color: var(--mut);
+        display: block;
+        font-size: 12px;
+      }
+      .scroll {
+        overflow-x: auto;
+      }
+      table.t {
+        width: 100%;
+        font-size: 13px;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+      }
+      table.t th,
+      table.t td {
+        padding: 6px 8px;
+        text-align: right;
+        border-bottom: 1px solid var(--bd);
+        white-space: nowrap;
+      }
+      table.t th:first-child,
+      table.t td:first-child,
+      table.t th.l,
+      table.t td.l {
+        text-align: left;
+      }
+      table.t th {
+        color: var(--mut);
+        font-weight: 500;
+        font-size: 12px;
+      }
+      .mini {
+        display: inline-block;
+        width: 90px;
+        height: 6px;
+        background: var(--bd);
+        border-radius: 3px;
+        overflow: hidden;
+        vertical-align: middle;
+      }
+      .mini i {
+        display: block;
+        height: 100%;
+        background: var(--pri);
+      }
+      .grp {
+        margin: 8px 0;
+      }
+      .grp b {
+        font-size: 12px;
+        color: var(--mut);
+        font-weight: 500;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .chips label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border: 1px solid var(--bd);
+        border-radius: 999px;
+        font-size: 13px;
+        cursor: pointer;
+        background: var(--card);
+      }
+      .chips label:has(input:checked) {
+        border-color: var(--pri);
+        color: var(--pri);
+      }
+      .chips .x {
+        color: var(--mut);
+        cursor: pointer;
+        margin-left: 2px;
+      }
+      details summary {
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--mut);
+      }
+      .presets button.on {
+        font-weight: 700;
+      }
+      @media (max-width: 600px) {
+        .themes {
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .tabs button {
+          flex: 1 1 45%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <a class="back" href="index.html">← 返回小工具集首頁</a>
+          <h1>網路測速</h1>
+          <p class="tagline">下載／上傳速度即時顯示，可自選封包大小與連線數；另可測各大網站的連線延遲，並顯示本機 IP 與地區。</p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
+      <p class="privacy">
+        速度測試會與 Cloudflare 測速伺服器（speed.cloudflare.com）傳輸隨機資料，不會上傳你的檔案。IP／地區查詢會向 Cloudflare、ipify、ipwho.is
+        等公開服務發出請求；歷史紀錄只存在這台裝置的瀏覽器中。
+      </p>
+
+      <section>
+        <h2>
+          <span class="num">1</span>我的連線資訊<button id="reInfo" style="margin-left: auto; font-size: 12px; padding: 3px 10px">重新偵測</button>
+        </h2>
+        <div class="cards" id="info"></div>
+        <p class="hint" id="infoNote" style="margin: 10px 0 0">地區由 IP 位址推估，使用 VPN、公司網路或行動網路時可能與實際位置不同。</p>
+      </section>
+
+      <nav class="tabs" role="tablist" aria-label="測速功能">
+        <button class="on" type="button" role="tab" aria-selected="true" data-pane="test">速度測試</button
+        ><button type="button" role="tab" aria-selected="false" data-pane="sites">網站連線測試</button
+        ><button type="button" role="tab" aria-selected="false" data-pane="mon">延遲監測</button
+        ><button type="button" role="tab" aria-selected="false" data-pane="hist">歷史紀錄</button>
+      </nav>
+
+      <!-- ============ 速度測試 ============ -->
+      <div class="pane on" id="pane-test">
+        <section>
+          <h2><span class="num">2</span>測試設定</h2>
+          <div class="row presets">
+            <span>預設：</span><button type="button" data-p="quick">快速</button><button type="button" data-p="std" class="on">標準</button
+            ><button type="button" data-p="full">完整</button><button type="button" data-p="custom">自訂</button>
+          </div>
+          <div class="row">
+            <label>下載封包大小 <select id="dlSize"></select></label>
+            <label>上傳封包大小 <select id="ulSize"></select></label>
+            <label>同時連線數 <select id="streams"></select></label>
+            <label>最長測試時間 <select id="maxSec"></select></label>
+          </div>
+          <div class="row">
+            <label><input type="checkbox" id="oLat" checked /> 延遲／抖動／封包遺失</label>
+            <label><input type="checkbox" id="oDl" checked /> 下載</label>
+            <label><input type="checkbox" id="oUl" checked /> 上傳</label>
+            <label><input type="checkbox" id="oLoad" checked /> 負載延遲（緩衝膨脹）</label>
+            <label>單位 <select id="unit"><option value="mbps">Mbps</option><option value="mbs">MB/s</option></select></label>
+          </div>
+          <p class="hint" id="estimate" style="margin: 4px 0"></p>
+          <details>
+            <summary>進階：自訂下載網址</summary>
+            <div class="row">
+              <input type="text" id="customUrl" class="grow" placeholder="https://你的伺服器/大檔案.bin（需允許跨來源 CORS；留空則使用 Cloudflare）" />
+            </div>
+            <p class="hint" style="margin: 0">使用自訂網址時，下載量由檔案實際大小決定，「下載封包大小」不生效；上傳仍使用 Cloudflare。</p>
+          </details>
+          <div class="row">
+            <button class="pri" id="go">開始測速</button><button id="stop" disabled>停止</button><span class="msg" id="msg"></span>
+          </div>
+        </section>
+
+        <section>
+          <h2><span class="num">3</span>即時速度</h2>
+          <div class="live">
+            <div class="gauge">
+              <svg viewBox="0 0 200 130" aria-label="即時速度表">
+                <path class="g-track" d="M20 105 A80 80 0 0 1 180 105" />
+                <path class="g-val" id="gArc" d="M20 105 A80 80 0 0 1 180 105" stroke-dasharray="0 252" />
+                <text class="g-num" id="gNum" x="100" y="88">—</text>
+                <text class="g-unit" id="gUnit" x="100" y="108">Mbps</text>
+                <text class="g-lbl" x="20" y="125">0</text>
+                <text class="g-lbl" id="gMax" x="180" y="125">100</text>
+              </svg>
+              <div class="phase" id="phase" style="text-align: center">尚未開始</div>
+            </div>
+            <div>
+              <canvas class="chart" id="liveChart" aria-label="速度曲線"></canvas>
+              <div class="bar"><i id="prog"></i></div>
+              <div class="phase" id="progTxt"></div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2><span class="num">4</span>測試結果</h2>
+          <div class="cards" id="results"></div>
+          <div id="verdict" style="margin-top: 12px"></div>
+          <div class="row"><button id="copy" disabled>複製結果文字</button></div>
+        </section>
+      </div>
+
+      <!-- ============ 網站連線測試 ============ -->
+      <div class="pane" id="pane-sites">
+        <section>
+          <h2><span class="num">2</span>選擇要測試的網站</h2>
+          <div id="targets"></div>
+          <div class="row">
+            <button id="selAll">全選</button><button id="selNone">全不選</button><button id="selTW">只選台灣常用</button>
+            <label>每站取樣次數 <select id="nSamples"><option>5</option><option selected>10</option><option>20</option></select></label>
+            <label><input type="checkbox" id="doDns" checked /> 同時解析網站 IP（DoH）</label>
+          </div>
+          <div class="row">
+            <input type="text" id="addUrl" class="grow" placeholder="新增自訂網站，例如 https://www.example.com" /><button id="addBtn">新增</button>
+          </div>
+          <div class="row"><button class="pri" id="siteGo">開始測試</button><button id="siteStop" disabled>停止</button><span class="msg" id="siteMsg"></span></div>
+        </section>
+        <section>
+          <h2><span class="num">3</span>測試結果</h2>
+          <div class="scroll">
+            <table class="t" id="siteTbl">
+              <thead>
+                <tr>
+                  <th class="l">網站</th><th class="l">IP（DoH 解析）</th><th>最低</th><th>平均</th><th>最高</th><th>抖動</th><th>遺失</th><th class="l">相對速度</th>
+                </tr>
+              </thead>
+              <tbody id="siteBody"></tbody>
+            </table>
+          </div>
+          <p class="hint" style="margin: 10px 0 0">
+            這裡量的是「連線回應時間」（含網路往返與伺服器回應），不是頻寬；瀏覽器無法對任意網站測下載速度。IP 由 DoH（dns.google／Cloudflare
+            DNS）解析，可能與你本機 DNS 取得的結果不同；網站使用 CDN 時，實際連到的節點取決於你的 DNS。被廣告攔截器或防火牆擋下的網站會顯示為遺失。
+          </p>
+        </section>
+      </div>
+
+      <!-- ============ 延遲監測 ============ -->
+      <div class="pane" id="pane-mon">
+        <section>
+          <h2><span class="num">2</span>連續延遲監測</h2>
+          <div class="row">
+            <label>目標 <select id="monTarget"></select></label>
+            <label>間隔 <select id="monGap"><option value="500">0.5 秒</option><option value="1000" selected>1 秒</option><option value="2000">2 秒</option></select></label>
+            <button class="pri" id="monGo">開始監測</button><button id="monStop" disabled>停止</button><button id="monClr">清除</button>
+          </div>
+          <canvas class="chart" id="monChart" aria-label="延遲曲線"></canvas>
+          <div class="cards" id="monStats" style="margin-top: 12px"></div>
+          <p class="hint" style="margin: 10px 0 0">適合觀察網路是否不穩（Wi-Fi 干擾、塞車時段、遊戲／視訊前確認）。逾時 4 秒視為遺失。</p>
+        </section>
+      </div>
+
+      <!-- ============ 歷史紀錄 ============ -->
+      <div class="pane" id="pane-hist">
+        <section>
+          <h2><span class="num">2</span>歷史紀錄</h2>
+          <canvas class="chart" id="histChart" aria-label="歷史速度趨勢"></canvas>
+          <div class="row">
+            <span class="hint" id="histLegend" style="margin: 0"></span
+            ><button id="histCsv" style="margin-left: auto">匯出 CSV</button><button id="histClr">清除全部</button>
+          </div>
+          <div class="scroll">
+            <table class="t">
+              <thead>
+                <tr>
+                  <th class="l">時間</th><th>下載</th><th>上傳</th><th>延遲</th><th>抖動</th><th>負載延遲↓</th><th class="l">設定</th><th class="l">網路</th>
+                </tr>
+              </thead>
+              <tbody id="histBody"></tbody>
+            </table>
+          </div>
+          <p class="hint" style="margin: 10px 0 0">最多保留 200 筆，不含 IP 位址。</p>
+        </section>
+      </div>
+
+      <footer>測速伺服器：Cloudflare Speed Test（speed.cloudflare.com）　·　上傳速度以每個封包完成時間估算，可能略低於實際值</footer>
+    </div>
+
+    <script>
+      (function () {
+        'use strict';
+        const $ = id => document.getElementById(id);
+        const CF = 'https://speed.cloudflare.com';
+        const LS = {
+          get(k, d) {
+            try {
+              const v = localStorage.getItem(k);
+              return v ? JSON.parse(v) : d;
+            } catch (e) {
+              return d;
+            }
+          },
+          set(k, v) {
+            try {
+              localStorage.setItem(k, JSON.stringify(v));
+            } catch (e) {}
+          },
+        };
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        const rnd = () => Math.random().toString(36).slice(2);
+        const median = a => {
+          if (!a.length) return null;
+          const s = [...a].sort((x, y) => x - y),
+            m = s.length >> 1;
+          return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+        };
+        const mean = a => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+        const jitterOf = a => {
+          if (a.length < 2) return null;
+          let s = 0;
+          for (let i = 1; i < a.length; i++) s += Math.abs(a[i] - a[i - 1]);
+          return s / (a.length - 1);
+        };
+        const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        let unit = LS.get('speed-unit', 'mbps');
+        const unitLabel = () => (unit === 'mbs' ? 'MB/s' : 'Mbps');
+        const fmtSpeed = v => {
+          if (v == null || isNaN(v)) return '—';
+          if (unit === 'mbs') v = v / 8;
+          return v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+        };
+        const fmtMs = v => (v == null ? '—' : (v >= 100 ? v.toFixed(0) : v.toFixed(1)) + ' ms');
+
+        /* ---------- 圖表 ---------- */
+        const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888';
+        const charts = new Map();
+        function niceMax(v) {
+          const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1e-9))));
+          const f = v / p;
+          return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+        }
+        function drawChart(cv, cfg) {
+          charts.set(cv, cfg);
+          const w = cv.clientWidth,
+            h = cv.clientHeight;
+          if (!w || !h) return;
+          const dpr = window.devicePixelRatio || 1;
+          cv.width = Math.round(w * dpr);
+          cv.height = Math.round(h * dpr);
+          const c = cv.getContext('2d');
+          c.setTransform(dpr, 0, 0, dpr, 0, 0);
+          c.clearRect(0, 0, w, h);
+          const pad = { l: 46, r: 12, t: 10, b: 20 },
+            iw = w - pad.l - pad.r,
+            ih = h - pad.t - pad.b;
+          const pts = cfg.series.flatMap(s => s.data);
+          const xmax = cfg.xMax != null ? cfg.xMax : Math.max(1, ...pts.map(p => p[0]));
+          const ymax = cfg.yMax != null ? cfg.yMax : niceMax(Math.max(1, ...pts.map(p => p[1])) * 1.1);
+          const X = x => pad.l + (x / xmax) * iw,
+            Y = y => pad.t + ih - (y / ymax) * ih;
+          c.font = '11px sans-serif';
+          c.fillStyle = cssv('--mut');
+          c.strokeStyle = cssv('--bd');
+          c.lineWidth = 1;
+          c.textAlign = 'right';
+          c.textBaseline = 'middle';
+          for (let i = 0; i <= 4; i++) {
+            const y = Y((ymax * i) / 4);
+            c.beginPath();
+            c.moveTo(pad.l, y);
+            c.lineTo(w - pad.r, y);
+            c.stroke();
+            const val = (ymax * i) / 4;
+            c.fillText((cfg.yFmt ? cfg.yFmt(val) : String(Math.round(val * 10) / 10)), pad.l - 6, y);
+          }
+          c.textAlign = 'center';
+          c.textBaseline = 'top';
+          c.fillText(cfg.xLabel ? cfg.xLabel(0) : '0', pad.l, h - pad.b + 5);
+          c.fillText(cfg.xLabel ? cfg.xLabel(xmax) : String(Math.round(xmax * 10) / 10), w - pad.r - 8, h - pad.b + 5);
+          cfg.series.forEach(s => {
+            if (!s.data.length) return;
+            const col = s.color ? cssv(s.color) : cssv('--pri');
+            c.beginPath();
+            s.data.forEach((p, i) => (i ? c.lineTo(X(p[0]), Y(p[1])) : c.moveTo(X(p[0]), Y(p[1]))));
+            c.strokeStyle = col;
+            c.lineWidth = 2;
+            c.lineJoin = 'round';
+            c.stroke();
+            if (s.fill) {
+              c.lineTo(X(s.data[s.data.length - 1][0]), Y(0));
+              c.lineTo(X(s.data[0][0]), Y(0));
+              c.closePath();
+              c.globalAlpha = 0.15;
+              c.fillStyle = col;
+              c.fill();
+              c.globalAlpha = 1;
+            }
+            if (s.dots) {
+              s.data.forEach(p => {
+                c.beginPath();
+                c.arc(X(p[0]), Y(p[1]), 3, 0, 7);
+                c.fillStyle = col;
+                c.fill();
+              });
+            }
+          });
+        }
+        const redrawAll = () => charts.forEach((cfg, cv) => drawChart(cv, cfg));
+        new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        window.addEventListener('resize', redrawAll);
+        document.querySelectorAll('.tabs [data-pane]').forEach(b => b.addEventListener('click', () => setTimeout(redrawAll, 0)));
+
+        /* ---------- 我的連線資訊 ---------- */
+        const regionName = code => {
+          try {
+            return new Intl.DisplayNames(['zh-TW'], { type: 'region' }).of(code) || code;
+          } catch (e) {
+            return code;
+          }
+        };
+        const net = { ip: '', city: '', region: '', country: '', isp: '', asn: '', colo: '', tz: '' };
+        async function getJson(url, ms = 4500) {
+          const c = new AbortController(),
+            t = setTimeout(() => c.abort(), ms);
+          try {
+            const r = await fetch(url, { signal: c.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
+            if (!r.ok) throw new Error(r.status);
+            return await r.json();
+          } finally {
+            clearTimeout(t);
+          }
+        }
+        async function getText(url, ms = 4500) {
+          const c = new AbortController(),
+            t = setTimeout(() => c.abort(), ms);
+          try {
+            const r = await fetch(url, { signal: c.signal, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
+            if (!r.ok) throw new Error(r.status);
+            return await r.text();
+          } finally {
+            clearTimeout(t);
+          }
+        }
+        async function getMeta() {
+          const tries = [
+            async () => {
+              const j = await getJson(CF + '/meta');
+              return { ip: j.clientIp, city: j.city, region: j.region, country: j.country, isp: j.asOrganization, asn: j.asn, colo: j.colo, src: 'Cloudflare' };
+            },
+            async () => {
+              const t = await getText(CF + '/cdn-cgi/trace'),
+                o = {};
+              t.split('\n').forEach(l => {
+                const i = l.indexOf('=');
+                if (i > 0) o[l.slice(0, i)] = l.slice(i + 1);
+              });
+              if (!o.ip) throw new Error('no ip');
+              return { ip: o.ip, country: o.loc, colo: o.colo, src: 'Cloudflare trace' };
+            },
+            async () => {
+              const j = await getJson('https://ipwho.is/');
+              if (j.success === false) throw new Error('fail');
+              return { ip: j.ip, city: j.city, region: j.region, country: j.country_code, isp: (j.connection || {}).isp, asn: (j.connection || {}).asn, tz: (j.timezone || {}).id, src: 'ipwho.is' };
+            },
+            async () => {
+              const j = await getJson('https://ipapi.co/json/');
+              if (j.error) throw new Error('fail');
+              return { ip: j.ip, city: j.city, region: j.region, country: j.country_code, isp: j.org, asn: j.asn, tz: j.timezone, src: 'ipapi.co' };
+            },
+          ];
+          for (const f of tries) {
+            try {
+              const r = await f();
+              if (r && r.ip) return r;
+            } catch (e) {}
+          }
+          return null;
+        }
+        async function getIpOnly(url) {
+          try {
+            const j = await getJson(url, 4000);
+            return j.ip || '';
+          } catch (e) {
+            return '';
+          }
+        }
+        const kv = (k, v, sub, cls) => `<div class="kv ${cls || ''}"><div class="k">${k}</div><div class="v">${v}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
+        function browserName() {
+          const u = navigator.userAgent;
+          const m = u.match(/(Edg|OPR|Firefox|Chrome|CriOS|FxiOS|Version)\/(\d+)/);
+          if (!m) return '未知瀏覽器';
+          const n = { Edg: 'Edge', OPR: 'Opera', Firefox: 'Firefox', Chrome: 'Chrome', CriOS: 'Chrome', FxiOS: 'Firefox', Version: /Safari/.test(u) ? 'Safari' : '瀏覽器' }[m[1]];
+          return n + ' ' + m[2];
+        }
+        function localCards() {
+          const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          const conn = c
+            ? `${c.type ? esc(c.type) + ' · ' : ''}${esc(c.effectiveType || '')}${c.downlink != null ? ' · 下行估計 ' + c.downlink + ' Mbps' : ''}${c.rtt != null ? ' · RTT ' + c.rtt + ' ms' : ''}${c.saveData ? ' · 省流量模式' : ''}`
+            : '此瀏覽器不提供';
+          const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+          const tz = (() => {
+            try {
+              return Intl.DateTimeFormat().resolvedOptions().timeZone;
+            } catch (e) {
+              return '';
+            }
+          })();
+          return (
+            kv('瀏覽器回報的連線類型', conn, '僅供參考，非實測值') +
+            kv('裝置／瀏覽器', esc(plat) + ' · ' + esc(browserName()), `${screen.width}×${screen.height} @${window.devicePixelRatio || 1}x · ${navigator.hardwareConcurrency || '?'} 核心`) +
+            kv('時區／語言', esc(tz), esc(navigator.language || '')) +
+            kv('網路狀態', navigator.onLine ? '已連線' : '離線')
+          );
+        }
+        async function loadInfo() {
+          $('info').innerHTML = kv('公開 IP', '偵測中…') + kv('地區', '偵測中…') + kv('ISP／網路', '偵測中…') + localCards();
+          const [meta, v4, v6] = await Promise.all([getMeta(), getIpOnly('https://api.ipify.org?format=json'), getIpOnly('https://api6.ipify.org?format=json')]);
+          if (!meta) {
+            $('info').innerHTML =
+              kv('公開 IP', '無法取得', '可能被廣告攔截器、防火牆或離線影響') + kv('地區', '—') + kv('ISP／網路', '—') + localCards();
+            return;
+          }
+          Object.assign(net, meta);
+          const place = [meta.city, meta.region, meta.country ? regionName(meta.country) : ''].filter((x, i, a) => x && a.indexOf(x) === i).join('，');
+          const ipSub = [v4 ? 'IPv4：' + esc(v4) : '', v6 ? 'IPv6：' + esc(v6) : 'IPv6：未偵測到'].filter(Boolean).join('<br>');
+          $('info').innerHTML =
+            kv('公開 IP', `${esc(meta.ip)} <button class="cp" data-v="${esc(meta.ip)}" style="font-size:11px;padding:1px 8px;margin-left:6px">複製</button>`, ipSub) +
+            kv('地區', esc(place) || '—', meta.src ? '資料來源：' + esc(meta.src) : '') +
+            kv('ISP／網路', esc(meta.isp || '—'), meta.asn ? 'AS' + String(meta.asn).replace(/^AS/i, '') : '') +
+            (meta.colo ? kv('Cloudflare 節點', esc(meta.colo), '測速時連到的資料中心代碼') : '') +
+            localCards();
+        }
+        $('info').addEventListener('click', e => {
+          const b = e.target.closest('.cp');
+          if (!b) return;
+          (navigator.clipboard ? navigator.clipboard.writeText(b.dataset.v) : Promise.reject()).then(
+            () => ((b.textContent = '已複製'), setTimeout(() => (b.textContent = '複製'), 1200)),
+            () => {}
+          );
+        });
+        $('reInfo').onclick = loadInfo;
+
+        /* ---------- 設定選項 ---------- */
+        const fill = (el, arr, fmt, def) => {
+          el.innerHTML = arr.map(v => `<option value="${v}" ${v === def ? 'selected' : ''}>${fmt(v)}</option>`).join('');
+        };
+        fill($('dlSize'), [1, 2, 5, 10, 25, 50, 100], v => v + ' MB', 25);
+        fill($('ulSize'), [1, 2, 5, 10, 25, 50], v => v + ' MB', 10);
+        fill($('streams'), [1, 2, 4, 6, 8], v => v + ' 條', 4);
+        fill($('maxSec'), [10, 15, 30, 60], v => v + ' 秒', 30);
+        $('unit').value = unit;
+        const PRESETS = {
+          quick: { dl: 5, ul: 2, st: 4, sec: 15 },
+          std: { dl: 25, ul: 10, st: 4, sec: 30 },
+          full: { dl: 100, ul: 25, st: 6, sec: 60 },
+        };
+        let lastDown = (LS.get('speed-history', [])[0] || {}).down || null;
+        function updateEstimate() {
+          const dl = +$('dlSize').value,
+            ul = +$('ulSize').value,
+            st = +$('streams').value;
+          const parts = [];
+          if ($('oDl').checked) parts.push(`下載 ${dl * st} MB`);
+          if ($('oUl').checked) parts.push(`上傳 ${ul * st} MB`);
+          let t = '';
+          if (lastDown && $('oDl').checked) {
+            const sec = ((dl * st * 8) / lastDown).toFixed(0);
+            t = `　預估下載階段約 ${sec} 秒（依上次結果）`;
+          }
+          $('estimate').textContent = `本次約耗用流量：${parts.join(' ＋ ') || '—'}${t}。封包越大，測試越久、結果越穩定；高速網路（>300 Mbps）建議選 50 MB 以上。`;
+        }
+        function markPreset(name) {
+          document.querySelectorAll('.presets button').forEach(b => b.classList.toggle('on', b.dataset.p === name));
+        }
+        document.querySelectorAll('.presets button').forEach(b =>
+          b.addEventListener('click', () => {
+            const p = PRESETS[b.dataset.p];
+            if (p) {
+              $('dlSize').value = p.dl;
+              $('ulSize').value = p.ul;
+              $('streams').value = p.st;
+              $('maxSec').value = p.sec;
+            }
+            markPreset(b.dataset.p);
+            updateEstimate();
+          })
+        );
+        ['dlSize', 'ulSize', 'streams', 'maxSec'].forEach(id =>
+          $(id).addEventListener('change', () => {
+            markPreset('custom');
+            updateEstimate();
+          })
+        );
+        ['oDl', 'oUl'].forEach(id => $(id).addEventListener('change', updateEstimate));
+        $('unit').onchange = () => {
+          unit = $('unit').value;
+          LS.set('speed-unit', unit);
+          $('gUnit').textContent = unitLabel();
+          if (lastResult) renderResults(lastResult);
+          renderHist();
+        };
+        updateEstimate();
+
+        /* ---------- 測速核心 ---------- */
+        const state = { running: false, ctl: null };
+        const serverDur = res => {
+          try {
+            const m = (res.headers.get('server-timing') || '').match(/cfRequestDuration;dur=([\d.]+)/);
+            return m ? parseFloat(m[1]) : 0;
+          } catch (e) {
+            return 0;
+          }
+        };
+        async function cfPing(signal) {
+          const t0 = performance.now();
+          try {
+            const res = await fetch(`${CF}/__down?bytes=0&r=${rnd()}`, { cache: 'no-store', signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+            await res.arrayBuffer();
+            const t = performance.now() - t0,
+              sd = serverDur(res);
+            return sd > 0 && sd < t ? t - sd : t;
+          } catch (e) {
+            if (signal && signal.aborted) return null;
+            // 後備：沒有 CORS 時仍可量到回應時間（不含伺服器處理時間校正）
+            try {
+              const t1 = performance.now();
+              await fetch(`${CF}/__down?bytes=0&r=${rnd()}`, { cache: 'no-store', mode: 'no-cors', signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+              return performance.now() - t1;
+            } catch (e2) {
+              return null;
+            }
+          }
+        }
+        function newMeter() {
+          const m = { t0: null, total: 0, samples: [], peak: 0, series: [], last: 0 };
+          m.start = () => {
+            if (m.t0 == null) {
+              m.t0 = performance.now();
+              m.samples.push({ t: 0, b: 0 });
+            }
+          };
+          m.add = n => {
+            m.start();
+            m.total += n;
+          };
+          m.snap = () => ({ t: (performance.now() - m.t0) / 1000, b: m.total });
+          m.tick = () => {
+            if (m.t0 == null) return { t: 0, v: 0 };
+            const s = m.snap();
+            m.samples.push(s);
+            let i = m.samples.length - 1;
+            while (i > 0 && s.t - m.samples[i - 1].t <= 1.0) i--;
+            const a = m.samples[i];
+            if (s.t - a.t >= 0.1) m.last = (((s.b - a.b) / (s.t - a.t)) * 8) / 1e6;
+            if (s.t >= 1 && m.last > m.peak) m.peak = m.last;
+            m.series.push([s.t, m.last]);
+            return { t: s.t, v: m.last };
+          };
+          return m;
+        }
+        function loadedProbe(signal, out) {
+          let alive = true;
+          (async () => {
+            while (alive && !signal.aborted) {
+              const t = await cfPing(signal);
+              if (t != null) out.push(t);
+              await sleep(250);
+            }
+          })();
+          return () => (alive = false);
+        }
+        function makeBlob(bytes) {
+          const chunk = new Uint8Array(1 << 20);
+          for (let i = 0; i < chunk.length; i += 65536) crypto.getRandomValues(chunk.subarray(i, i + 65536));
+          const parts = [],
+            n = Math.floor(bytes / chunk.length);
+          for (let i = 0; i < n; i++) parts.push(chunk);
+          const rest = bytes - n * chunk.length;
+          if (rest > 0) parts.push(chunk.subarray(0, rest));
+          return new Blob(parts);
+        }
+        async function runLatency(n, onP) {
+          const ctl = state.ctl,
+            xs = [];
+          let lost = 0;
+          for (let i = 0; i <= n; i++) {
+            if (ctl.signal.aborted) break;
+            const t = await cfPing(ctl.signal);
+            if (i > 0) {
+              if (t == null) lost++;
+              else xs.push(t);
+              onP(i, n, t);
+            }
+            await sleep(60);
+          }
+          if (!xs.length && !ctl.signal.aborted) throw new Error('無法連線到測速伺服器（可能被網路、防火牆或廣告攔截器封鎖）');
+          return { total: n, med: median(xs), min: xs.length ? Math.min(...xs) : null, jit: jitterOf(xs), loss: n ? (lost / n) * 100 : 0, all: xs };
+        }
+        async function runTransfer(kind, o) {
+          const ctl = state.ctl,
+            signal = ctl.signal;
+          const meter = newMeter(),
+            loaded = [],
+            errs = [];
+          let firstDone = null;
+          const sub = new AbortController();
+          const stopAll = () => sub.abort();
+          const tmo = setTimeout(stopAll, o.maxMs);
+          signal.addEventListener('abort', stopAll, { once: true });
+          const sig = sub.signal;
+          const stopProbe = o.load ? loadedProbe(sig, loaded) : () => {};
+          const target = o.streams * o.bytes;
+          const tick = setInterval(() => {
+            const r = meter.tick();
+            const frac = o.custom ? Math.min(1, r.t / (o.maxMs / 1000)) : Math.min(1, meter.total / target);
+            o.onTick(r, frac);
+          }, 100);
+          let worker;
+          if (kind === 'down') {
+            worker = async () => {
+              try {
+                const url = o.custom ? o.custom + (o.custom.includes('?') ? '&' : '?') + 'r=' + rnd() : `${CF}/__down?bytes=${o.bytes}&r=${rnd()}`;
+                const res = await fetch(url, { cache: 'no-store', signal: sig, credentials: 'omit', referrerPolicy: 'no-referrer' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const rd = res.body.getReader();
+                for (;;) {
+                  const { done, value } = await rd.read();
+                  if (done) break;
+                  meter.add(value.length);
+                }
+                if (!firstDone) firstDone = meter.snap();
+              } catch (e) {
+                if (!sig.aborted) errs.push(e);
+              }
+            };
+          } else {
+            const piece = Math.min(o.bytes, 2e6),
+              n = Math.ceil(o.bytes / piece),
+              blob = makeBlob(piece);
+            meter.start();
+            worker = async () => {
+              try {
+                for (let k = 0; k < n && !sig.aborted; k++) {
+                  await fetch(`${CF}/__up?r=${rnd()}`, { method: 'POST', body: blob, mode: 'no-cors', cache: 'no-store', signal: sig, credentials: 'omit', referrerPolicy: 'no-referrer' });
+                  meter.add(piece);
+                }
+                if (!firstDone && !sig.aborted) firstDone = meter.snap();
+              } catch (e) {
+                if (!sig.aborted) errs.push(e);
+              }
+            };
+          }
+          await Promise.all(Array.from({ length: o.streams }, worker));
+          clearTimeout(tmo);
+          clearInterval(tick);
+          stopProbe();
+          const wasCut = sub.signal.aborted;
+          sub.abort();
+          o.onTick(meter.tick(), 1);
+          if (!meter.total) {
+            if (signal.aborted) return null;
+            throw new Error(
+              kind === 'down'
+                ? '下載測試失敗' + (errs[0] ? '：' + errs[0].message : '') + '（伺服器可能不允許跨來源存取，或網路被攔截）'
+                : '上傳測試失敗' + (errs[0] ? '：' + errs[0].message : '')
+            );
+          }
+          const end = firstDone && firstDone.t >= 0.8 ? firstDone : meter.snap();
+          const avg = (end.b * 8) / 1e6 / Math.max(end.t, 0.05);
+          const peakV = Math.max(meter.peak, avg, ...meter.series.map(x => x[1]));
+          return { avg, peak: peakV, bytes: meter.total, sec: meter.snap().t, series: meter.series, loaded, partial: wasCut && !firstDone };
+        }
+
+        /* ---------- 介面更新 ---------- */
+        let gMax = 100;
+        const ARC = Math.PI * 80;
+        function resetGauge() {
+          gMax = 100;
+          setGauge(0, true);
+          $('gNum').textContent = '—';
+        }
+        function setGauge(v, reset) {
+          if (!reset && v > gMax * 0.92) {
+            gMax = niceMax(v * 1.5);
+          }
+          const frac = Math.min(1, v / gMax);
+          $('gArc').setAttribute('stroke-dasharray', `${(ARC * frac).toFixed(1)} ${ARC.toFixed(1)}`);
+          $('gNum').textContent = reset ? '0' : fmtSpeed(v);
+          $('gUnit').textContent = unitLabel();
+          $('gMax').textContent = fmtSpeed(gMax).replace(/\.0+$/, '');
+        }
+        const live = { series: [], tBase: 0 };
+        function drawLive(extra) {
+          drawChart($('liveChart'), {
+            series: [{ data: live.series, color: '--pri', fill: true }],
+            xMax: Math.max(5, live.series.length ? live.series[live.series.length - 1][0] : 5),
+            yFmt: v => fmtSpeed(v),
+            xLabel: x => x.toFixed(0) + ' 秒',
+          });
+        }
+        let lastResult = null;
+        function level(v, good, ok) {
+          return v >= good ? 'ok' : v >= ok ? 'mid' : 'bad';
+        }
+        function bloatGrade(inc) {
+          if (inc == null) return null;
+          return inc < 30 ? ['優', 'ok'] : inc < 60 ? ['良', 'ok'] : inc < 200 ? ['普通', 'mid'] : ['差', 'bad'];
+        }
+        function renderResults(r) {
+          const c = [];
+          if (r.ping) {
+            c.push(kv('延遲（中位數）', fmtMs(r.ping.med), `最低 ${fmtMs(r.ping.min)}`, 'big'));
+            c.push(kv('抖動', fmtMs(r.ping.jit), '相鄰封包延遲差平均'));
+            c.push(kv('封包遺失', r.ping.loss.toFixed(1) + ' %', `取樣 ${r.ping.total} 次`));
+          }
+          if (r.down) c.push(kv('下載速度', `${fmtSpeed(r.down.avg)} <small style="display:inline">${unitLabel()}</small>`, `峰值 ${fmtSpeed(r.down.peak)} · 共 ${(r.down.bytes / 1e6).toFixed(1)} MB / ${r.down.sec.toFixed(1)} 秒${r.down.partial ? ' · 未傳完（達最長時間或已停止）' : ''}`, 'big'));
+          if (r.up) c.push(kv('上傳速度', `${fmtSpeed(r.up.avg)} <small style="display:inline">${unitLabel()}</small>`, `峰值 ${fmtSpeed(r.up.peak)} · 共 ${(r.up.bytes / 1e6).toFixed(1)} MB / ${r.up.sec.toFixed(1)} 秒${r.up.partial ? ' · 未傳完（達最長時間或已停止）' : ''}`, 'big'));
+          const bl = (lbl, arr) => {
+            if (!arr || !arr.length) return;
+            const m = median(arr),
+              inc = r.ping ? m - r.ping.med : null,
+              g = bloatGrade(inc);
+            c.push(kv(lbl, fmtMs(m), inc != null ? `比閒置多 ${inc.toFixed(0)} ms ${g ? `<span class="pill ${g[1]}">${g[0]}</span>` : ''}` : ''));
+          };
+          bl('下載時延遲', r.down && r.down.loaded);
+          bl('上傳時延遲', r.up && r.up.loaded);
+          $('results').innerHTML = c.join('') || '<p class="hint" style="margin:0">尚無結果</p>';
+          renderVerdict(r);
+        }
+        function renderVerdict(r) {
+          if (!r.down && !r.up && !r.ping) {
+            $('verdict').innerHTML = '';
+            return;
+          }
+          const d = r.down ? r.down.avg : null,
+            u = r.up ? r.up.avg : null,
+            p = r.ping ? r.ping.med : null,
+            j = r.ping ? r.ping.jit : null,
+            loss = r.ping ? r.ping.loss : null;
+          const bloat = r.down && r.down.loaded && r.ping ? median(r.down.loaded) - r.ping.med : null;
+          const L = (...xs) => (xs.includes('bad') ? 'bad' : xs.includes('mid') ? 'mid' : xs.includes('?') && xs.every(x => x === '?') ? '?' : 'ok');
+          const rows = [
+            ['網頁瀏覽、社群', '需下載 ≥ 3 Mbps、延遲 < 150 ms', L(d != null ? level(d, 3, 1) : '?', p != null ? (p < 150 ? 'ok' : p < 300 ? 'mid' : 'bad') : '?')],
+            ['1080p 影音串流', '需下載 ≥ 8 Mbps', L(d != null ? level(d, 8, 4) : '?')],
+            ['4K 影音串流', '需下載 ≥ 25 Mbps', L(d != null ? level(d, 25, 15) : '?')],
+            ['視訊會議（Teams／Meet／Zoom）', '需下載 ≥ 5、上傳 ≥ 3 Mbps、延遲 < 150 ms、抖動 < 30 ms', L(d != null ? level(d, 5, 2) : '?', u != null ? level(u, 3, 1.5) : '?', p != null ? (p < 150 ? 'ok' : p < 300 ? 'mid' : 'bad') : '?', j != null ? (j < 30 ? 'ok' : j < 60 ? 'mid' : 'bad') : '?')],
+            ['線上遊戲', '需延遲 < 60 ms、抖動 < 20 ms、遺失 < 1 %', L(p != null ? (p < 60 ? 'ok' : p < 120 ? 'mid' : 'bad') : '?', j != null ? (j < 20 ? 'ok' : j < 40 ? 'mid' : 'bad') : '?', loss != null ? (loss < 1 ? 'ok' : loss < 3 ? 'mid' : 'bad') : '?', bloat != null ? (bloat < 100 ? 'ok' : bloat < 250 ? 'mid' : 'bad') : '?')],
+            ['雲端備份、傳大檔', '需上傳 ≥ 20 Mbps', L(u != null ? level(u, 20, 8) : '?')],
+          ].filter(x => x[2] !== '?');
+          const lab = { ok: '適合', mid: '勉強', bad: '不建議' };
+          $('verdict').innerHTML =
+            '<b style="font-size:13px;color:var(--mut);font-weight:500">用途適合度（依本次結果概估）</b>' +
+            rows.map(x => `<div class="use"><div>${x[0]}<small>${x[1]}</small></div><span class="pill ${x[2]}">${lab[x[2]]}</span></div>`).join('');
+        }
+        function resultText(r) {
+          const t = [`網路測速 ${new Date().toLocaleString('zh-TW', { hour12: false })}`];
+          if (net.ip) t.push(`IP：${net.ip}　${[net.city, net.country].filter(Boolean).join(' ')}　${net.isp || ''}`.trim());
+          if (r.ping) t.push(`延遲：${fmtMs(r.ping.med)}　抖動：${fmtMs(r.ping.jit)}　遺失：${r.ping.loss.toFixed(1)}%`);
+          if (r.down) t.push(`下載：${fmtSpeed(r.down.avg)} ${unitLabel()}（峰值 ${fmtSpeed(r.down.peak)}）`);
+          if (r.up) t.push(`上傳：${fmtSpeed(r.up.avg)} ${unitLabel()}（峰值 ${fmtSpeed(r.up.peak)}）`);
+          if (r.down && r.down.loaded && r.down.loaded.length) t.push(`下載時延遲：${fmtMs(median(r.down.loaded))}`);
+          return t.join('\n');
+        }
+        $('copy').onclick = () => {
+          if (!lastResult) return;
+          (navigator.clipboard ? navigator.clipboard.writeText(resultText(lastResult)) : Promise.reject()).then(
+            () => {
+              $('msg').textContent = '已複製到剪貼簿';
+            },
+            () => {
+              $('msg').textContent = '瀏覽器不允許複製';
+            }
+          );
+        };
+        function setBusy(b) {
+          state.running = b;
+          $('go').disabled = b;
+          $('stop').disabled = !b;
+          ['dlSize', 'ulSize', 'streams', 'maxSec', 'oLat', 'oDl', 'oUl', 'oLoad', 'customUrl'].forEach(id => ($(id).disabled = b));
+          document.querySelectorAll('.presets button').forEach(x => (x.disabled = b));
+        }
+
+        $('go').onclick = async () => {
+          if (state.running) return;
+          if (!$('oLat').checked && !$('oDl').checked && !$('oUl').checked) {
+            $('msg').textContent = '請至少勾選一個測試項目';
+            return;
+          }
+          const custom = $('customUrl').value.trim();
+          if (custom && !/^https:\/\//i.test(custom)) {
+            $('msg').textContent = '自訂下載網址必須以 https:// 開頭';
+            return;
+          }
+          const ctl = new AbortController();
+          state.ctl = ctl;
+          setBusy(true);
+          $('msg').textContent = '';
+          $('copy').disabled = true;
+          const res = {};
+          lastResult = res;
+          $('results').innerHTML = '';
+          $('verdict').innerHTML = '';
+          resetGauge();
+          live.series = [];
+          drawLive();
+          const maxMs = +$('maxSec').value * 1000,
+            streams = +$('streams').value,
+            load = $('oLoad').checked;
+          const setPhase = (txt, p) => {
+            $('phase').textContent = txt;
+            $('progTxt').textContent = txt;
+            if (p != null) $('prog').style.width = (p * 100).toFixed(0) + '%';
+          };
+          try {
+            if ($('oLat').checked) {
+              setPhase('測量延遲中…', 0);
+              res.ping = await runLatency(20, (i, n, t) => {
+                setPhase(`測量延遲中… ${i}/${n}　${t == null ? '逾時' : fmtMs(t)}`, i / n);
+                $('gNum').textContent = t == null ? '—' : t.toFixed(0);
+                $('gUnit').textContent = 'ms';
+              });
+              renderResults(res);
+              $('gUnit').textContent = unitLabel();
+            }
+            for (const kind of ['down', 'up']) {
+              if (ctl.signal.aborted) break;
+              if (!$(kind === 'down' ? 'oDl' : 'oUl').checked) continue;
+              const bytes = +$(kind === 'down' ? 'dlSize' : 'ulSize').value * 1e6;
+              resetGauge();
+              live.series = [];
+              const name = kind === 'down' ? '下載' : '上傳';
+              setPhase(`${name}測試中…`, 0);
+              const r = await runTransfer(kind, {
+                streams,
+                bytes,
+                maxMs,
+                load,
+                custom: kind === 'down' ? custom : '',
+                onTick: (s, frac) => {
+                  live.series.push([s.t, s.v]);
+                  setGauge(s.v);
+                  drawLive();
+                  setPhase(`${name}測試中… ${fmtSpeed(s.v)} ${unitLabel()}　已測 ${s.t.toFixed(1)} 秒`, frac);
+                },
+              });
+              if (r) res[kind] = r;
+              renderResults(res);
+            }
+            if (ctl.signal.aborted) {
+              setPhase('已停止', null);
+              $('msg').textContent = '已停止，以下為已完成部分';
+            } else {
+              setPhase('測試完成', 1);
+              setGauge(res.down ? res.down.avg : res.up ? res.up.avg : 0);
+            }
+            if (res.down || res.up || res.ping) {
+              $('copy').disabled = false;
+              saveHistory(res, { dl: +$('dlSize').value, ul: +$('ulSize').value, st: streams, custom: !!custom });
+              if (res.down) {
+                lastDown = res.down.avg;
+                updateEstimate();
+              }
+            }
+          } catch (e) {
+            setPhase('測試失敗', null);
+            $('msg').textContent = e.message || String(e);
+          } finally {
+            setBusy(false);
+            state.ctl = null;
+            $('prog').style.width = ctl.signal.aborted ? $('prog').style.width : '100%';
+          }
+        };
+        $('stop').onclick = () => state.ctl && state.ctl.abort();
+
+        /* ---------- 歷史紀錄 ---------- */
+        const HKEY = 'speed-history';
+        function saveHistory(r, cfg) {
+          const h = LS.get(HKEY, []);
+          h.unshift({
+            ts: Date.now(),
+            down: r.down ? +r.down.avg.toFixed(2) : null,
+            up: r.up ? +r.up.avg.toFixed(2) : null,
+            ping: r.ping ? +r.ping.med.toFixed(1) : null,
+            jit: r.ping && r.ping.jit != null ? +r.ping.jit.toFixed(1) : null,
+            ldd: r.down && r.down.loaded && r.down.loaded.length ? +median(r.down.loaded).toFixed(0) : null,
+            cfg: `${cfg.custom ? '自訂' : cfg.dl + 'MB'}↓ ${cfg.ul}MB↑ ×${cfg.st}`,
+            net: [net.isp, net.city].filter(Boolean).join(' · '),
+          });
+          LS.set(HKEY, h.slice(0, 200));
+          renderHist();
+        }
+        function renderHist() {
+          const h = LS.get(HKEY, []);
+          $('histBody').innerHTML =
+            h
+              .map(
+                x =>
+                  `<tr><td class="l">${new Date(x.ts).toLocaleString('zh-TW', { hour12: false })}</td><td>${fmtSpeed(x.down)}</td><td>${fmtSpeed(x.up)}</td><td>${x.ping == null ? '—' : x.ping + ' ms'}</td><td>${x.jit == null ? '—' : x.jit + ' ms'}</td><td>${x.ldd == null ? '—' : x.ldd + ' ms'}</td><td class="l">${esc(x.cfg || '')}</td><td class="l">${esc(x.net || '')}</td></tr>`
+              )
+              .join('') || '<tr><td class="l" colspan="8" style="color:var(--mut)">尚無紀錄，完成一次測速後會自動儲存</td></tr>';
+          $('histLegend').textContent = `速度單位：${unitLabel()}　· 圖表：藍＝下載、橘＝上傳（由舊到新）`;
+          const rev = [...h].reverse();
+          const d = rev.map((x, i) => [i, x.down == null ? 0 : x.down]),
+            u = rev.map((x, i) => [i, x.up == null ? 0 : x.up]);
+          drawChart($('histChart'), {
+            series: [
+              { data: d, color: '--pri', dots: true },
+              { data: u, color: '--hist2', dots: true },
+            ],
+            xMax: Math.max(1, rev.length - 1),
+            yFmt: v => fmtSpeed(v),
+            xLabel: x => '#' + (Math.round(x) + 1),
+          });
+        }
+        document.documentElement.style.setProperty('--hist2', '#d08770');
+        $('histClr').onclick = () => {
+          if (confirm('確定清除全部歷史紀錄？')) {
+            LS.set(HKEY, []);
+            renderHist();
+          }
+        };
+        $('histCsv').onclick = () => {
+          const h = LS.get(HKEY, []);
+          const rows = [['時間', '下載Mbps', '上傳Mbps', '延遲ms', '抖動ms', '下載時延遲ms', '設定', '網路']].concat(
+            h.map(x => [new Date(x.ts).toLocaleString('zh-TW', { hour12: false }), x.down, x.up, x.ping, x.jit, x.ldd, x.cfg, x.net].map(v => (v == null ? '' : '"' + String(v).replace(/"/g, '""') + '"')))
+          );
+          const blob = new Blob(['\ufeff' + rows.map(r => r.join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'speedtest-history.csv';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        };
+
+        /* ---------- 網站連線測試 ---------- */
+        const T = (name, url, tw) => ({ name, url, tw: !!tw });
+        const GROUPS = [
+          ['搜尋與入口', [T('Google', 'https://www.google.com/generate_204'), T('Bing', 'https://www.bing.com/favicon.ico'), T('Yahoo 奇摩', 'https://tw.yahoo.com/favicon.ico', 1), T('Wikipedia', 'https://www.wikipedia.org/static/favicon/wikipedia.ico')]],
+          ['社群與通訊', [T('Facebook', 'https://www.facebook.com/favicon.ico'), T('Instagram', 'https://www.instagram.com/favicon.ico'), T('X（Twitter）', 'https://x.com/favicon.ico'), T('LINE', 'https://line.me/favicon.ico', 1), T('Discord', 'https://discord.com/favicon.ico'), T('Telegram', 'https://telegram.org/favicon.ico')]],
+          ['影音串流', [T('YouTube', 'https://www.youtube.com/generate_204'), T('Netflix', 'https://www.netflix.com/favicon.ico'), T('Spotify', 'https://open.spotify.com/favicon.ico'), T('Twitch', 'https://www.twitch.tv/favicon.ico')]],
+          ['雲端與工作', [T('Microsoft', 'https://www.microsoft.com/favicon.ico'), T('Apple', 'https://www.apple.com/favicon.ico'), T('Amazon', 'https://www.amazon.com/favicon.ico'), T('GitHub', 'https://github.com/favicon.ico'), T('Zoom', 'https://zoom.us/favicon.ico'), T('Dropbox', 'https://www.dropbox.com/favicon.ico')]],
+          ['CDN 與 DNS', [T('Cloudflare', 'https://www.cloudflare.com/cdn-cgi/trace'), T('Cloudflare 測速', CF + '/__down?bytes=0'), T('Cloudflare DNS 1.1.1.1', 'https://1.1.1.1/cdn-cgi/trace'), T('Google DNS', 'https://dns.google/resolve?name=example.com'), T('jsDelivr', 'https://cdn.jsdelivr.net/favicon.ico')]],
+          ['台灣常用', [T('中華電信 HiNet', 'https://www.hinet.net/favicon.ico', 1), T('PChome', 'https://www.pchome.com.tw/favicon.ico', 1), T('momo 購物', 'https://www.momoshop.com.tw/favicon.ico', 1), T('蝦皮購物', 'https://shopee.tw/favicon.ico', 1), T('Dcard', 'https://www.dcard.tw/favicon.ico', 1), T('PTT', 'https://www.ptt.cc/favicon.ico', 1)]],
+        ];
+        const hostOf = u => {
+          try {
+            return new URL(u).hostname;
+          } catch (e) {
+            return u;
+          }
+        };
+        let custom = LS.get('speed-custom', []); // [{name,url}]
+        let picked = new Set(LS.get('speed-picked', ['Google', 'YouTube', 'Facebook', 'Cloudflare 測速', 'Microsoft', 'Apple', 'Amazon', 'GitHub', 'Netflix', 'LINE']));
+        const allTargets = () => GROUPS.flatMap(g => g[1]).concat(custom.map(c => T(c.name, c.url)));
+        function renderTargets() {
+          const groups = GROUPS.map(g => [g[0], g[1]]);
+          if (custom.length) groups.push(['自訂', custom.map(c => T(c.name, c.url))]);
+          $('targets').innerHTML = groups
+            .map(
+              ([gn, items]) =>
+                `<div class="grp"><b>${esc(gn)}</b><div class="chips">${items
+                  .map(
+                    t =>
+                      `<label title="${esc(hostOf(t.url))}"><input type="checkbox" data-n="${esc(t.name)}" ${picked.has(t.name) ? 'checked' : ''}>${esc(t.name)}${gn === '自訂' ? `<span class="x" data-del="${esc(t.name)}" title="移除">✕</span>` : ''}</label>`
+                  )
+                  .join('')}</div></div>`
+            )
+            .join('');
+          $('monTarget').innerHTML = allTargets()
+            .map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`)
+            .join('');
+          const mt = LS.get('speed-montarget', 'Google');
+          if (allTargets().some(t => t.name === mt)) $('monTarget').value = mt;
+        }
+        $('targets').addEventListener('change', e => {
+          const n = e.target.dataset.n;
+          if (n == null) return;
+          e.target.checked ? picked.add(n) : picked.delete(n);
+          LS.set('speed-picked', [...picked]);
+        });
+        $('targets').addEventListener('click', e => {
+          const d = e.target.dataset.del;
+          if (d == null) return;
+          e.preventDefault();
+          custom = custom.filter(c => c.name !== d);
+          picked.delete(d);
+          LS.set('speed-custom', custom);
+          LS.set('speed-picked', [...picked]);
+          renderTargets();
+        });
+        const setAll = fn => {
+          picked = new Set(allTargets().filter(fn).map(t => t.name));
+          LS.set('speed-picked', [...picked]);
+          renderTargets();
+        };
+        $('selAll').onclick = () => setAll(() => true);
+        $('selNone').onclick = () => setAll(() => false);
+        $('selTW').onclick = () => setAll(t => t.tw);
+        $('addBtn').onclick = () => {
+          let v = $('addUrl').value.trim();
+          if (!v) return;
+          if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+          let u;
+          try {
+            u = new URL(v);
+          } catch (e) {
+            $('siteMsg').textContent = '網址格式不正確';
+            return;
+          }
+          if (u.protocol !== 'https:') {
+            $('siteMsg').textContent = '僅支援 https 網站（http 會被瀏覽器的混合內容規則擋下）';
+            return;
+          }
+          const name = u.hostname.replace(/^www\./, '');
+          if (allTargets().some(t => t.name === name)) {
+            $('siteMsg').textContent = '已有同名項目';
+            return;
+          }
+          custom.push({ name, url: u.href });
+          picked.add(name);
+          LS.set('speed-custom', custom);
+          LS.set('speed-picked', [...picked]);
+          $('addUrl').value = '';
+          $('siteMsg').textContent = '';
+          renderTargets();
+        };
+        $('addUrl').addEventListener('keydown', e => e.key === 'Enter' && $('addBtn').click());
+
+        async function probe(url, signal, timeout = 4000) {
+          const c = new AbortController(),
+            to = setTimeout(() => c.abort(), timeout);
+          const onAbort = () => c.abort();
+          if (signal) signal.addEventListener('abort', onAbort, { once: true });
+          const u = url + (url.includes('?') ? '&' : '?') + '_=' + rnd();
+          const t0 = performance.now();
+          try {
+            await fetch(u, { mode: 'no-cors', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: c.signal });
+            return performance.now() - t0;
+          } catch (e) {
+            return null;
+          } finally {
+            clearTimeout(to);
+            if (signal) signal.removeEventListener('abort', onAbort);
+          }
+        }
+        async function resolveIp(host) {
+          const ips = new Set();
+          const tryOne = async url => {
+            const j = await getJson(url, 4000);
+            (j.Answer || []).forEach(a => a.type === 1 && ips.add(a.data));
+          };
+          try {
+            await tryOne(`https://dns.google/resolve?name=${encodeURIComponent(host)}&type=A`);
+          } catch (e) {}
+          if (!ips.size) {
+            try {
+              const c = new AbortController(),
+                t = setTimeout(() => c.abort(), 4000);
+              const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=A`, { headers: { accept: 'application/dns-json' }, signal: c.signal, credentials: 'omit' });
+              clearTimeout(t);
+              const j = await r.json();
+              (j.Answer || []).forEach(a => a.type === 1 && ips.add(a.data));
+            } catch (e) {}
+          }
+          return [...ips];
+        }
+        const siteState = { ctl: null, running: false };
+        $('siteGo').onclick = async () => {
+          if (siteState.running) return;
+          const list = allTargets().filter(t => picked.has(t.name));
+          if (!list.length) {
+            $('siteMsg').textContent = '請至少選一個網站';
+            return;
+          }
+          const n = +$('nSamples').value,
+            dns = $('doDns').checked,
+            ctl = new AbortController();
+          siteState.ctl = ctl;
+          siteState.running = true;
+          $('siteGo').disabled = true;
+          $('siteStop').disabled = false;
+          $('siteMsg').textContent = '';
+          const rows = list.map(t => ({ t, xs: [], lost: 0, ips: null, done: false }));
+          const render = () => {
+            const mx = Math.max(1, ...rows.map(r => (r.xs.length ? mean(r.xs) : 0)));
+            $('siteBody').innerHTML = rows
+              .map(r => {
+                const a = r.xs.length ? mean(r.xs) : null;
+                const tot = r.xs.length + r.lost;
+                const lossPct = tot ? (r.lost / tot) * 100 : 0;
+                const ipTxt = r.ips == null ? (dns ? '解析中…' : '—') : r.ips.length ? r.ips.slice(0, 3).map(esc).join('<br>') : '—';
+                return `<tr><td class="l">${esc(r.t.name)}<br><small style="color:var(--mut)">${esc(hostOf(r.t.url))}</small></td><td class="l" style="white-space:normal;font-size:12px">${ipTxt}</td><td>${fmtMs(r.xs.length ? Math.min(...r.xs) : null)}</td><td><b>${fmtMs(a)}</b></td><td>${fmtMs(r.xs.length ? Math.max(...r.xs) : null)}</td><td>${fmtMs(jitterOf(r.xs))}</td><td>${tot ? lossPct.toFixed(0) + ' %' : '—'}${r.done && !r.xs.length ? ' <span class="pill bad">失敗</span>' : ''}</td><td class="l"><span class="mini"><i style="width:${a ? Math.max(4, (a / mx) * 100) : 0}%"></i></span></td></tr>`;
+              })
+              .join('');
+          };
+          render();
+          let idx = 0,
+            finished = 0;
+          const worker = async () => {
+            while (idx < rows.length && !ctl.signal.aborted) {
+              const r = rows[idx++];
+              if (dns) resolveIp(hostOf(r.t.url)).then(ips => ((r.ips = ips), render()));
+              await probe(r.t.url, ctl.signal); // 暖機：建立連線，不計入
+              for (let i = 0; i < n && !ctl.signal.aborted; i++) {
+                const v = await probe(r.t.url, ctl.signal);
+                v == null ? r.lost++ : r.xs.push(v);
+                render();
+                await sleep(80);
+              }
+              r.done = true;
+              finished++;
+              $('siteMsg').textContent = `完成 ${finished}/${rows.length}`;
+              render();
+            }
+          };
+          await Promise.all(Array.from({ length: Math.min(3, rows.length) }, worker));
+          rows.sort((x, y) => (x.xs.length ? mean(x.xs) : 1e9) - (y.xs.length ? mean(y.xs) : 1e9));
+          render();
+          $('siteMsg').textContent = ctl.signal.aborted ? '已停止' : `測試完成（已依平均延遲由快到慢排序）`;
+          siteState.running = false;
+          $('siteGo').disabled = false;
+          $('siteStop').disabled = true;
+        };
+        $('siteStop').onclick = () => siteState.ctl && siteState.ctl.abort();
+
+        /* ---------- 延遲監測 ---------- */
+        const mon = { ctl: null, data: [], lost: 0, n: 0 };
+        function renderMon() {
+          const xs = mon.data.map(p => p[1]).filter(v => v != null);
+          const last = mon.data.length ? mon.data[mon.data.length - 1][1] : null;
+          const shown = mon.data.filter(p => p[1] != null);
+          drawChart($('monChart'), {
+            series: [{ data: shown, color: '--pri', fill: true }],
+            xMax: Math.max(10, mon.data.length ? mon.data[mon.data.length - 1][0] : 10),
+            yFmt: v => Math.round(v) + ' ms',
+            xLabel: x => Math.round(x) + ' 秒',
+          });
+          $('monStats').innerHTML = mon.n
+            ? kv('目前', fmtMs(last), last == null ? '逾時' : '', 'big') +
+              kv('平均', fmtMs(mean(xs))) +
+              kv('最低／最高', `${fmtMs(xs.length ? Math.min(...xs) : null)} / ${fmtMs(xs.length ? Math.max(...xs) : null)}`) +
+              kv('抖動', fmtMs(jitterOf(xs))) +
+              kv('遺失率', ((mon.lost / mon.n) * 100).toFixed(1) + ' %', `${mon.lost} / ${mon.n} 次`)
+            : '';
+        }
+        $('monGo').onclick = async () => {
+          if (mon.ctl) return;
+          const name = $('monTarget').value,
+            gap = +$('monGap').value,
+            t = allTargets().find(x => x.name === name);
+          if (!t) return;
+          LS.set('speed-montarget', name);
+          mon.ctl = new AbortController();
+          $('monGo').disabled = true;
+          $('monStop').disabled = false;
+          $('monTarget').disabled = true;
+          const t0 = performance.now();
+          const ctl = mon.ctl;
+          await probe(t.url, ctl.signal);
+          while (!ctl.signal.aborted) {
+            const v = await probe(t.url, ctl.signal);
+            if (ctl.signal.aborted) break;
+            mon.n++;
+            if (v == null) mon.lost++;
+            mon.data.push([(performance.now() - t0) / 1000, v]);
+            if (mon.data.length > 300) mon.data.shift();
+            renderMon();
+            await sleep(gap);
+          }
+        };
+        $('monStop').onclick = () => {
+          if (mon.ctl) mon.ctl.abort();
+          mon.ctl = null;
+          $('monGo').disabled = false;
+          $('monStop').disabled = true;
+          $('monTarget').disabled = false;
+        };
+        $('monClr').onclick = () => {
+          mon.data = [];
+          mon.lost = 0;
+          mon.n = 0;
+          renderMon();
+        };
+
+        /* ---------- 啟動 ---------- */
+        renderTargets();
+        renderHist();
+        renderMon();
+        drawLive();
+        resetGauge();
+        $('gNum').textContent = '—';
+        loadInfo();
+      })();
+    </script>
+  </body>
+</html>

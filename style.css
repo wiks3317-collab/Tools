@@ -1052,10 +1052,10 @@ tr.row:hover {
 }
 
 /* ===== 分頁容器與內嵌模式（搭配 common.js） ===== */
-section.pane {
+.pane {
   display: none;
 }
-section.pane.on {
+.pane.on {
   display: block;
 }
 [hidden] {

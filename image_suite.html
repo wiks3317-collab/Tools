@@ -15,27 +15,198 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
     <script src="common.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "onnxruntime-web": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.bundle.min.mjs",
+          "onnxruntime-web/webgpu": "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.21.0/dist/ort.webgpu.bundle.min.mjs"
+        }
+      }
+    </script>
     <link rel="stylesheet" href="style.css" />
     <style>
-      .tabs button {
+.tabs button{font:inherit;font-size:13px;cursor:pointer}
+.note{margin:0}
+@media (max-width:600px){.themes{width:100%;justify-content:flex-start}.tabs button{flex:1 1 100%;text-align:left}}
+:where(#pane-batch) .msg{
+        margin: 2px 0 0;
+      }
+:where(#pane-batch) .msg{
+        margin-top: 8px;
+      }
+:where(#pane-batch) h2{
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+:where(#pane-batch) select{
         font: inherit;
         font-size: 13px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+      }
+:where(#pane-batch) input[type='text'],:where(#pane-batch) input[type='password']{
+        font: inherit;
+        font-size: 13px;
+      }
+:where(#pane-batch) input[type='text'],:where(#pane-batch) input[type='password']{
+        width: 100%;
+      }
+:where(#pane-batch) option{
+        background: var(--card);
+      }
+:where(#pane-batch) .panel{
+        display: none;
+      }
+:where(#pane-batch) .row{
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+:where(#pane-batch) .opt{
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+:where(#pane-batch) .opt label{
+        gap: 4px;
+      }
+:where(#pane-batch) input[type='number']{
+        width: 90px;
+      }
+:where(#pane-batch) input[type='range']{
+        width: 140px;
+      }
+:where(#pane-batch) .ok{
+        color: var(--pri);
+      }
+:where(#pane-edit) .msg,:where(#pane-edit) .hint{
+        margin: 2px 0 0;
+      }
+:where(#pane-edit) .privacy{
+        margin: 8px 0 12px;
+      }
+:where(#pane-edit) button.on{
+        background: var(--pri);
+        border-color: var(--pri);
+        color: var(--prifg);
+      }
+:where(#pane-edit) select{
+        font: inherit;
+        font-size: 13px;
+        padding: 4px 8px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+      }
+:where(#pane-edit) input[type='number']{
+        padding: 4px 8px;
+      }
+:where(#pane-edit) input[type='number']{
+        width: 84px;
+      }
+:where(#pane-edit) input[type='range']{
+        width: 100%;
+      }
+:where(#pane-edit) .drop{
+        display: block;
+      }
+:where(#pane-edit) #ed{
+        display: none;
+        grid-template-columns: 1fr 330px;
+        gap: 14px;
+        align-items: start;
+      }
+:where(#pane-edit) #ed > div{
+        min-width: 0;
+      }
+:where(#pane-edit) .stage{
+        background: var(--gut);
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+        padding: 10px;
+        display: block;
+        min-height: 300px;
+        max-height: 72vh;
+        overflow: auto;
+      }
+:where(#pane-edit) #view{
+        display: block;
+        max-width: none;
+        max-height: none;
+        flex: none;
+        margin: 0 auto;
+        touch-action: none;
+        background: conic-gradient(#ccc 25%, #fff 0 50%, #ccc 0 75%, #fff 0) 0 0/16px 16px;
+      }
+:where(#pane-edit) .row{
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 6px 0;
+      }
+:where(#pane-edit) .row label{
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+      }
+:where(#pane-edit) .sl{
+        display: grid;
+        grid-template-columns: 62px 1fr 38px;
+        gap: 6px;
+        align-items: center;
+        font-size: 13px;
+      }
+:where(#pane-edit) .sl output{
+        color: var(--mut);
+        text-align: right;
+        font-size: 12px;
+      }
+:where(#pane-edit) .opt{
+        display: none;
+      }
+:where(#pane-edit) .opt.on{
+        display: block;
+      }
+:where(#pane-edit) #ed > div:nth-child(2) > section > h2{
         cursor: pointer;
+        user-select: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
       }
-      .note {
-        margin: 0;
+:where(#pane-edit) #ed > div:nth-child(2) > section > h2::after{
+        content: '▾';
+        color: var(--mut);
+        font-size: 12px;
+        transition: transform 0.15s;
       }
-      @media (max-width:600px) {
-        .themes {
-          width: 100%;
-          justify-content: flex-start;
-        }
-        .tabs button {
-          flex: 1 1 100%;
-          text-align: left;
-        }
+:where(#pane-edit) #ed > div:nth-child(2) > section.collapsed > h2{
+        margin-bottom: 0;
       }
-    </style>
+:where(#pane-edit) #ed > div:nth-child(2) > section.collapsed > h2::after{
+        transform: rotate(-90deg);
+      }
+:where(#pane-edit) #ed > div:nth-child(2) > section.collapsed > :not(h2){
+        display: none !important;
+      }
+:where(#pane-edit) .sec-tools{
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+:where(#pane-edit) .sec-tools button{
+        padding: 3px 10px;
+        font-size: 12px;
+      }
+@media (max-width:860px){:where(#pane-edit) #ed{
+          grid-template-columns: 1fr;
+        }}
+</style>
   </head>
   <body>
     <div class="wrap">
@@ -51,13 +222,1150 @@
         <button class="on" type="button" role="tab" aria-selected="true" data-pane="batch">批次處理／轉檔</button
         ><button type="button" role="tab" aria-selected="false" data-pane="edit">圖片編輯／去背</button>
       </nav>
-      <section class="pane on" id="pane-batch">
-        <iframe class="tool-frame" id="batchFrame" title="圖片批次處理工具" src="image_tool.html"></iframe>
+      <div class="pane on" id="pane-batch">
+<p class="privacy">圖片只在你的瀏覽器本機處理，不會上傳。處理後的圖片不含原始 EXIF（拍攝時間、GPS 位置等）。</p>
+      <section>
+        <h2><span class="num">1</span>加入圖片</h2>
+        <div class="drop-zone" id="dz">
+          拖曳圖片到這裡，或點擊選擇（可多選；JPG、PNG、WebP、GIF、BMP、HEIC）<input
+            type="file"
+            id="fin"
+            multiple
+            accept="image/*,.heic,.heif"
+          />
+        </div>
+        <div id="fileList" class="lst"></div>
+        <div class="row"><span class="clear-link" id="clr">清空清單</span></div>
       </section>
-      <section class="pane" id="pane-edit">
-        <iframe class="tool-frame auto" id="editFrame" loading="lazy" title="圖片編輯與去背工具" src="photo_editor.html"></iframe>
+      <section>
+        <h2><span class="num">2</span>設定</h2>
+        <div class="opt">
+          輸出格式：<select id="b_fmt">
+            <option value="keep">維持原格式</option>
+            <option value="jpeg">JPG</option>
+            <option value="png">PNG</option>
+            <option value="webp">WebP</option>
+          </select>
+          <label>品質 <input type="range" id="b_q" min="10" max="100" value="80" /><span id="qv">80</span></label>
+        </div>
+        <div class="opt">
+          縮放：<select id="b_rs">
+            <option value="none">不縮放</option>
+            <option value="long" selected>最長邊不超過</option>
+            <option value="w">指定寬度</option>
+            <option value="h">指定高度</option>
+            <option value="p">百分比</option>
+          </select>
+          <input type="number" id="rv" value="1920" min="1" /><span id="ru">px</span
+          ><label><input type="checkbox" id="noup" checked /> 不放大小圖</label>
+        </div>
+        <div class="opt">
+          檔案大小上限：<input type="number" id="tk" value="0" min="0" /> KB（0 = 不限；僅 JPG／WebP，必要時會自動降品質、再縮小尺寸）
+        </div>
+        <div class="opt">
+          旋轉：<select id="rot">
+            <option value="0">不旋轉</option>
+            <option value="90">順時針 90°</option>
+            <option value="180">180°</option>
+            <option value="270">逆時針 90°</option>
+          </select>
+          <label><input type="checkbox" id="b_fh" /> 水平翻轉</label><label><input type="checkbox" id="b_fv" /> 垂直翻轉</label>
+          <label>透明背景填色（轉 JPG 時） <input type="color" id="b_bgc" value="#ffffff" /></label>
+        </div>
       </section>
-      <p class="note">圖片處理主要在瀏覽器本機執行。AI 去背、HEIC 轉檔及部分 PDF／字型資源需連線下載第三方元件。</p>
+      <section>
+        <h2><span class="num">3</span>處理與下載</h2>
+        <div class="row">
+          <button class="pri" id="go" disabled>開始處理</button><button id="dl" style="display: none">下載全部</button
+          ><span class="msg" id="b_msg"></span>
+        </div>
+      </section>
+      
+      </div>
+      <div class="pane" id="pane-edit">
+<div class="privacy">
+        圖片只在你的瀏覽器內處理，不會上傳。※「AI 去背」第一次使用需從 CDN 下載模型（約數十 MB），之後會快取；其他功能完全離線可用。
+      </div>
+
+      <label class="drop" id="drop" for="file"
+        >點擊選擇圖片、拖曳到這裡，或直接貼上（Ctrl／⌘+V）<input type="file" id="file" accept="image/*"
+      /></label>
+
+      <div id="ed">
+        <div>
+          <div class="stage" id="previewStage"><canvas id="view"></canvas></div>
+          <div class="row preview-zoom" aria-label="預覽縮放控制">
+            <button id="zoomOut" type="button" title="縮小預覽">－</button>
+            <label for="zoomRange">預覽縮放</label
+            ><input id="zoomRange" type="range" min="1" max="300" value="100" style="width: min(180px, 35%)" />
+            <output id="zoomLabel">適合視窗</output><button id="zoomIn" type="button" title="放大預覽">＋</button>
+            <button id="zoomFit" type="button">適合視窗</button><button id="zoomActual" type="button">原始尺寸</button>
+          </div>
+          <div class="row">
+            <button id="undo" disabled>↶ 復原</button><button id="init">還原原圖</button> <button id="newf">換一張圖片</button
+            ><span class="msg" id="msg"></span>
+          </div>
+        </div>
+        <div>
+          <section>
+            <h2>去背</h2>
+            <div class="row"><button class="pri" id="ai">AI 一鍵去背</button></div>
+            <div class="row" id="modes">
+              <button data-m="pick">點色去背</button><button data-m="erase">橡皮擦</button> <button data-m="restore">還原筆刷</button
+              ><button data-m="crop">裁切</button>
+            </div>
+            <div class="opt" data-for="pick">
+              <div class="sl">
+                <span>容許度</span><input type="range" id="tol" min="0" max="120" value="30" /><output id="tolo">30</output>
+              </div>
+              <label class="row"><input type="checkbox" id="contig" checked />只移除相連區域</label>
+              <p class="hint">點圖片上要變透明的顏色（例如純色背景）。</p>
+            </div>
+            <div class="opt" data-for="erase restore">
+              <div class="sl">
+                <span>筆刷大小</span><input type="range" id="bs" min="5" max="150" value="40" /><output id="bso">40</output>
+              </div>
+              <p class="hint">橡皮擦把畫面擦成透明；還原筆刷把原圖畫回來，可修 AI 去背的邊緣。</p>
+            </div>
+            <div class="opt" data-for="crop">
+              <div class="row">
+                <select id="ratio">
+                  <option value="0">自由比例</option>
+                  <option value="1">1:1</option>
+                  <option value="1.3333">4:3</option>
+                  <option value="0.75">3:4</option>
+                  <option value="1.7778">16:9</option>
+                  <option value="0.5625">9:16</option>
+                </select>
+                <button id="docrop" class="pri">套用裁切</button>
+              </div>
+              <p class="hint">在圖片上拖曳選取範圍。</p>
+            </div>
+            <div class="row">
+              <label>背景色 <input type="color" id="bgc" value="#ffffff" /></label><button id="bgon">填入背景</button
+              ><button id="bgoff">透明</button>
+            </div>
+          </section>
+          <section>
+            <h2>旋轉／翻轉／縮放</h2>
+            <div class="row">
+              <button id="rl">⟲ 左轉</button><button id="rr">⟳ 右轉</button><button id="fh">⇋ 水平</button><button id="fv">⇅ 垂直</button>
+            </div>
+            <div class="row">
+              <input type="number" id="rw" min="1" /> × <input type="number" id="rh" min="1" /><label
+                ><input type="checkbox" id="lock" checked />鎖定比例</label
+              ><button id="rs">縮放</button>
+            </div>
+          </section>
+          <section>
+            <h2>調色</h2>
+            <div class="row" id="presets"></div>
+            <div id="sliders"></div>
+            <div class="row"><button id="rst">重設調色</button></div>
+          </section>
+          <section>
+            <h2>圖片時間資訊</h2>
+            <div id="metaInfo" class="hint">載入圖片後會嘗試讀取 EXIF 拍攝／修改時間，並顯示檔案修改時間。</div>
+            <p class="hint">EXIF 資訊不一定存在；「檔案修改時間」是瀏覽器收到的檔案中繼資料，重新下載或透過通訊軟體傳送後可能已改變。</p>
+          </section>
+          <section>
+            <h2>日期時間浮水印</h2>
+            <div class="row">
+              <label><input type="checkbox" id="wmOn" /> 在預覽及匯出圖片加入浮水印</label>
+            </div>
+            <div class="row">
+              <label
+                >時間來源
+                <select id="wmSource">
+                  <option value="capture">EXIF 拍攝時間</option>
+                  <option value="edit">EXIF 修改時間</option>
+                  <option value="digitized">EXIF 數位化時間</option>
+                  <option value="file">檔案修改時間</option>
+                  <option value="now">目前時間</option>
+                  <option value="custom">自訂時間</option>
+                </select></label
+              >
+            </div>
+            <div class="row" id="wmCustomRow" hidden>
+              <label>自訂時間 <input type="datetime-local" id="wmCustom" /></label>
+            </div>
+            <div class="row">
+              <label>附加文字 <input type="text" id="wmExtra" maxlength="100" placeholder="例如：內部用／拍攝地點" /></label>
+            </div>
+            <div class="row">
+              <label
+                >位置
+                <select id="wmPos">
+                  <option value="br">右下</option>
+                  <option value="bl">左下</option>
+                  <option value="tr">右上</option>
+                  <option value="tl">左上</option>
+                  <option value="bc">下方置中</option>
+                </select></label
+              ><label>文字顏色 <input type="color" id="wmColor" value="#ffffff" /></label>
+            </div>
+            <div class="sl">
+              <span>透明度</span><input type="range" id="wmAlpha" min="20" max="100" value="90" /><output id="wmAlphaOut">90%</output>
+            </div>
+            <div class="sl">
+              <span>文字大小</span><input type="range" id="wmSize" min="1" max="5" value="2" /><output id="wmSizeOut">中</output>
+            </div>
+            <p class="hint">浮水印會實際寫入匯出圖片。日期可能與原始拍攝時間不同，請以讀取到的 EXIF／檔案中繼資料為準。</p>
+          </section>
+          <section>
+            <h2>匯出</h2>
+            <div class="row">
+              <select id="fmt">
+                <option value="image/png">PNG（保留透明）</option>
+                <option value="image/jpeg">JPG</option>
+                <option value="image/webp">WebP</option>
+              </select>
+            </div>
+            <div class="sl"><span>品質</span><input type="range" id="q" min="30" max="100" value="92" /><output id="qo">92</output></div>
+            <div class="row"><button class="pri" id="save">下載圖片</button></div>
+            <p class="hint">JPG 不支援透明，透明處會填背景色（未設定則為白色）。浮水印會寫入輸出檔案。</p>
+          </section>
+        </div>
+      
+      </div>
+      <p class="note">圖片處理主要在瀏覽器本機執行。AI 去背、HEIC 轉檔（heic2any）及字型資源需連線下載第三方元件；批次打包使用 JSZip。</p>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+(function () {
+const $ = id => document.getElementById(id);
+
+      let items = [];
+      const fmt = n => (n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(2) + ' MB');
+      const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      const isHeic = f => /heic|heif/i.test(f.type) || /\.(heic|heif)$/i.test(f.name);
+      function list() {
+        $('fileList').innerHTML = items
+          .map(
+            (it, i) =>
+              `<div><span>${esc(it.file.name)}（${fmt(it.file.size)}）${it.out ? ` → <b class="ok">${fmt(it.out.size)}</b>（${it.w}×${it.h}，${it.out.size <= it.file.size ? '-' : '+'}${Math.abs(Math.round((1 - it.out.size / it.file.size) * 100))}%）` : ''}${it.err ? ' <b>失敗：' + esc(it.err) + '</b>' : ''}</span>${it.out ? `<button data-d="${i}">下載</button>` : ''}<button data-x="${i}">✕</button></div>`
+          )
+          .join('');
+        $('go').disabled = !items.length;
+        $('dl').style.display = items.some(x => x.out) ? '' : 'none';
+      }
+      function add(fs) {
+        for (const f of fs)
+          if (/^image\//.test(f.type) || isHeic(f) || /\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name)) items.push({ file: f });
+        list();
+      }
+      $('fin').onchange = e => {
+        add(e.target.files);
+        e.target.value = '';
+      };
+      const dz = $('dz');
+      dz.onclick = e => {
+        if (e.target !== $('fin')) $('fin').click();
+      };
+      dz.ondragover = e => {
+        e.preventDefault();
+        dz.classList.add('dragover');
+      };
+      dz.ondragleave = () => dz.classList.remove('dragover');
+      dz.ondrop = e => {
+        e.preventDefault();
+        dz.classList.remove('dragover');
+        add(e.dataTransfer.files);
+      };
+      ['dragover', 'drop'].forEach(v =>
+        window.addEventListener(v, e => {
+          if (!dz.contains(e.target)) e.preventDefault();
+        })
+      );
+      $('clr').onclick = () => {
+        items = [];
+        list();
+        $('b_msg').textContent = '';
+      };
+      $('b_q').oninput = () => ($('qv').textContent = $('b_q').value);
+      $('b_rs').onchange = () => {
+        const m = $('b_rs').value;
+        $('ru').textContent = m === 'p' ? '%' : 'px';
+        $('rv').value = m === 'p' ? 50 : 1920;
+        $('rv').disabled = m === 'none';
+      };
+      $('fileList').onclick = e => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        if (b.dataset.x != null) {
+          items.splice(+b.dataset.x, 1);
+          list();
+        } else {
+          const it = items[+b.dataset.d];
+          save(it.out, it.outName);
+        }
+      };
+      function save(blob, name) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1e4);
+      }
+      let heicP = null;
+      const loadHeic = () =>
+        heicP ||
+        (heicP = new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js';
+          s.onload = res;
+          s.onerror = () => rej(Error('HEIC 轉換元件載入失敗，請確認網路'));
+          document.head.appendChild(s);
+        }));
+      async function bitmap(f) {
+        let src = f;
+        if (isHeic(f)) {
+          await loadHeic();
+          src = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.95 });
+          if (Array.isArray(src)) src = src[0];
+        }
+        try {
+          return await createImageBitmap(src, { imageOrientation: 'from-image' });
+        } catch (e) {
+          return await createImageBitmap(src);
+        }
+      }
+      const toBlob = (c, m, q) => new Promise(r => c.toBlob(r, m, q));
+      async function run(it) {
+        const bm = await bitmap(it.file);
+        const f = $('b_fmt').value,
+          t = it.file.type;
+        const mime =
+          f === 'keep'
+            ? t === 'image/jpeg' || isHeic(it.file)
+              ? 'image/jpeg'
+              : t === 'image/webp'
+                ? 'image/webp'
+                : 'image/png'
+            : 'image/' + f;
+        const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[mime];
+        let w = bm.width,
+          h = bm.height,
+          k = 1;
+        const mode = $('b_rs').value,
+          v = +$('rv').value || 1;
+        if (mode === 'long') k = v / Math.max(w, h);
+        else if (mode === 'w') k = v / w;
+        else if (mode === 'h') k = v / h;
+        else if (mode === 'p') k = v / 100;
+        if ($('noup').checked && k > 1) k = 1;
+        const rot = +$('rot').value,
+          c = document.createElement('canvas'),
+          x = c.getContext('2d');
+        function draw(s) {
+          const dw = Math.max(1, Math.round(bm.width * k * s)),
+            dh = Math.max(1, Math.round(bm.height * k * s));
+          c.width = rot % 180 ? dh : dw;
+          c.height = rot % 180 ? dw : dh;
+          if (mime === 'image/jpeg') {
+            x.fillStyle = $('b_bgc').value;
+            x.fillRect(0, 0, c.width, c.height);
+          }
+          x.save();
+          x.translate(c.width / 2, c.height / 2);
+          x.rotate((rot * Math.PI) / 180);
+          x.scale($('b_fh').checked ? -1 : 1, $('b_fv').checked ? -1 : 1);
+          x.imageSmoothingQuality = 'high';
+          x.drawImage(bm, -dw / 2, -dh / 2, dw, dh);
+          x.restore();
+        }
+        const q0 = +$('b_q').value / 100,
+          lim = (+$('tk').value || 0) * 1024;
+        let s = 1,
+          blob = null;
+        draw(s);
+        blob = await toBlob(c, mime, q0);
+        if (!blob) throw new Error('瀏覽器無法產生圖片資料');
+        if (lim) {
+          let fitted = false;
+          for (let n = 0; n < 24; n++) {
+            let best = null;
+            if (mime === 'image/png') {
+              const candidate = await toBlob(c, mime);
+              if (candidate && candidate.size <= lim) best = candidate;
+            } else {
+              let lo = 0.05,
+                hi = q0;
+              const lowBlob = await toBlob(c, mime, lo);
+              if (lowBlob && lowBlob.size <= lim) best = lowBlob;
+              for (let j = 0; j < 9; j++) {
+                const quality = (lo + hi) / 2,
+                  b = await toBlob(c, mime, quality);
+                if (b && b.size <= lim) {
+                  best = b;
+                  lo = quality;
+                } else hi = quality;
+              }
+            }
+            if (best && best.size <= lim) {
+              blob = best;
+              fitted = true;
+              break;
+            }
+            if (c.width <= 1 && c.height <= 1) break;
+            s *= 0.8;
+            draw(s);
+          }
+          if (!fitted) throw new Error(`降低畫質及解析度後仍無法達到 ${lim} bytes 上限；請提高上限或改用 JPG／WebP。`);
+        }
+        if (!blob) throw new Error('圖片輸出失敗');
+        if (lim && blob.size > lim) throw new Error(`輸出檔仍超過大小限制（${fmt(blob.size)}）`);
+        it.out = blob;
+        it.w = c.width;
+        it.h = c.height;
+        it.err = '';
+        it.outName = it.file.name.replace(/\.[^.]+$/, '') + '_new.' + ext;
+      }
+      $('go').onclick = async () => {
+        $('go').disabled = true;
+        let n = 0;
+        for (const it of items) {
+          $('b_msg').textContent = `處理中 ${++n}/${items.length}...`;
+          try {
+            await run(it);
+          } catch (e) {
+            it.out = null;
+            it.err = e.message;
+          }
+        }
+        $('b_msg').textContent = '完成';
+        list();
+      };
+      $('dl').onclick = async () => {
+        const ok = items.filter(x => x.out);
+        if (ok.length === 1) return save(ok[0].out, ok[0].outName);
+        const z = new JSZip(),
+          used = {};
+        for (const it of ok) {
+          let nm = it.outName;
+          if (used[nm]) {
+            const p = nm.lastIndexOf('.');
+            nm = nm.slice(0, p) + '_' + used[nm] + nm.slice(p);
+          }
+          used[it.outName] = (used[it.outName] || 0) + 1;
+          z.file(nm, it.out);
+        }
+        save(await z.generateAsync({ type: 'blob' }), 'images.zip');
+      };
+})();
+    </script>
+    <script>
+(function () {
+const $ = id => document.getElementById(id);
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const mk = (w, h) => {
+        const c = document.createElement('canvas');
+        c.width = w;
+        c.height = h;
+        return c;
+      };
+      const clone = c => {
+        const n = mk(c.width, c.height);
+        n.getContext('2d').drawImage(c, 0, 0);
+        return n;
+      };
+      const DEF = { b: 100, c: 100, s: 100, h: 0, bl: 0, g: 0, se: 0, inv: 0 };
+      let work,
+        ref,
+        first,
+        undo = [],
+        mode = '',
+        F = { ...DEF },
+        bg = null,
+        sel = null,
+        fname = 'image',
+        down = false,
+        last,
+        cs;
+      let sourceFile = null,
+        imageMeta = { capture: null, edit: null, digitized: null, file: null },
+        watermarkNow = new Date();
+      let previewScale = 1,
+        previewFit = true;
+      const view = $('view'),
+        vx = view.getContext('2d');
+      const say = t => {
+        $('msg').textContent = t || '';
+      };
+
+      /* ---------- 載入 ---------- */
+      function parseExifDate(v) {
+        if (!v) return null;
+        if (v instanceof Date && !Number.isNaN(v.getTime())) return v;
+        const str = String(v).trim();
+        const iso = str.replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3').replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/, '$1T$2');
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+      function fmtDate(d) {
+        if (!d) return '未提供';
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+      }
+      async function readImageMetadata(f) {
+        imageMeta = { capture: null, edit: null, digitized: null, file: f.lastModified ? new Date(f.lastModified) : null };
+        try {
+          const exifr = await import('https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.esm.mjs');
+          const tags = await exifr.parse(f, { xmp: true, iptc: true });
+          if (tags) {
+            imageMeta.capture = parseExifDate(tags.DateTimeOriginal || tags.CreateDate || tags.DateCreated);
+            imageMeta.edit = parseExifDate(tags.ModifyDate || tags.ModifyDateTime || tags.XMPModifyDate);
+            imageMeta.digitized = parseExifDate(tags.DateTimeDigitized || tags.CreateDate);
+          }
+        } catch (e) {
+          console.warn('EXIF 讀取失敗或套件未載入', e);
+        }
+        const lines = [
+          ['EXIF 拍攝時間', imageMeta.capture],
+          ['EXIF 修改時間', imageMeta.edit],
+          ['EXIF 數位化時間', imageMeta.digitized],
+          ['檔案修改時間', imageMeta.file],
+        ];
+        $('metaInfo').replaceChildren(
+          ...lines.map(([label, value]) => {
+            const d = document.createElement('div');
+            d.textContent = `${label}：${fmtDate(value)}`;
+            return d;
+          })
+        );
+        if ($('wmSource').value === 'capture' && !imageMeta.capture && imageMeta.file) {
+          const d = document.createElement('div');
+          d.textContent = '提示：此圖片沒有讀到 EXIF 拍攝時間，可改選檔案修改時間。';
+          $('metaInfo').appendChild(d);
+        }
+      }
+      async function load(f) {
+        if (!f) return;
+        const imageLike = f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|tiff?|heic|heif|avif)$/i.test(f.name);
+        if (!imageLike) {
+          say('請選擇圖片檔');
+          return;
+        }
+        try {
+          previewFit = true;
+          previewScale = 1;
+          sourceFile = f;
+          const bm = await createImageBitmap(f, { imageOrientation: 'from-image' });
+          const s = Math.min(1, 4096 / Math.max(bm.width, bm.height), Math.sqrt(10000000 / (bm.width * bm.height)));
+          work = mk(Math.max(1, Math.round(bm.width * s)), Math.max(1, Math.round(bm.height * s)));
+          work.getContext('2d').drawImage(bm, 0, 0, work.width, work.height);
+          ref = clone(work);
+          first = clone(work);
+          undo = [];
+          $('undo').disabled = true;
+          fname = f.name.replace(/\.[^.]+$/, '') || 'image';
+          F = { ...DEF };
+          bg = null;
+          sel = null;
+          setMode('');
+          syncUI();
+          $('drop').style.display = 'none';
+          $('ed').style.display = 'grid';
+          say(s < 1 ? `圖片尺寸較大，為避免瀏覽器記憶體不足已縮小為 ${work.width} × ${work.height}` : '');
+          updatePreviewZoom(true);
+          draw();
+          await readImageMetadata(f);
+        } catch (e) {
+          say('無法讀取這個檔案（瀏覽器可能不支援此格式，例如 HEIC／AVIF）');
+        }
+      }
+      $('file').onchange = e => load(e.target.files[0]);
+      $('newf').onclick = () => {
+        work = ref = first = null;
+        undo = [];
+        sel = null;
+        bg = null;
+        F = { ...DEF };
+        sourceFile = null;
+        down = false;
+        imageMeta = { capture: null, edit: null, digitized: null, file: null };
+        previewFit = true;
+        previewScale = 1;
+        $('undo').disabled = true;
+        say('');
+        setMode('');
+        syncSl();
+        view.width = view.height = 1;
+        $('drop').style.display = '';
+        $('ed').style.display = 'none';
+        $('file').value = '';
+        $('file').click();
+      };
+      ['dragenter', 'dragover'].forEach(n =>
+        $('pane-edit').addEventListener(n, e => {
+          e.preventDefault();
+          $('drop').classList.add('dragover');
+        })
+      );
+      ['dragleave', 'drop'].forEach(n =>
+        $('pane-edit').addEventListener(n, e => {
+          e.preventDefault();
+          $('drop').classList.remove('dragover');
+        })
+      );
+      $('pane-edit').addEventListener('drop', e => load(e.dataTransfer.files[0]));
+      document.addEventListener('paste', e => {
+        if (!$('pane-edit').classList.contains('on')) return;
+        const f = [...e.clipboardData.files][0];
+        if (f) load(f);
+      });
+
+      /* ---------- 繪製 ---------- */
+      const filt = () =>
+        `brightness(${F.b}%) contrast(${F.c}%) saturate(${F.s}%) hue-rotate(${F.h}deg) blur(${F.bl}px) grayscale(${F.g}%) sepia(${F.se}%) invert(${F.inv}%)`;
+      function watermarkValue() {
+        if (!$('wmOn').checked) return '';
+        const source = $('wmSource').value;
+        let d = null,
+          label = '';
+        if (source === 'capture') {
+          d = imageMeta.capture;
+          label = '拍攝';
+        } else if (source === 'edit') {
+          d = imageMeta.edit;
+          label = '修改';
+        } else if (source === 'digitized') {
+          d = imageMeta.digitized;
+          label = '數位化';
+        } else if (source === 'file') {
+          d = imageMeta.file;
+          label = '檔案修改';
+        } else if (source === 'now') {
+          d = watermarkNow;
+          label = '建立';
+        } else if (source === 'custom') {
+          d = parseExifDate($('wmCustom').value);
+          label = '自訂';
+        }
+        if (!d) {
+          d = imageMeta.file;
+          label = '檔案修改（來源缺值，改用檔案時間）';
+        }
+        let text = d ? `${label}時間：${fmtDate(d)}` : '日期時間未提供';
+        const extra = $('wmExtra').value.trim();
+        if (extra) text += '  ' + extra;
+        return text;
+      }
+      function paintWatermark(context, w, h) {
+        const text = watermarkValue();
+        if (!text) return;
+        const ratio = +$('wmSize').value,
+          fontPx = Math.max(12, Math.round(Math.min(w, h) * (0.012 + ratio * 0.004))),
+          pad = Math.max(8, Math.round(fontPx * 0.55));
+        context.save();
+        context.font = `600 ${fontPx}px "Noto Sans TC", sans-serif`;
+        context.textBaseline = 'middle';
+        const tw = context.measureText(text).width,
+          boxW = Math.min(Math.max(1, w - 2 * pad), tw + pad * 2),
+          boxH = fontPx + pad * 1.2,
+          alpha = +$('wmAlpha').value / 100;
+        let x = pad,
+          y = pad;
+        const pos = $('wmPos').value;
+        if (pos.endsWith('r')) x = w - pad - boxW;
+        else if (pos === 'bc') x = (w - boxW) / 2;
+        if (pos.startsWith('b')) y = h - pad - boxH;
+        context.globalAlpha = alpha;
+        context.fillStyle = '#000000';
+        context.fillRect(Math.max(0, x), Math.max(0, y), boxW, boxH);
+        context.fillStyle = $('wmColor').value;
+        context.globalAlpha = alpha;
+        context.fillText(text, Math.max(0, x + pad), Math.max(fontPx / 2, y + boxH / 2), Math.max(0, boxW - 2 * pad));
+        context.restore();
+      }
+      function fitScale() {
+        if (!work) return 1;
+        const stage = $('previewStage');
+        const usableW = Math.max(120, stage.clientWidth - 24);
+        const usableH = Math.max(180, window.innerHeight * 0.58);
+        return Math.max(0.01, Math.min(1, usableW / work.width, usableH / work.height));
+      }
+      function updatePreviewZoom(forceFit = false) {
+        if (!work) return;
+        if (forceFit || previewFit) previewScale = fitScale();
+        view.style.width = Math.max(1, Math.round(work.width * previewScale)) + 'px';
+        view.style.height = Math.max(1, Math.round(work.height * previewScale)) + 'px';
+        $('zoomRange').value = String(clamp(Math.round(previewScale * 100), 1, 300));
+        $('zoomLabel').textContent = `${Math.round(previewScale * 100)}%${previewFit ? '（適合）' : ''}`;
+      }
+      function setPreviewScale(scale, fit = false) {
+        previewFit = fit;
+        previewScale = clamp(scale, 0.01, 3);
+        updatePreviewZoom(fit);
+      }
+      $('zoomRange').oninput = e => setPreviewScale((+e.target.value || 100) / 100, false);
+      $('zoomIn').onclick = () => setPreviewScale(Math.min(3, previewScale * 1.2), false);
+      $('zoomOut').onclick = () => setPreviewScale(Math.max(0.01, previewScale / 1.2), false);
+      $('zoomFit').onclick = () => setPreviewScale(fitScale(), true);
+      $('zoomActual').onclick = () => setPreviewScale(1, false);
+      window.addEventListener('resize', () => {
+        if (previewFit) updatePreviewZoom(true);
+      });
+      function draw() {
+        if (!work) return;
+        if (view.width !== work.width || view.height !== work.height) {
+          view.width = work.width;
+          view.height = work.height;
+        }
+        const w = view.width,
+          h = view.height;
+        vx.clearRect(0, 0, w, h);
+        if (bg) {
+          vx.fillStyle = bg;
+          vx.fillRect(0, 0, w, h);
+        }
+        vx.filter = filt();
+        vx.drawImage(work, 0, 0);
+        vx.filter = 'none';
+        if (mode === 'crop' && sel) {
+          vx.fillStyle = 'rgba(0,0,0,.5)';
+          vx.fillRect(0, 0, w, sel.y);
+          vx.fillRect(0, sel.y + sel.h, w, h);
+          vx.fillRect(0, sel.y, sel.x, sel.h);
+          vx.fillRect(sel.x + sel.w, sel.y, w, sel.h);
+          vx.strokeStyle = '#fff';
+          vx.lineWidth = Math.max(1, w / 500);
+          vx.setLineDash([8, 6]);
+          vx.strokeRect(sel.x, sel.y, sel.w, sel.h);
+          vx.setLineDash([]);
+        }
+        paintWatermark(vx, w, h);
+        updatePreviewZoom();
+      }
+      function push() {
+        undo.push([clone(work), clone(ref)]);
+        if (undo.length > 20) undo.shift();
+        $('undo').disabled = false;
+      }
+      $('undo').onclick = () => {
+        const u = undo.pop();
+        if (!u) return;
+        [work, ref] = u;
+        $('undo').disabled = !undo.length;
+        syncUI();
+        draw();
+      };
+      $('init').onclick = () => {
+        push();
+        work = clone(first);
+        ref = clone(first);
+        syncUI();
+        draw();
+      };
+      function syncUI() {
+        $('rw').value = work.width;
+        $('rh').value = work.height;
+      }
+
+      /* ---------- 模式 ---------- */
+      function setMode(m) {
+        mode = mode === m ? '' : m;
+        sel = null;
+        $('pane-edit').querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
+        $('pane-edit').querySelectorAll('.opt').forEach(o => o.classList.toggle('on', o.dataset.for.split(' ').includes(mode)));
+        view.style.cursor = mode ? 'crosshair' : 'default';
+        draw();
+      }
+      $('modes').onclick = e => {
+        const b = e.target.closest('button');
+        if (b) setMode(b.dataset.m);
+      };
+      $('tol').oninput = e => ($('tolo').textContent = e.target.value);
+      $('bs').oninput = e => ($('bso').textContent = e.target.value);
+      $('q').oninput = e => ($('qo').textContent = e.target.value);
+      $('wmOn').onchange = draw;
+      $('wmSource').onchange = () => {
+        $('wmCustomRow').hidden = $('wmSource').value !== 'custom';
+        if ($('wmSource').value === 'now') watermarkNow = new Date();
+        draw();
+      };
+      $('wmCustom').oninput = draw;
+      $('wmExtra').oninput = draw;
+      $('wmPos').onchange = draw;
+      $('wmColor').oninput = draw;
+      $('wmAlpha').oninput = () => {
+        $('wmAlphaOut').textContent = $('wmAlpha').value + '%';
+        draw();
+      };
+      $('wmSize').oninput = () => {
+        $('wmSizeOut').textContent = ['很小', '小', '中', '大', '特大'][+$('wmSize').value - 1];
+        draw();
+      };
+
+      /* ---------- 指標操作 ---------- */
+      const P = e => {
+        const r = view.getBoundingClientRect();
+        return [((e.clientX - r.left) * view.width) / r.width, ((e.clientY - r.top) * view.height) / r.height];
+      };
+      view.onpointerdown = e => {
+        if (!work || !mode) return;
+        const p = P(e);
+        if (mode === 'pick') {
+          wand(p);
+          return;
+        }
+        down = true;
+        view.setPointerCapture(e.pointerId);
+        if (mode === 'crop') {
+          cs = p;
+          sel = null;
+        } else {
+          push();
+          last = p;
+          brush(p, p);
+        }
+      };
+      view.onpointermove = e => {
+        if (!down) return;
+        const p = P(e);
+        if (mode === 'crop') {
+          const W = view.width,
+            H = view.height,
+            ar = +$('ratio').value;
+          const x2 = clamp(p[0], 0, W),
+            y2 = clamp(p[1], 0, H),
+            dx = x2 - cs[0],
+            dy = y2 - cs[1];
+          let w = Math.abs(dx),
+            h = Math.abs(dy);
+          if (ar) {
+            if (w / Math.max(h, 0.001) > ar) h = w / ar;
+            else w = h * ar;
+          }
+          if (ar && w > 0 && h > 0) {
+            const maxW = dx < 0 ? cs[0] : W - cs[0],
+              maxH = dy < 0 ? cs[1] : H - cs[1];
+            const factor = Math.min(1, maxW / w, maxH / h);
+            w *= factor;
+            h *= factor;
+          } else {
+            w = Math.min(w, dx < 0 ? cs[0] : W - cs[0]);
+            h = Math.min(h, dy < 0 ? cs[1] : H - cs[1]);
+          }
+          sel = { x: dx < 0 ? cs[0] - w : cs[0], y: dy < 0 ? cs[1] - h : cs[1], w, h };
+          draw();
+        } else {
+          brush(last, p);
+          last = p;
+        }
+      };
+      view.onpointerup = view.onpointercancel = () => {
+        down = false;
+      };
+
+      function brush(a, b) {
+        const k = view.width / view.getBoundingClientRect().width,
+          r = (+$('bs').value / 2) * k,
+          x = work.getContext('2d'),
+          n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r / 3)));
+        for (let i = 1; i <= n; i++) {
+          const px = a[0] + ((b[0] - a[0]) * i) / n,
+            py = a[1] + ((b[1] - a[1]) * i) / n;
+          x.save();
+          x.beginPath();
+          x.arc(px, py, r, 0, 7);
+          if (mode === 'erase') {
+            x.globalCompositeOperation = 'destination-out';
+            x.fill();
+          } else {
+            x.clip();
+            x.clearRect(0, 0, work.width, work.height);
+            x.drawImage(ref, 0, 0);
+          }
+          x.restore();
+        }
+        draw();
+      }
+
+      function wand([px, py]) {
+        push();
+        const w = work.width,
+          h = work.height,
+          x = work.getContext('2d'),
+          im = x.getImageData(0, 0, w, h),
+          d = im.data;
+        px |= 0;
+        py |= 0;
+        const i0 = (py * w + px) * 4,
+          t = +$('tol').value * 3,
+          r = d[i0],
+          g = d[i0 + 1],
+          b = d[i0 + 2];
+        const ok = i => d[i + 3] > 0 && Math.abs(d[i] - r) + Math.abs(d[i + 1] - g) + Math.abs(d[i + 2] - b) <= t;
+        if ($('contig').checked) {
+          const st = [py * w + px],
+            seen = new Uint8Array(w * h);
+          while (st.length) {
+            const p = st.pop();
+            if (seen[p]) continue;
+            seen[p] = 1;
+            const i = p * 4;
+            if (!ok(i)) continue;
+            d[i + 3] = 0;
+            const cx = p % w;
+            if (cx > 0) st.push(p - 1);
+            if (cx < w - 1) st.push(p + 1);
+            if (p >= w) st.push(p - w);
+            if (p < w * h - w) st.push(p + w);
+          }
+        } else for (let i = 0; i < d.length; i += 4) if (ok(i)) d[i + 3] = 0;
+        x.putImageData(im, 0, 0);
+        draw();
+      }
+
+      /* ---------- AI 去背 ---------- */
+      $('ai').onclick = async () => {
+        if (!work) return;
+        const btn = $('ai');
+        btn.disabled = true;
+        say('載入 AI 模型中…（首次需下載，請稍候）');
+        try {
+          const { removeBackground } = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm');
+          const blob = await new Promise(r => work.toBlob(r, 'image/png'));
+          const out = await removeBackground(blob, {
+            progress: (key, cur, tot) => {
+              say(`處理中：${key.replace('fetch:', '下載 ')} ${tot ? Math.round((cur / tot) * 100) + '%' : ''}`);
+            },
+          });
+          const bm = await createImageBitmap(out);
+          push();
+          const n = mk(work.width, work.height);
+          n.getContext('2d').drawImage(bm, 0, 0, n.width, n.height);
+          work = n;
+          draw();
+          say('去背完成。可用「還原筆刷」／「橡皮擦」修飾邊緣。');
+        } catch (e) {
+          console.error(e);
+          say('AI 去背失敗：' + ((e && e.message) || e) + '（可改用「點色去背」；詳細錯誤請看 F12 Console）');
+        }
+        btn.disabled = false;
+      };
+
+      /* ---------- 幾何變換（work 與 ref 一起變） ---------- */
+      function xf(fn) {
+        push();
+        work = fn(work);
+        ref = fn(ref);
+        sel = null;
+        syncUI();
+        draw();
+      }
+      const rot = d => c => {
+        const n = mk(c.height, c.width),
+          x = n.getContext('2d');
+        x.translate(n.width / 2, n.height / 2);
+        x.rotate((Math.PI / 2) * d);
+        x.drawImage(c, -c.width / 2, -c.height / 2);
+        return n;
+      };
+      const flip = (sx, sy) => c => {
+        const n = mk(c.width, c.height),
+          x = n.getContext('2d');
+        x.translate(sx < 0 ? c.width : 0, sy < 0 ? c.height : 0);
+        x.scale(sx, sy);
+        x.drawImage(c, 0, 0);
+        return n;
+      };
+      $('rl').onclick = () => xf(rot(-1));
+      $('rr').onclick = () => xf(rot(1));
+      $('fh').onclick = () => xf(flip(-1, 1));
+      $('fv').onclick = () => xf(flip(1, -1));
+      $('rw').oninput = () => {
+        if ($('lock').checked) $('rh').value = Math.round(($('rw').value * work.height) / work.width);
+      };
+      $('rh').oninput = () => {
+        if ($('lock').checked) $('rw').value = Math.round(($('rh').value * work.width) / work.height);
+      };
+      $('rs').onclick = () => {
+        const w = Math.max(1, Math.min(8000, +$('rw').value | 0)),
+          h = Math.max(1, Math.min(8000, +$('rh').value | 0));
+        xf(c => {
+          const n = mk(w, h),
+            x = n.getContext('2d');
+          x.imageSmoothingQuality = 'high';
+          x.drawImage(c, 0, 0, w, h);
+          return n;
+        });
+      };
+      $('docrop').onclick = () => {
+        if (!sel || sel.w < 2 || sel.h < 2) {
+          say('請先在圖片上拖曳選取裁切範圍');
+          return;
+        }
+        const x = Math.round(sel.x),
+          y = Math.round(sel.y),
+          w = Math.min(Math.round(sel.w), work.width - x),
+          h = Math.min(Math.round(sel.h), work.height - y);
+        xf(c => {
+          const n = mk(w, h);
+          n.getContext('2d').drawImage(c, x, y, w, h, 0, 0, w, h);
+          return n;
+        });
+        setMode('');
+      };
+
+      /* ---------- 背景色 ---------- */
+      $('bgon').onclick = () => {
+        bg = $('bgc').value;
+        draw();
+      };
+      $('bgoff').onclick = () => {
+        bg = null;
+        draw();
+      };
+      $('bgc').oninput = () => {
+        if (bg) {
+          bg = $('bgc').value;
+          draw();
+        }
+      };
+
+      /* ---------- 調色 ---------- */
+      const SL = [
+        ['b', '亮度', 0, 200],
+        ['c', '對比', 0, 200],
+        ['s', '飽和度', 0, 300],
+        ['h', '色相', -180, 180],
+        ['bl', '模糊', 0, 20],
+        ['g', '黑白', 0, 100],
+        ['se', '復古褐', 0, 100],
+      ];
+      $('sliders').innerHTML = SL.map(
+        ([k, n, a, b]) =>
+          `<div class="sl"><span>${n}</span><input type="range" data-k="${k}" min="${a}" max="${b}" value="${DEF[k]}"><output></output></div>`
+      ).join('');
+      const syncSl = () =>
+        $('pane-edit').querySelectorAll('#sliders input').forEach(i => {
+          i.value = F[i.dataset.k];
+          i.nextElementSibling.textContent = i.value;
+        });
+      $('sliders').oninput = e => {
+        F[e.target.dataset.k] = +e.target.value;
+        syncSl();
+        draw();
+      };
+      const PRE = {
+        原圖: {},
+        黑白: { g: 100 },
+        復古: { se: 60, c: 110, s: 80 },
+        鮮豔: { s: 160, c: 110 },
+        冷調: { h: -20, s: 110 },
+        暖調: { h: 15, se: 25 },
+        反相: { inv: 100 },
+      };
+      $('presets').innerHTML = Object.keys(PRE)
+        .map(k => `<button>${k}</button>`)
+        .join('');
+      $('presets').onclick = e => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        F = { ...DEF, ...PRE[b.textContent] };
+        syncSl();
+        draw();
+      };
+      $('rst').onclick = () => {
+        F = { ...DEF };
+        syncSl();
+        draw();
+      };
+      syncSl();
+
+      /* ---------- 匯出 ---------- */
+      $('save').onclick = () => {
+        if (!work) return;
+        const type = $('fmt').value,
+          n = mk(work.width, work.height),
+          x = n.getContext('2d');
+        if (bg || type === 'image/jpeg') {
+          x.fillStyle = bg || '#fff';
+          x.fillRect(0, 0, n.width, n.height);
+        }
+        x.filter = filt();
+        x.drawImage(work, 0, 0);
+        x.filter = 'none';
+        paintWatermark(x, n.width, n.height);
+        n.toBlob(
+          b => {
+            if (!b) {
+              say('匯出失敗：瀏覽器無法產生圖片資料');
+              return;
+            }
+            const a = document.createElement('a'),
+              ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[type],
+              url = URL.createObjectURL(b);
+            a.href = url;
+            a.download = `${fname}_edited.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+            say('圖片已匯出' + ($('wmOn').checked ? '（含日期時間浮水印）' : ''));
+          },
+          type,
+          +$('q').value / 100
+        );
+      };
+
+      // ---- 右側工具窗格：可摺疊（狀態記在 localStorage） ----
+      (function () {
+        const col = $('pane-edit').querySelector('#ed > div:nth-child(2)');
+        const secs = [...col.querySelectorAll(':scope > section')];
+        const KEY = 'photo-editor-collapsed';
+        let saved = [];
+        try {
+          saved = JSON.parse(localStorage.getItem(KEY) || '[]');
+        } catch (e) {}
+        const save = () => {
+          try {
+            localStorage.setItem(KEY, JSON.stringify(secs.filter(x => x.classList.contains('collapsed')).map(x => x.querySelector('h2').textContent.trim())));
+          } catch (e) {}
+        };
+        const setC = (sec, c) => {
+          sec.classList.toggle('collapsed', c);
+          sec.querySelector('h2').setAttribute('aria-expanded', String(!c));
+        };
+        secs.forEach(sec => {
+          const h = sec.querySelector('h2');
+          if (!h) return;
+          h.tabIndex = 0;
+          h.setAttribute('role', 'button');
+          const toggle = () => {
+            setC(sec, !sec.classList.contains('collapsed'));
+            save();
+          };
+          h.addEventListener('click', toggle);
+          h.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggle();
+            }
+          });
+          setC(sec, saved.includes(h.textContent.trim()));
+        });
+        const bar = document.createElement('div');
+        bar.className = 'sec-tools';
+        bar.innerHTML = '<button type="button" id="secOpen">全部展開</button><button type="button" id="secClose">全部摺疊</button>';
+        col.insertBefore(bar, col.firstChild);
+        bar.querySelector('#secOpen').onclick = () => {
+          secs.forEach(x => setC(x, false));
+          save();
+        };
+        bar.querySelector('#secClose').onclick = () => {
+          secs.forEach(x => setC(x, true));
+          save();
+        };
+      })();
+})();
+    </script>
+    <script>
+      // 切換分頁後通知各工具重新計算尺寸（預覽縮放等）
+      document.querySelectorAll('.tabs [data-pane]').forEach(b => b.addEventListener('click', () => setTimeout(() => window.dispatchEvent(new Event('resize')), 0)));
+    </script>
   </body>
 </html>
