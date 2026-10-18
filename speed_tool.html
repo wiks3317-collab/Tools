@@ -775,25 +775,68 @@
             return 0;
           }
         };
+        let pingCors = true; // Cloudflare 不給第三方網頁 CORS 授權時，改用 no-cors 只量回應時間
         async function cfPing(signal) {
-          const t0 = performance.now();
-          try {
-            const res = await fetch(`${CF}/__down?bytes=0&r=${rnd()}`, { cache: 'no-store', signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-            await res.arrayBuffer();
-            const t = performance.now() - t0,
-              sd = serverDur(res);
-            return sd > 0 && sd < t ? t - sd : t;
-          } catch (e) {
-            if (signal && signal.aborted) return null;
-            // 後備：沒有 CORS 時仍可量到回應時間（不含伺服器處理時間校正）
+          if (pingCors) {
+            const t0 = performance.now();
             try {
-              const t1 = performance.now();
-              await fetch(`${CF}/__down?bytes=0&r=${rnd()}`, { cache: 'no-store', mode: 'no-cors', signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-              return performance.now() - t1;
-            } catch (e2) {
-              return null;
+              const res = await fetch(`${CF}/__down?bytes=0&r=${rnd()}`, { cache: 'no-store', signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+              await res.arrayBuffer();
+              const t = performance.now() - t0,
+                sd = serverDur(res);
+              return sd > 0 && sd < t ? t - sd : t;
+            } catch (e) {
+              if (signal && signal.aborted) return null;
+              pingCors = false;
             }
           }
+          const t1 = performance.now();
+          try {
+            await fetch(`${CF}/__down?bytes=0&r=${rnd()}`, { cache: 'no-store', mode: 'no-cors', signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+            return performance.now() - t1;
+          } catch (e2) {
+            return null;
+          }
+        }
+        /* 相容模式下載：跨來源又沒有 CORS 時讀不到串流，改用 <script> 載入整包資料，
+           以 Resource Timing 的完成時間估算（內容是隨機資料，載入後 load/error 都只代表「已傳完」）。
+           註：no-cors fetch 不行，未讀取的 body 會卡住不完成。 */
+        let downCors = true;
+        window.addEventListener('error', ev => {
+          if (ev.filename && ev.filename.indexOf(CF) === 0) ev.preventDefault(); // 隨機資料不是合法 JS，吃掉預期中的語法錯誤
+        });
+        try {
+          performance.setResourceTimingBufferSize(3000);
+          performance.addEventListener('resourcetimingbufferfull', () => performance.clearResourceTimings());
+        } catch (e) {}
+        function scriptLoad(url, sig) {
+          return new Promise((resolve, reject) => {
+            if (sig.aborted) return reject(new Error('aborted'));
+            const el = document.createElement('script'),
+              t0 = performance.now();
+            let done = false;
+            const fin = (fn, v) => {
+              if (done) return;
+              done = true;
+              sig.removeEventListener('abort', onAb);
+              el.onload = el.onerror = null;
+              el.remove();
+              fn(v);
+            };
+            const onAb = () => fin(reject, new Error('aborted'));
+            const ready = () => {
+              const es = performance.getEntriesByName(url),
+                e = es.length ? es[es.length - 1] : null;
+              fin(resolve, e && e.responseEnd > 0 ? e.responseEnd - e.startTime : performance.now() - t0);
+            };
+            sig.addEventListener('abort', onAb, { once: true });
+            el.onload = ready;
+            el.onerror = ready;
+            el.async = true;
+            el.referrerPolicy = 'no-referrer';
+            el.src = url;
+            document.head.appendChild(el);
+          });
         }
         function newMeter() {
           const m = { t0: null, total: 0, samples: [], peak: 0, series: [], last: 0 };
@@ -880,19 +923,47 @@
             o.onTick(r, frac);
           }, 100);
           let worker;
+          let compat = false;
           if (kind === 'down') {
+            const pieceBytes = Math.min(o.bytes, 8e6);
+            const compatLoop = async () => {
+              compat = true;
+              meter.start();
+              const n = Math.ceil(o.bytes / pieceBytes);
+              for (let k = 0; k < n && !sig.aborted; k++) {
+                const ms = await scriptLoad(`${CF}/__down?bytes=${pieceBytes}&r=${rnd()}`, sig);
+                if (sig.aborted) return;
+                const mbps = (pieceBytes * 8) / Math.max(ms, 0.001) / 1e3;
+                if (ms < 15 || mbps > 5000) throw new Error('回應速度異常地快，疑似被防火牆／代理的錯誤頁攔截');
+                meter.add(pieceBytes);
+              }
+              if (!firstDone && !sig.aborted) firstDone = meter.snap();
+            };
             worker = async () => {
-              try {
-                const url = o.custom ? o.custom + (o.custom.includes('?') ? '&' : '?') + 'r=' + rnd() : `${CF}/__down?bytes=${o.bytes}&r=${rnd()}`;
-                const res = await fetch(url, { cache: 'no-store', signal: sig, credentials: 'omit', referrerPolicy: 'no-referrer' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const rd = res.body.getReader();
-                for (;;) {
-                  const { done, value } = await rd.read();
-                  if (done) break;
-                  meter.add(value.length);
+              if (o.custom || downCors) {
+                try {
+                  const url = o.custom ? o.custom + (o.custom.includes('?') ? '&' : '?') + 'r=' + rnd() : `${CF}/__down?bytes=${o.bytes}&r=${rnd()}`;
+                  const res = await fetch(url, { cache: 'no-store', signal: sig, credentials: 'omit', referrerPolicy: 'no-referrer' });
+                  if (!res.ok) throw new Error('HTTP ' + res.status);
+                  const rd = res.body.getReader();
+                  for (;;) {
+                    const { done, value } = await rd.read();
+                    if (done) break;
+                    meter.add(value.length);
+                  }
+                  if (!firstDone) firstDone = meter.snap();
+                  return;
+                } catch (e) {
+                  if (sig.aborted) return;
+                  if (o.custom || meter.total > 0 || !(e instanceof TypeError)) {
+                    errs.push(e);
+                    return;
+                  }
+                  downCors = false; // CORS 被擋 → 之後直接走相容模式
                 }
-                if (!firstDone) firstDone = meter.snap();
+              }
+              try {
+                await compatLoop();
               } catch (e) {
                 if (!sig.aborted) errs.push(e);
               }
@@ -925,14 +996,14 @@
             if (signal.aborted) return null;
             throw new Error(
               kind === 'down'
-                ? '下載測試失敗' + (errs[0] ? '：' + errs[0].message : '') + '（伺服器可能不允許跨來源存取，或網路被攔截）'
+                ? '下載測試失敗' + (errs[0] ? '：' + errs[0].message : '') + (o.custom ? '（該網址可能沒有開放 CORS，請換一個有開放跨來源的網址）' : '（測速伺服器可能被網路／防火牆攔截）')
                 : '上傳測試失敗' + (errs[0] ? '：' + errs[0].message : '')
             );
           }
           const end = firstDone && firstDone.t >= 0.8 ? firstDone : meter.snap();
           const avg = (end.b * 8) / 1e6 / Math.max(end.t, 0.05);
           const peakV = Math.max(meter.peak, avg, ...meter.series.map(x => x[1]));
-          return { avg, peak: peakV, bytes: meter.total, sec: meter.snap().t, series: meter.series, loaded, partial: wasCut && !firstDone };
+          return { avg, peak: peakV, bytes: meter.total, sec: meter.snap().t, series: meter.series, loaded, partial: wasCut && !firstDone, compat };
         }
 
         /* ---------- 介面更新 ---------- */
@@ -977,7 +1048,7 @@
             c.push(kv('抖動', fmtMs(r.ping.jit), '相鄰封包延遲差平均'));
             c.push(kv('封包遺失', r.ping.loss.toFixed(1) + ' %', `取樣 ${r.ping.total} 次`));
           }
-          if (r.down) c.push(kv('下載速度', `${fmtSpeed(r.down.avg)} <small style="display:inline">${unitLabel()}</small>`, `峰值 ${fmtSpeed(r.down.peak)} · 共 ${(r.down.bytes / 1e6).toFixed(1)} MB / ${r.down.sec.toFixed(1)} 秒${r.down.partial ? ' · 未傳完（達最長時間或已停止）' : ''}`, 'big'));
+          if (r.down) c.push(kv('下載速度', `${fmtSpeed(r.down.avg)} <small style="display:inline">${unitLabel()}</small>`, `峰值 ${fmtSpeed(r.down.peak)} · 共 ${(r.down.bytes / 1e6).toFixed(1)} MB / ${r.down.sec.toFixed(1)} 秒${r.down.compat ? ' · 相容模式（無 CORS，以完成時間估算，略偏低）' : ''}${r.down.partial ? ' · 未傳完（達最長時間或已停止）' : ''}`, 'big'));
           if (r.up) c.push(kv('上傳速度', `${fmtSpeed(r.up.avg)} <small style="display:inline">${unitLabel()}</small>`, `峰值 ${fmtSpeed(r.up.peak)} · 共 ${(r.up.bytes / 1e6).toFixed(1)} MB / ${r.up.sec.toFixed(1)} 秒${r.up.partial ? ' · 未傳完（達最長時間或已停止）' : ''}`, 'big'));
           const bl = (lbl, arr) => {
             if (!arr || !arr.length) return;
@@ -1199,10 +1270,10 @@
         };
 
         /* ---------- 網站連線測試 ---------- */
-        const T = (name, url, tw) => ({ name, url, tw: !!tw });
+        const T = (name, url, tw, alt) => ({ name, url, tw: !!tw, alt: alt || [] });
         const GROUPS = [
           ['搜尋與入口', [T('Google', 'https://www.google.com/generate_204'), T('Bing', 'https://www.bing.com/favicon.ico'), T('Yahoo 奇摩', 'https://tw.yahoo.com/favicon.ico', 1), T('Wikipedia', 'https://www.wikipedia.org/static/favicon/wikipedia.ico')]],
-          ['社群與通訊', [T('Facebook', 'https://www.facebook.com/favicon.ico'), T('Instagram', 'https://www.instagram.com/favicon.ico'), T('X（Twitter）', 'https://x.com/favicon.ico'), T('LINE', 'https://line.me/favicon.ico', 1), T('Discord', 'https://discord.com/favicon.ico'), T('Telegram', 'https://telegram.org/favicon.ico')]],
+          ['社群與通訊', [T('Facebook', 'https://www.facebook.com/favicon.ico', 0, ['https://connect.facebook.net/en_US/sdk.js']), T('Instagram', 'https://www.instagram.com/favicon.ico'), T('X（Twitter）', 'https://x.com/favicon.ico', 0, ['https://platform.twitter.com/widgets.js']), T('LINE', 'https://line.me/favicon.ico', 1), T('Discord', 'https://discord.com/favicon.ico'), T('Telegram', 'https://telegram.org/favicon.ico')]],
           ['影音串流', [T('YouTube', 'https://www.youtube.com/generate_204'), T('Netflix', 'https://www.netflix.com/favicon.ico'), T('Spotify', 'https://open.spotify.com/favicon.ico'), T('Twitch', 'https://www.twitch.tv/favicon.ico')]],
           ['雲端與工作', [T('Microsoft', 'https://www.microsoft.com/favicon.ico'), T('Apple', 'https://www.apple.com/favicon.ico'), T('Amazon', 'https://www.amazon.com/favicon.ico'), T('GitHub', 'https://github.com/favicon.ico'), T('Zoom', 'https://zoom.us/favicon.ico'), T('Dropbox', 'https://www.dropbox.com/favicon.ico')]],
           ['CDN 與 DNS', [T('Cloudflare', 'https://www.cloudflare.com/cdn-cgi/trace'), T('Cloudflare 測速', CF + '/__down?bytes=0'), T('Cloudflare DNS 1.1.1.1', 'https://1.1.1.1/cdn-cgi/trace'), T('Google DNS', 'https://dns.google/resolve?name=example.com'), T('jsDelivr', 'https://cdn.jsdelivr.net/favicon.ico')]],
@@ -1292,7 +1363,7 @@
         };
         $('addUrl').addEventListener('keydown', e => e.key === 'Enter' && $('addBtn').click());
 
-        async function probe(url, signal, timeout = 4000) {
+        async function probe(url, signal, timeout = 4000, head = false) {
           const c = new AbortController(),
             to = setTimeout(() => c.abort(), timeout);
           const onAbort = () => c.abort();
@@ -1301,13 +1372,44 @@
           const t0 = performance.now();
           try {
             await fetch(u, { mode: 'no-cors', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: c.signal });
-            return performance.now() - t0;
+            const dt = performance.now() - t0;
+            if (head) c.abort(); // 只要回應標頭就好，立刻中止避免整頁下載（未讀的 body 也會卡住連線）
+            return dt;
           } catch (e) {
             return null;
           } finally {
             clearTimeout(to);
             if (signal) signal.removeEventListener('abort', onAbort);
           }
+        }
+        /* 有些網站（如 Facebook、X）會在 favicon 等資源加 Cross-Origin-Resource-Policy，
+           其他網頁用 no-cors 載入會被瀏覽器直接擋下，看起來就像「失敗」。
+           所以依序嘗試：原網址 → 備用網址 → /robots.txt → 首頁，記住第一個成功的。 */
+        const urlPick = new Map();
+        async function pickUrl(t, signal) {
+          if (urlPick.has(t.name)) return urlPick.get(t.name);
+          const cands = [[t.url, false]],
+            seen = new Set([t.url]);
+          let origin = '';
+          try {
+            origin = new URL(t.url).origin;
+          } catch (e) {}
+          [...(t.alt || []), origin && origin + '/robots.txt', origin && origin + '/'].forEach(u => {
+            if (u && !seen.has(u)) {
+              seen.add(u);
+              cands.push([u, true]);
+            }
+          });
+          for (const [u, head] of cands) {
+            if (signal && signal.aborted) break;
+            const v = await probe(u, signal, 6000, head);
+            if (v != null) {
+              const r = { url: u, head };
+              urlPick.set(t.name, r);
+              return r;
+            }
+          }
+          return { url: t.url, head: false };
         }
         async function resolveIp(host) {
           const ips = new Set();
@@ -1355,7 +1457,7 @@
                 const tot = r.xs.length + r.lost;
                 const lossPct = tot ? (r.lost / tot) * 100 : 0;
                 const ipTxt = r.ips == null ? (dns ? '解析中…' : '—') : r.ips.length ? r.ips.slice(0, 3).map(esc).join('<br>') : '—';
-                return `<tr><td class="l">${esc(r.t.name)}<br><small style="color:var(--mut)">${esc(hostOf(r.t.url))}</small></td><td class="l" style="white-space:normal;font-size:12px">${ipTxt}</td><td>${fmtMs(r.xs.length ? Math.min(...r.xs) : null)}</td><td><b>${fmtMs(a)}</b></td><td>${fmtMs(r.xs.length ? Math.max(...r.xs) : null)}</td><td>${fmtMs(jitterOf(r.xs))}</td><td>${tot ? lossPct.toFixed(0) + ' %' : '—'}${r.done && !r.xs.length ? ' <span class="pill bad">失敗</span>' : ''}</td><td class="l"><span class="mini"><i style="width:${a ? Math.max(4, (a / mx) * 100) : 0}%"></i></span></td></tr>`;
+                return `<tr><td class="l">${esc(r.t.name)}<br><small style="color:var(--mut)">${esc(hostOf(r.t.url))}${r.pk && r.pk.url !== r.t.url ? '（改用備用網址）' : ''}</small></td><td class="l" style="white-space:normal;font-size:12px">${ipTxt}</td><td>${fmtMs(r.xs.length ? Math.min(...r.xs) : null)}</td><td><b>${fmtMs(a)}</b></td><td>${fmtMs(r.xs.length ? Math.max(...r.xs) : null)}</td><td>${fmtMs(jitterOf(r.xs))}</td><td>${tot ? lossPct.toFixed(0) + ' %' : '—'}${r.done && !r.xs.length ? ' <span class="pill bad">失敗</span>' : ''}</td><td class="l"><span class="mini"><i style="width:${a ? Math.max(4, (a / mx) * 100) : 0}%"></i></span></td></tr>`;
               })
               .join('');
           };
@@ -1366,9 +1468,11 @@
             while (idx < rows.length && !ctl.signal.aborted) {
               const r = rows[idx++];
               if (dns) resolveIp(hostOf(r.t.url)).then(ips => ((r.ips = ips), render()));
-              await probe(r.t.url, ctl.signal); // 暖機：建立連線，不計入
+              const pk = await pickUrl(r.t, ctl.signal);
+              r.pk = pk;
+              await probe(pk.url, ctl.signal, 4000, pk.head); // 暖機：建立連線，不計入
               for (let i = 0; i < n && !ctl.signal.aborted; i++) {
-                const v = await probe(r.t.url, ctl.signal);
+                const v = await probe(pk.url, ctl.signal, 4000, pk.head);
                 v == null ? r.lost++ : r.xs.push(v);
                 render();
                 await sleep(80);
@@ -1382,7 +1486,9 @@
           await Promise.all(Array.from({ length: Math.min(3, rows.length) }, worker));
           rows.sort((x, y) => (x.xs.length ? mean(x.xs) : 1e9) - (y.xs.length ? mean(y.xs) : 1e9));
           render();
-          $('siteMsg').textContent = ctl.signal.aborted ? '已停止' : `測試完成（已依平均延遲由快到慢排序）`;
+          $('siteMsg').textContent = ctl.signal.aborted
+            ? '已停止'
+            : `測試完成（已依平均延遲由快到慢排序）` + (rows.some(r => !r.xs.length) ? '。標示「失敗」者：可能是網路／DNS 被封鎖，或該網站禁止被其他網頁探測（瀏覽器端分不出這兩種，可按 F12 → Network 查看）' : '');
           siteState.running = false;
           $('siteGo').disabled = false;
           $('siteStop').disabled = true;
@@ -1422,9 +1528,10 @@
           $('monTarget').disabled = true;
           const t0 = performance.now();
           const ctl = mon.ctl;
-          await probe(t.url, ctl.signal);
+          const pk = await pickUrl(t, ctl.signal);
+          await probe(pk.url, ctl.signal, 4000, pk.head);
           while (!ctl.signal.aborted) {
-            const v = await probe(t.url, ctl.signal);
+            const v = await probe(pk.url, ctl.signal, 4000, pk.head);
             if (ctl.signal.aborted) break;
             mon.n++;
             if (v == null) mon.lost++;
