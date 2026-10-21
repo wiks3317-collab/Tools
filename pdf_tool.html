@@ -239,9 +239,14 @@
               accept=".pdf,application/pdf,image/*,.zip,.jpg,.jpeg,.png,.bmp,.gif,.webp,.tif,.tiff"
             />
           </div>
+          <div id="parseArea" style="display: none; margin: 10px 0">
+            <div class="progress-bar-bg"><div id="parseFill" class="progress-bar-fill"></div></div>
+            <div id="parseText" style="font-size: 13px; margin: 4px 0"></div>
+            <button type="button" id="parseCancel">取消解析</button>
+          </div>
           <div id="fileList"></div>
           <div class="adv-hint" style="margin-top: 6px">
-            PDF 會自動逐頁處理：有文字層的頁面直接擷取文字（不需 OCR，較快較準）；掃描型頁面則自動轉成圖片並用 OCR 辨識。圖片（JPG、PNG 等）或 ZIP 內的圖片會直接用 OCR 辨識，可與 PDF 混合上傳。
+            PDF 會自動逐頁處理：有文字層的頁面直接擷取文字（不需 OCR，較快較準）；掃描型頁面則自動轉成圖片並用 OCR 辨識。圖片（JPG、PNG 等）或 ZIP 內的圖片會直接用 OCR 辨識，可與 PDF 混合上傳。<br />檔案上限：圖片（含 ZIP 內的圖片）合計最多 250 張、總大小 128 MB；單一 ZIP 不可超過 128 MB。PDF 沒有硬性上限，但頁數超過 200 頁時會先請你確認（每頁會轉成圖片，頁數越多越吃記憶體）。
           </div>
         </section>
 
@@ -276,6 +281,14 @@
               ><input type="radio" name="outputMode" value="separate" checked /> 每頁／每張圖片各自一個 .txt（PDF 會連同頁面圖片一起打包成 .zip）</label
             >
             <label><input type="radio" name="outputMode" value="merged" /> 合併成一份 .txt（純文字，不含圖片）</label>
+            <label><input type="radio" name="outputMode" value="md" /> Markdown（.md ＋ 頁面圖片，打包成 .zip）</label>
+            <div id="mdOptions" style="display: none; margin: 4px 0 8px 22px; font-size: 13px">
+              文字呈現方式：
+              <select id="mdTextStyle">
+                <option value="plain">一般文字（自動跳脫特殊符號，適合文章）</option>
+                <option value="code">程式碼區塊（原樣保留換行與空白，適合表格截圖、ID 碼）</option>
+              </select>
+            </div>
             <label
               ><input type="radio" name="outputMode" value="html" /> HTML 報告（文字＋圖片放在同一份檔案，版面最接近原始
               PDF，想保留圖片建議選這個）</label
@@ -692,94 +705,178 @@
         return text.trim();
       }
 
-      // Expands one PDF file into one pendingFiles entry per page. Pages with a
-      // real text layer get pdfText set (OCR is skipped for them); pages without
-      // one (scanned pages) are left for the normal OCR pipeline to handle.
-      async function expandPdf(file) {
+      // ---------- 解析進度（PDF 逐頁顯示）----------
+      let parsing = false;
+      let cancelParse = false;
+      const MAX_PDF_PAGES_WARN = 200;
+      const parseArea = $('parseArea');
+      const parseFill = $('parseFill');
+      const parseText = $('parseText');
+      const parseCancel = $('parseCancel');
+      parseCancel.addEventListener('click', () => {
+        cancelParse = true;
+        parseCancel.disabled = true;
+        parseText.textContent = '正在取消...';
+      });
+      function setParseProgress(text, done, total) {
+        parseText.textContent = text;
+        parseFill.style.width = (total ? Math.round((done / total) * 100) : 0) + '%';
+      }
+      const yieldToBrowser = () => new Promise(r => setTimeout(r));
+
+      // Expands one PDF file into one pendingFiles entry per page. Each page is
+      // added (and shown in the list) as soon as it is parsed, so the user sees
+      // progress instead of waiting for the whole file. Pages with a real text
+      // layer get pdfText set (OCR is skipped for them); scanned pages are left
+      // for the normal OCR pipeline.
+      async function expandPdf(file, prefix) {
         const buf = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-        const baseName = file.name.replace(/\.pdf$/i, '');
-        const entries = [];
-        for (let p = 1; p <= pdf.numPages; p++) {
-          const page = await pdf.getPage(p);
-          const blob = await renderPdfPageToBlob(page, 2);
-          const extracted = await extractPdfPageText(page);
-          const hasText = extracted.replace(/\s/g, '').length > 3;
-          entries.push({
-            name: `${baseName}_p${String(p).padStart(2, '0')}.png`,
-            blob,
-            pdfText: hasText ? extracted : null,
-            isPdfPage: true,
-          });
+        try {
+          const total = pdf.numPages;
+          if (
+            total > MAX_PDF_PAGES_WARN &&
+            !confirm(`${file.name} 共 ${total} 頁。每頁都會轉成圖片並佔用記憶體，頁數很多時瀏覽器可能變慢或當機（手機尤其明顯）。\n\n要繼續解析嗎？`)
+          ) {
+            return;
+          }
+          const baseName = file.name.replace(/\.pdf$/i, '');
+          for (let p = 1; p <= total; p++) {
+            if (cancelParse) return;
+            setParseProgress(`正在解析 ${file.name}：第 ${p} / ${total} 頁${prefix}`, p - 1, total);
+            const page = await pdf.getPage(p);
+            const blob = await renderPdfPageToBlob(page, 2);
+            const extracted = await extractPdfPageText(page);
+            page.cleanup();
+            const hasText = extracted.replace(/\s/g, '').length > 3;
+            addPendingEntry({
+              name: `${baseName}_p${String(p).padStart(2, '0')}.png`,
+              blob,
+              pdfText: hasText ? extracted : null,
+              isPdfPage: true,
+            });
+            setParseProgress(`已解析 ${file.name}：${p} / ${total} 頁${prefix}`, p, total);
+            await yieldToBrowser();
+          }
+        } finally {
+          await pdf.destroy();
         }
-        return entries;
       }
 
       async function handleFiles(fileArray) {
-        for (const f of fileArray) {
-          const lowerName = f.name.toLowerCase();
-          if (lowerName.endsWith('.pdf') || f.type === 'application/pdf') {
-            try {
-              const entries = await expandPdf(f);
-              pendingFiles.push(...entries);
-            } catch (e) {
-              alert('無法解析 PDF ' + f.name + '：' + e.message);
-            }
-          } else if (lowerName.endsWith('.zip')) {
-            if (f.size > MAX_ZIP_BYTES) {
-              alert('單一 ZIP 壓縮檔不可超過 128 MB，請先分割或縮小檔案。');
-              continue;
-            }
-            const beforeZip = pendingFiles.length;
-            const beforeCount = imageItems().length;
-            const beforeBytes = imageBytes();
-            try {
-              const zip = await JSZip.loadAsync(f);
-              let zipCount = 0,
-                zipBytes = 0;
-              for (const relPath in zip.files) {
-                const entry = zip.files[relPath];
-                if (entry.dir || !isImageName(relPath)) continue;
-                if (beforeCount + ++zipCount > MAX_ZIP_IMAGES) throw new Error(`ZIP 圖片數量超過 ${MAX_ZIP_IMAGES} 張上限`);
-                const expected = Number(entry._data && entry._data.uncompressedSize) || 0;
-                if (expected && (expected > MAX_ZIP_BYTES || beforeBytes + zipBytes + expected > MAX_PENDING_BYTES))
-                  throw new Error('單一 ZIP 或待處理圖片解壓後超過 128 MB 上限');
-                const blob = await entry.async('blob');
-                zipBytes += blob.size;
-                if (blob.size > MAX_ZIP_BYTES || beforeBytes + zipBytes > MAX_PENDING_BYTES)
-                  throw new Error('單一 ZIP 或待處理圖片總大小超過 128 MB 上限');
-                // 保留相對路徑，避免不同資料夾的同名圖檔輸出時互相覆蓋。
-                pendingFiles.push({ name: relPath, blob });
-              }
-            } catch (e) {
-              pendingFiles.splice(beforeZip);
-              alert('無法完整解壓縮 ' + f.name + '：' + e.message + '\n如 ZIP 含大量／超大圖片，請分批處理。');
-            }
-          } else if (f.type.startsWith('image/') || isImageName(f.name)) {
-            if (imageItems().length >= MAX_ZIP_IMAGES || imageBytes() + f.size > MAX_PENDING_BYTES) {
-              alert('待處理圖片數量上限為 250 張、總大小上限為 128 MB，請分批處理。');
-              continue;
-            }
-            pendingFiles.push({ name: f.name, blob: f });
-          }
+        if (parsing) {
+          alert('正在解析檔案，請等目前的解析完成（或按「取消解析」）後再加入檔案。');
+          return;
         }
-        renderFileList();
+        parsing = true;
+        cancelParse = false;
+        parseCancel.disabled = false;
+        parseArea.style.display = 'block';
+        parseFill.style.width = '0%';
+        startBtn.disabled = true;
+        try {
+          for (let n = 0; n < fileArray.length; n++) {
+            if (cancelParse) break;
+            const f = fileArray[n];
+            const prefix = fileArray.length > 1 ? `（檔案 ${n + 1}/${fileArray.length}）` : '';
+            const lowerName = f.name.toLowerCase();
+            if (lowerName.endsWith('.pdf') || f.type === 'application/pdf') {
+              const before = pendingFiles.length;
+              try {
+                await expandPdf(f, prefix);
+                if (cancelParse) {
+                  pendingFiles.splice(before); // 取消時不保留只解析到一半的 PDF
+                  renderFileList();
+                }
+              } catch (e) {
+                pendingFiles.splice(before);
+                renderFileList();
+                alert('無法解析 PDF ' + f.name + '：' + e.message);
+              }
+            } else if (lowerName.endsWith('.zip')) {
+              if (f.size > MAX_ZIP_BYTES) {
+                alert('單一 ZIP 壓縮檔不可超過 128 MB，請先分割或縮小檔案。');
+                continue;
+              }
+              setParseProgress(`正在解壓縮 ${f.name}...${prefix}`, 0, 0);
+              const beforeZip = pendingFiles.length;
+              const beforeCount = imageItems().length;
+              const beforeBytes = imageBytes();
+              const added = [];
+              try {
+                const zip = await JSZip.loadAsync(f);
+                let zipCount = 0,
+                  zipBytes = 0;
+                for (const relPath in zip.files) {
+                  const entry = zip.files[relPath];
+                  if (entry.dir || !isImageName(relPath)) continue;
+                  if (beforeCount + ++zipCount > MAX_ZIP_IMAGES) throw new Error(`ZIP 圖片數量超過 ${MAX_ZIP_IMAGES} 張上限`);
+                  const expected = Number(entry._data && entry._data.uncompressedSize) || 0;
+                  if (expected && (expected > MAX_ZIP_BYTES || beforeBytes + zipBytes + expected > MAX_PENDING_BYTES))
+                    throw new Error('單一 ZIP 或待處理圖片解壓後超過 128 MB 上限');
+                  const blob = await entry.async('blob');
+                  zipBytes += blob.size;
+                  if (blob.size > MAX_ZIP_BYTES || beforeBytes + zipBytes > MAX_PENDING_BYTES)
+                    throw new Error('單一 ZIP 或待處理圖片總大小超過 128 MB 上限');
+                  // 保留相對路徑，避免不同資料夾的同名圖檔輸出時互相覆蓋。
+                  added.push({ name: relPath, blob });
+                  setParseProgress(`正在解壓縮 ${f.name}：已取出 ${added.length} 張圖片${prefix}`, 0, 0);
+                }
+                added.forEach(addPendingEntry);
+              } catch (e) {
+                pendingFiles.splice(beforeZip);
+                renderFileList();
+                alert('無法完整解壓縮 ' + f.name + '：' + e.message + '\n如 ZIP 含大量／超大圖片，請分批處理。');
+              }
+            } else if (f.type.startsWith('image/') || isImageName(f.name)) {
+              if (imageItems().length >= MAX_ZIP_IMAGES || imageBytes() + f.size > MAX_PENDING_BYTES) {
+                alert('待處理圖片數量上限為 250 張、總大小上限為 128 MB，請分批處理。');
+                continue;
+              }
+              addPendingEntry({ name: f.name, blob: f });
+            }
+          }
+        } finally {
+          parsing = false;
+          parseArea.style.display = 'none';
+          renderFileList();
+        }
       }
 
+      // ---------- 檔案清單（可逐筆新增，不必整份重畫）----------
+      function fileRowHtml(f) {
+        return `<div class="file-row"><span>${escapeHtml(f.name)}</span></div>`;
+      }
+      function ensureFileListDom() {
+        if (!document.getElementById('fileRows')) {
+          fileListEl.innerHTML = '<div id="fileSummary"></div><div id="fileRows"></div>';
+        }
+      }
+      function updateFileSummary() {
+        ensureFileListDom();
+        document.getElementById('fileSummary').innerHTML =
+          `已加入 ${pendingFiles.length} 項（PDF 頁面 ${pendingFiles.length - imageItems().length}、圖片 ${imageItems().length}）　<span class="clear-link" id="clearLink">清除全部</span>`;
+        document.getElementById('clearLink').addEventListener('click', () => {
+          if (parsing) return;
+          pendingFiles = [];
+          renderFileList();
+        });
+      }
+      function addPendingEntry(f) {
+        pendingFiles.push(f);
+        updateFileSummary();
+        document.getElementById('fileRows').insertAdjacentHTML('beforeend', fileRowHtml(f));
+        fileListEl.scrollTop = fileListEl.scrollHeight;
+      }
       function renderFileList() {
         if (!pendingFiles.length) {
           fileListEl.innerHTML = '';
           startBtn.disabled = true;
           return;
         }
-        fileListEl.innerHTML =
-          `已加入 ${pendingFiles.length} 項（PDF 頁面 ${pendingFiles.length - imageItems().length}、圖片 ${imageItems().length}）　<span class="clear-link" id="clearLink">清除全部</span><br>` +
-          pendingFiles.map(f => `<div class="file-row"><span>${escapeHtml(f.name)}</span></div>`).join('');
-        document.getElementById('clearLink').addEventListener('click', () => {
-          pendingFiles = [];
-          renderFileList();
-        });
-        startBtn.disabled = false;
+        updateFileSummary();
+        document.getElementById('fileRows').innerHTML = pendingFiles.map(fileRowHtml).join('');
+        startBtn.disabled = parsing;
       }
 
       fileInput.addEventListener('change', e => {
@@ -956,6 +1053,64 @@ ${imageSections}
 </body></html>`;
       }
 
+      // ---------- Markdown 輸出 ----------
+      function mdEscapeLine(line) {
+        return line
+          .replace(/([\\`*_\[\]<>|~])/g, '\\$1')
+          .replace(/^(\s*)([#>+\-])/, '$1\\$2')
+          .replace(/^(\s*)(\d+)([.)])/, '$1$2\\$3');
+      }
+      // 一般文字：跳脫特殊符號，並用「行尾兩個空白」保留原本的換行
+      function mdText(text) {
+        return text.replace(/\r/g, '').split('\n').map(mdEscapeLine).join('  \n');
+      }
+      // 程式碼區塊：原樣保留；圍欄長度依內容中的反引號自動加長
+      function mdCode(text) {
+        const runs = text.match(/`+/g) || [];
+        const n = Math.max(3, ...runs.map(r => r.length + 1));
+        const fence = '`'.repeat(n);
+        return fence + '\n' + text.replace(/\r/g, '').trim() + '\n' + fence;
+      }
+      async function buildMarkdownZip(results, style) {
+        const zip = new JSZip();
+        const render = style === 'code' ? mdCode : mdText;
+        const pad = Math.max(3, String(results.length).length);
+        let md = `# OCR 辨識結果\n\n> 產生時間：${new Date().toLocaleString('zh-TW')}　·　共 ${results.length} 項\n`;
+        results.forEach((r, idx) => {
+          const no = String(idx + 1).padStart(pad, '0');
+          md += `\n---\n\n## ${idx + 1}. ${mdEscapeLine(r.name)}\n\n`;
+          if (r.imageBlob) {
+            const m = r.name.match(/\.([a-z0-9]+)$/i);
+            const ext = !r.isPdfPage && m && IMAGE_EXT.includes(m[1].toLowerCase()) ? m[1].toLowerCase() : 'png';
+            const base = r.name.replace(/\.[^.\/]+$/, '').split('/').pop();
+            const safe = base.replace(/[\\\/:*?"<>|\s#%()\[\]]+/g, '_');
+            const file = `${no}_${safe}.${ext}`;
+            zip.file('images/' + file, r.imageBlob);
+            md += `![${r.name.replace(/[\[\]]/g, '')}](images/${encodeURI(file)})\n\n`;
+          }
+          if (r.error) {
+            md += `> ⚠️ 辨識失敗：${r.error}\n`;
+            return;
+          }
+          const t = (r.ocrText || '').trim();
+          md += t ? render(t) + '\n' : '_（此項沒有辨識到文字）_\n';
+          if (r.transText) {
+            md += `\n**翻譯（${r.tgtLabel}）**\n\n`;
+            md += style === 'code' ? mdCode(r.transText) + '\n' : mdText(r.transText).split('\n').map(l => '> ' + l).join('\n') + '\n';
+          }
+          if (r.transErr) md += `\n> ⚠️ 翻譯失敗：${r.transErr}\n`;
+        });
+        zip.file('ocr_result.md', md);
+        const blob = await zip.generateAsync({ type: 'blob' });
+        return { blob, md };
+      }
+      document.querySelectorAll('input[name="outputMode"]').forEach(r =>
+        r.addEventListener('change', () => {
+          document.getElementById('mdOptions').style.display =
+            document.querySelector('input[name="outputMode"]:checked').value === 'md' ? 'block' : 'none';
+        })
+      );
+
       startBtn.addEventListener('click', async () => {
         if (!pendingFiles.length) return;
         startBtn.disabled = true;
@@ -1099,21 +1254,25 @@ ${imageSections}
           const outcome = itemOutcome[i];
           if (outcome.error) {
             setItemLabel(i, f.name + '：失敗（' + outcome.error + '）');
-            results.push({ name: f.name, text: '[辨識失敗：' + outcome.error + ']', isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
+            results.push({ name: f.name, text: '[辨識失敗：' + outcome.error + ']', error: outcome.error, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
             continue;
           }
           let finalText = outcome.text;
+          let transText = null,
+            transErr = null;
           if (doTranslate) {
             setItemLabel(i, f.name + '：翻譯中...');
             try {
               const translated = await translateText(outcome.text, srcIso, tgtIso);
               finalText = outcome.text + `\n\n----- 翻譯（${tgtLabel}）-----\n` + translated;
+              transText = translated;
             } catch (terr) {
               finalText = outcome.text + `\n\n----- 翻譯失敗：${terr.message} -----`;
+              transErr = terr.message;
             }
           }
           setItemLabel(i, f.name + '：完成');
-          results.push({ name: f.name, text: finalText, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
+          results.push({ name: f.name, text: finalText, ocrText: outcome.text, transText, transErr, tgtLabel, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
         }
 
         if (mode === 'merged') {
@@ -1122,6 +1281,13 @@ ${imageSections}
           resultFilename = 'ocr_merged_result.txt';
           document.getElementById('previewText').textContent =
             merged.length > 3000 ? merged.slice(0, 3000) + '\n...(預覽截斷，請下載查看完整內容)' : merged;
+        } else if (mode === 'md') {
+          const out = await buildMarkdownZip(results, document.getElementById('mdTextStyle').value);
+          resultBlob = out.blob;
+          resultFilename = 'ocr_markdown.zip';
+          document.getElementById('previewText').textContent =
+            '已產生 Markdown 壓縮檔（ocr_result.md ＋ images/ 資料夾），請解壓縮後用 Markdown 編輯器開啟，圖片會自動對應。\n\n' +
+            (out.md.length > 3000 ? out.md.slice(0, 3000) + '\n...(預覽截斷，請下載查看完整內容)' : out.md);
         } else if (mode === 'html') {
           const html = await buildHtmlReport(results);
           resultBlob = new Blob([html], { type: 'text/html;charset=utf-8' });
