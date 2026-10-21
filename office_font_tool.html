@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Office 字型批次修改</title>
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
+    <meta name="referrer" content="no-referrer" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%A4%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <script src="common.js"></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .msg {
+        margin-top: 8px;
+      }
+      h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      select {
+        font: inherit;
+        font-size: 13px;
+        border: 1px solid var(--bd);
+        border-radius: 6px;
+      }
+      input[type='text'] {
+        font: inherit;
+        font-size: 13px;
+      }
+      option {
+        background: var(--card);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+      .opt {
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+      .opt label {
+        gap: 4px;
+      }
+      .opt input[type='text'] {
+        width: 200px;
+      }
+      .opt input[type='number'] {
+        width: 80px;
+      }
+      #statusList a {
+        margin-left: 8px;
+      }
+      #statusList li.err {
+        color: #bf616a;
+      }
+      #statusList li.ok .st {
+        color: var(--pri);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <a class="back" href="index.html">← 返回小工具集首頁</a>
+          <h1>Office 字型批次修改</h1>
+          <p class="tagline">把 Word、Excel、PowerPoint 檔案整份文件的字型與字體大小，一次改成你指定的設定，可一次處理多個檔案。</p>
+        </div>
+        <div class="themes" id="themes">主題：</div>
+      </header>
+      <p class="privacy">檔案只在你的瀏覽器本機處理，不會上傳。輸出為新檔（檔名加上「_改字型」），原檔不會被修改。</p>
+      <section>
+        <h2><span class="num">1</span>加入檔案</h2>
+        <div class="drop-zone" id="dz">
+          拖曳檔案到這裡，或點擊選擇（可多選；docx、xlsx、pptx）<input type="file" id="fin" multiple accept=".docx,.xlsx,.pptx" />
+        </div>
+        <div id="fileList"></div>
+        <div class="row"><span class="clear-link" id="clr">清空清單</span></div>
+        <p class="adv-hint">不支援舊版 doc／xls／ppt、加密檔與巨集檔（docm、xlsm、pptm）。</p>
+      </section>
+      <section>
+        <h2><span class="num">2</span>設定</h2>
+        <div class="opt">
+          <label>西文字型 <input type="text" id="lat" list="dlLat" placeholder="例：Arial（留空＝不改）" autocomplete="off" /></label>
+          <label>中文字型 <input type="text" id="ea" list="dlEa" placeholder="例：微軟正黑體（留空＝不改）" autocomplete="off" /></label>
+        </div>
+        <datalist id="dlLat">
+          <option value="Arial"></option>
+          <option value="Calibri"></option>
+          <option value="Times New Roman"></option>
+          <option value="Georgia"></option>
+          <option value="Verdana"></option>
+          <option value="Consolas"></option>
+        </datalist>
+        <datalist id="dlEa">
+          <option value="微軟正黑體"></option>
+          <option value="新細明體"></option>
+          <option value="標楷體"></option>
+          <option value="Noto Sans TC"></option>
+          <option value="微軟雅黑"></option>
+          <option value="宋体"></option>
+        </datalist>
+        <div class="radio-group">
+          <label><input type="radio" name="m" value="keep" checked />不改大小</label>
+          <label
+            ><input type="radio" name="m" value="scale" />依比例縮放 ×
+            <input type="number" id="k" value="1.1" step="0.05" min="0.3" max="5" />（保留標題與內文的大小層次）</label
+          >
+          <label><input type="radio" name="m" value="fixed" />全部統一成 <input type="number" id="n" value="12" step="0.5" min="1" max="200" /> pt</label>
+        </div>
+        <p class="adv-hint">
+          Excel 一個儲存格只有單一字型，會使用「中文字型」；留空則使用「西文字型」。字體放大後，Word 換行分頁、PPT
+          文字方塊、Excel 欄寬列高可能需要手動調整；開啟檔案的電腦若沒有安裝所選字型，Office 會改用替代字型。
+        </p>
+      </section>
+      <section>
+        <h2><span class="num">3</span>處理與下載</h2>
+        <div class="row"><button class="pri" id="go" disabled>開始處理</button><button id="dl" style="display: none">下載全部（ZIP）</button></div>
+        <div id="progressArea" style="display: none">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar"></div></div>
+          <div id="progressText"></div>
+          <ul id="statusList"></ul>
+        </div>
+      </section>
+      <footer>JSZip　·　僅供內部作業使用</footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+      const $ = id => document.getElementById(id);
+      const NS = {
+        w: 'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+        a: 'http://schemas.openxmlformats.org/drawingml/2006/main',
+        s: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+      };
+      const EXT = ['docx', 'xlsx', 'pptx'];
+      let files = [],
+        outs = [];
+
+      const fmt = n => (n < 1048576 ? (n / 1024).toFixed(0) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
+      const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      const extOf = f => f.name.split('.').pop().toLowerCase();
+      const child = (p, ns, n) => [...p.children].find(c => c.localName === n && c.namespaceURI === ns);
+      const insBefore = (p, e, names) => {
+        const r = [...p.children].find(c => names.includes(c.localName));
+        r ? p.insertBefore(e, r) : p.appendChild(e);
+      };
+      const getOpt = () => ({
+        lat: $('lat').value.trim(),
+        ea: $('ea').value.trim(),
+        mode: document.querySelector('input[name=m]:checked').value,
+        n: parseFloat($('n').value) || 12,
+        k: parseFloat($('k').value) || 1,
+      });
+      // 回傳新的字體大小（pt，最小單位 0.5）
+      const pt = (v, o) => (o.mode === 'fixed' ? o.n : Math.max(1, Math.round(v * o.k * 2) / 2));
+
+      // 主題字型（Word／Excel／PowerPoint 共用）
+      function theme(doc, o) {
+        const A = NS.a;
+        for (const t of ['majorFont', 'minorFont']) {
+          const m = doc.getElementsByTagNameNS(A, t)[0];
+          if (!m) continue;
+          const L = child(m, A, 'latin'),
+            E = child(m, A, 'ea');
+          if (o.lat && L) L.setAttribute('typeface', o.lat);
+          if (o.ea) {
+            if (E) E.setAttribute('typeface', o.ea);
+            [...m.children].filter(c => c.localName === 'font').forEach(c => c.remove());
+          }
+        }
+      }
+
+      // Word：每個 w:rPr 補上／改寫 w:rFonts 與 w:sz、w:szCs
+      function word(doc, o, isStyles) {
+        const W = NS.w,
+          AFTER = ['szCs', 'highlight', 'u', 'effect', 'bdr', 'shd', 'fitText', 'vertAlign', 'rtl', 'cs', 'em', 'lang', 'eastAsianLayout', 'specVanish', 'oMath'];
+        if (o.mode !== 'keep' && isStyles) {
+          const dd = doc.getElementsByTagNameNS(W, 'rPrDefault')[0],
+            r = dd && dd.getElementsByTagNameNS(W, 'rPr')[0];
+          if (r)
+            for (const n of ['sz', 'szCs'])
+              if (!child(r, W, n)) {
+                const e = doc.createElementNS(W, 'w:' + n);
+                e.setAttributeNS(W, 'w:val', '20');
+                insBefore(r, e, n === 'sz' ? AFTER : AFTER.slice(1));
+              }
+        }
+        for (const r of [...doc.getElementsByTagNameNS(W, 'rPr')]) {
+          if (o.lat || o.ea) {
+            let f = child(r, W, 'rFonts');
+            if (!f) {
+              f = doc.createElementNS(W, 'w:rFonts');
+              const st = child(r, W, 'rStyle');
+              st ? st.after(f) : r.prepend(f);
+            }
+            if (o.lat) {
+              for (const a of ['asciiTheme', 'hAnsiTheme', 'cstheme']) f.removeAttributeNS(W, a);
+              for (const a of ['ascii', 'hAnsi', 'cs']) f.setAttributeNS(W, 'w:' + a, o.lat);
+            }
+            if (o.ea) {
+              f.removeAttributeNS(W, 'eastAsiaTheme');
+              f.setAttributeNS(W, 'w:eastAsia', o.ea);
+            }
+          }
+          if (o.mode !== 'keep')
+            for (const n of ['sz', 'szCs']) {
+              const e = child(r, W, n),
+                v = e && parseFloat(e.getAttributeNS(W, 'val'));
+              if (v) e.setAttributeNS(W, 'w:val', Math.round(pt(v / 2, o) * 2));
+            }
+        }
+      }
+
+      // Excel：樣式表的 <font>，以及共用字串／註解裡的 <rPr>
+      function xl(doc, o, rich) {
+        const S = NS.s,
+          nm = o.ea || o.lat;
+        for (const f of [...doc.getElementsByTagNameNS(S, rich ? 'rPr' : 'font')]) {
+          if (nm) {
+            const n = child(f, S, rich ? 'rFont' : 'name');
+            if (n) n.setAttribute('val', nm);
+            const sc = child(f, S, 'scheme');
+            if (sc) sc.remove();
+          }
+          if (o.mode !== 'keep') {
+            const z = child(f, S, 'sz'),
+              v = z && parseFloat(z.getAttribute('val'));
+            if (v) z.setAttribute('val', pt(v, o));
+          }
+        }
+      }
+
+      // PowerPoint／圖表：DrawingML 的 a:rPr、a:defRPr、a:endParaRPr
+      function dml(doc, o) {
+        const A = NS.a,
+          rm = [...(o.lat ? ['latin', 'cs'] : []), ...(o.ea ? ['ea'] : [])];
+        for (const tag of ['rPr', 'defRPr', 'endParaRPr'])
+          for (const r of [...doc.getElementsByTagNameNS(A, tag)]) {
+            if (rm.length) {
+              rm.forEach(n => {
+                const e = child(r, A, n);
+                if (e) e.remove();
+              });
+              const pre = r.prefix ? r.prefix + ':' : '',
+                mk = (n, v) => {
+                  const e = doc.createElementNS(A, pre + n);
+                  e.setAttribute('typeface', v);
+                  return e;
+                },
+                l = [];
+              if (o.lat) l.push(mk('latin', o.lat));
+              if (o.ea) l.push(mk('ea', o.ea));
+              if (o.lat) l.push(mk('cs', o.lat));
+              l.forEach(e => insBefore(r, e, ['sym', 'hlinkClick', 'hlinkMouseOver', 'rtl', 'extLst']));
+            }
+            if (o.mode === 'fixed') r.setAttribute('sz', Math.round(o.n * 2) * 50);
+            else if (o.mode === 'scale' && r.getAttribute('sz'))
+              r.setAttribute('sz', Math.max(100, Math.round(pt(r.getAttribute('sz') / 100, o) * 2) * 50));
+          }
+      }
+
+      const RX = {
+        docx: /^word\/(document|styles|numbering|footnotes|endnotes|comments)\.xml$|^word\/(header|footer)\d*\.xml$/,
+        pptx: /^ppt\/(slides|slideLayouts|slideMasters|notesSlides|notesMasters|handoutMasters|charts|diagrams)\/[^/]+\.xml$|^ppt\/presentation\.xml$/,
+      };
+      function pick(ext, p) {
+        if (/theme\/theme\d+\.xml$/.test(p)) return theme;
+        if (ext !== 'pptx' && /\/(charts|drawings)\/[^/]+\.xml$/.test(p)) return dml;
+        if (ext === 'docx' && RX.docx.test(p)) return (d, o) => word(d, o, p.endsWith('styles.xml'));
+        if (ext === 'xlsx') {
+          if (p === 'xl/styles.xml') return (d, o) => xl(d, o, false);
+          if (/^xl\/(sharedStrings|comments\d*)\.xml$/.test(p)) return (d, o) => xl(d, o, true);
+        }
+        if (ext === 'pptx' && RX.pptx.test(p)) return dml;
+      }
+
+      async function run(f, o) {
+        const ext = extOf(f);
+        if (!EXT.includes(ext)) throw new Error('不支援的格式');
+        let z;
+        try {
+          z = await JSZip.loadAsync(await f.arrayBuffer());
+        } catch (e) {
+          throw new Error('無法開啟（可能已加密或不是有效的 Office 檔）');
+        }
+        let cnt = 0;
+        for (const p of Object.keys(z.files)) {
+          const h = pick(ext, p);
+          if (!h || z.files[p].dir) continue;
+          const doc = new DOMParser().parseFromString(await z.file(p).async('string'), 'application/xml');
+          if (doc.getElementsByTagName('parsererror').length) continue;
+          h(doc, o);
+          cnt++;
+          const xml = new XMLSerializer().serializeToString(doc);
+          z.file(p, /^<\?xml/.test(xml) ? xml : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + xml);
+        }
+        if (!cnt) throw new Error('找不到可處理的內容');
+        const blob = await z.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+        return { blob, name: f.name.replace(/\.[^.]+$/, '') + '_改字型.' + ext };
+      }
+
+      // ---- 檔案清單 ----
+      function renderFiles() {
+        $('fileList').innerHTML = files.map(f => `<div class="file-row">${esc(f.name)}（${fmt(f.size)}）</div>`).join('');
+        $('go').disabled = !files.length;
+      }
+      function addFiles(list) {
+        const ok = [...list].filter(f => EXT.includes(extOf(f)));
+        const bad = list.length - ok.length;
+        ok.forEach(f => {
+          if (!files.some(x => x.name === f.name && x.size === f.size && x.lastModified === f.lastModified)) files.push(f);
+        });
+        outs = [];
+        $('dl').style.display = 'none';
+        $('progressArea').style.display = 'none';
+        renderFiles();
+        if (bad) $('fileList').insertAdjacentHTML('beforeend', `<div class="file-row err">已略過 ${bad} 個不支援的檔案</div>`);
+      }
+      $('fin').onchange = e => {
+        addFiles(e.target.files);
+        e.target.value = '';
+      };
+      const dz = $('dz');
+      dz.onclick = e => {
+        if (e.target !== $('fin')) $('fin').click();
+      };
+      dz.ondragover = e => {
+        e.preventDefault();
+        dz.classList.add('dragover');
+      };
+      dz.ondragleave = () => dz.classList.remove('dragover');
+      dz.ondrop = e => {
+        e.preventDefault();
+        dz.classList.remove('dragover');
+        addFiles(e.dataTransfer.files);
+      };
+      ['dragover', 'drop'].forEach(v =>
+        window.addEventListener(v, e => {
+          if (!dz.contains(e.target)) e.preventDefault();
+        })
+      );
+      $('clr').onclick = () => {
+        files = [];
+        outs = [];
+        $('dl').style.display = 'none';
+        $('progressArea').style.display = 'none';
+        renderFiles();
+      };
+
+      // ---- 處理 ----
+      $('go').onclick = async () => {
+        const o = getOpt();
+        if (!o.lat && !o.ea && o.mode === 'keep') {
+          alert('請至少指定一個字型，或選擇修改大小。');
+          return;
+        }
+        $('go').disabled = true;
+        $('dl').style.display = 'none';
+        outs = [];
+        $('progressArea').style.display = 'block';
+        const st = files.map(() => ({ c: '', h: '等待中' }));
+        const draw = () => {
+          $('statusList').innerHTML = files.map((f, i) => `<li class="${st[i].c}">${esc(f.name)}<span class="st"> — ${st[i].h}</span></li>`).join('');
+        };
+        draw();
+        for (let i = 0; i < files.length; i++) {
+          st[i].h = '處理中…';
+          draw();
+          $('progressText').textContent = `處理中（${i + 1} / ${files.length}）`;
+          try {
+            const r = await run(files[i], o);
+            outs.push(r);
+            const u = URL.createObjectURL(r.blob);
+            st[i] = { c: 'ok', h: `完成<a href="${u}" download="${esc(r.name)}">下載</a>` };
+          } catch (e) {
+            st[i] = { c: 'err', h: esc(e.message) };
+          }
+          $('bar').style.width = ((i + 1) / files.length) * 100 + '%';
+          draw();
+        }
+        $('progressText').textContent = `完成：成功 ${outs.length} 個，失敗 ${files.length - outs.length} 個`;
+        $('go').disabled = false;
+        if (outs.length > 1) $('dl').style.display = '';
+      };
+      $('dl').onclick = async () => {
+        const z = new JSZip();
+        outs.forEach(r => z.file(r.name, r.blob));
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(await z.generateAsync({ type: 'blob' }));
+        a.download = '改字型結果.zip';
+        a.click();
+      };
+    </script>
+  </body>
+</html>
