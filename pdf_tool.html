@@ -1004,6 +1004,173 @@
         return new Promise(resolve => canvas.toBlob(b => resolve(b), 'image/png'));
       }
 
+      // ---------- 表格版面還原（偵測框線 → 儲存格 → 依座標歸位文字）----------
+      const CJK = '\\u3000-\\u303f\\u3400-\\u9fff\\uff00-\\uffef';
+      const CJK_RE = new RegExp('[' + CJK + ']');
+      // 中文字之間 / 中文與數字、標點之間的空白多半是 OCR 誤判，一律移除
+      function cleanCjk(s) {
+        s = s.replace(/\s+/g, ' ').trim();
+        if (!CJK_RE.test(s)) return s;
+        return s
+          .replace(new RegExp('\\s+(?=[' + CJK + '])|(?<=[' + CJK + '])\\s+', 'g'), '')
+          .replace(/([(（\[])\s+/g, '$1').replace(/\s+([)）\]])/g, '$1')
+          .replace(/(\d)\s+(?=\d)/g, '$1');
+      }
+      function getWords(data) {
+        let ws = data.words;
+        if (!ws || !ws.length) {
+          ws = [];
+          (data.blocks || []).forEach(b => b.paragraphs.forEach(p => p.lines.forEach(l => l.words.forEach(w => ws.push(w)))));
+        }
+        return ws.filter(w => w.text && w.text.trim() && w.bbox).map(w => ({ s: w.text.trim(), x0: w.bbox.x0, x1: w.bbox.x1, y0: w.bbox.y0, y1: w.bbox.y1 }));
+      }
+      // 將一組字依「垂直中心」分行，再由左到右串成文字
+      function wordsToLines(ws) {
+        ws = ws.slice().sort((a, b) => a.y0 + a.y1 - (b.y0 + b.y1));
+        const lines = [];
+        ws.forEach(w => {
+          const cy = (w.y0 + w.y1) / 2, h = w.y1 - w.y0;
+          const L = lines.find(l => Math.abs(l.cy - cy) < Math.max(l.h, h) * 0.6);
+          if (L) { L.ws.push(w); L.cy = (L.cy * (L.ws.length - 1) + cy) / L.ws.length; L.h = Math.max(L.h, h); }
+          else lines.push({ ws: [w], cy, h });
+        });
+        return lines.map(l => ({ y: l.cy, s: cleanCjk(l.ws.sort((a, b) => a.x0 - b.x0).map(w => w.s).join(' ')) })).filter(l => l.s);
+      }
+      // 找出水平 / 垂直的連續深色線段（框線）
+      function findSegments(d, W, H, horizontal) {
+        const A = horizontal ? H : W, B = horizontal ? W : H;
+        const minLen = Math.max(30, B * (horizontal ? 0.04 : 0.03));
+        const segs = [];
+        for (let a = 0; a < A; a++) {
+          let run = 0, start = 0;
+          for (let b = 0; b <= B; b++) {
+            const dark = b < B && d[((horizontal ? a * W + b : b * W + a)) * 4] < 140;
+            if (dark) { if (!run) start = b; run++; }
+            else { if (run >= minLen) segs.push({ p: a, s: start, e: b - 1 }); run = 0; }
+          }
+        }
+        // 合併相鄰（粗線）且重疊的線段
+        const out = [];
+        segs.forEach(g => {
+          const m = out.find(o => g.p - o.p2 <= 2 && g.s <= o.e + 4 && g.e >= o.s - 4);
+          if (m) { m.p2 = g.p; m.s = Math.min(m.s, g.s); m.e = Math.max(m.e, g.e); }
+          else out.push({ p: g.p, p2: g.p, s: g.s, e: g.e });
+        });
+        return out.map(o => ({ p: (o.p + o.p2) / 2, s: o.s, e: o.e }));
+      }
+      function clusterPos(arr) {
+        arr = arr.slice().sort((a, b) => a - b);
+        const out = [];
+        arr.forEach(v => { const l = out[out.length - 1]; if (l && v - l.max <= 8) { l.sum += v; l.n++; l.max = v; } else out.push({ sum: v, n: 1, max: v }); });
+        return out.map(o => o.sum / o.n);
+      }
+      function detectTables(cv) {
+        const W = cv.width, H = cv.height;
+        const d = cv.getContext('2d').getImageData(0, 0, W, H).data;
+        const hs = findSegments(d, W, H, true).map(g => ({ y: g.p, x0: g.s, x1: g.e }));
+        const vs = findSegments(d, W, H, false).map(g => ({ x: g.p, y0: g.s, y1: g.e }));
+        const T = 6, parent = [...hs, ...vs].map((_, i) => i);
+        const find = i => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+        hs.forEach((h, i) => vs.forEach((v, j) => {
+          if (v.x >= h.x0 - T && v.x <= h.x1 + T && h.y >= v.y0 - T && h.y <= v.y1 + T) parent[find(i)] = find(hs.length + j);
+        }));
+        const groups = {};
+        hs.forEach((h, i) => (groups[find(i)] = groups[find(i)] || { h: [], v: [] }).h.push(h));
+        vs.forEach((v, j) => (groups[find(hs.length + j)] = groups[find(hs.length + j)] || { h: [], v: [] }).v.push(v));
+        const tables = [];
+        Object.values(groups).forEach(g => {
+          const ys = clusterPos(g.h.map(h => h.y)), xs = clusterPos(g.v.map(v => v.x));
+          if (ys.length < 2 || xs.length < 2) return;
+          const nr = ys.length - 1, nc = xs.length - 1;
+          const hasV = (c, r) => c <= 0 || c >= nc || g.v.some(v => Math.abs(v.x - xs[c]) <= 8 && v.y0 <= ys[r] + 8 && v.y1 >= ys[r + 1] - 8);
+          const hasH = (r, c) => r <= 0 || r >= nr || g.h.some(h => Math.abs(h.y - ys[r]) <= 8 && h.x0 <= xs[c] + 8 && h.x1 >= xs[c + 1] - 8);
+          const seen = Array.from({ length: nr }, () => Array(nc).fill(false));
+          const cells = [];
+          for (let r = 0; r < nr; r++) for (let c = 0; c < nc; c++) {
+            if (seen[r][c]) continue;
+            let ce = c; while (ce + 1 < nc && !hasV(ce + 1, r)) ce++;
+            let re = r; while (re + 1 < nr && Array.from({ length: ce - c + 1 }, (_, k) => c + k).every(cc => !hasH(re + 1, cc))) re++;
+            for (let a = r; a <= re; a++) for (let b = c; b <= ce; b++) seen[a][b] = true;
+            cells.push({ r, c, rs: re - r + 1, cs: ce - c + 1, x0: xs[c], x1: xs[ce + 1], y0: ys[r], y1: ys[re + 1], ws: [] });
+          }
+          tables.push({ x0: xs[0], x1: xs[nc], y0: ys[0], y1: ys[nr], nr, nc, cells });
+        });
+        return tables;
+      }
+      // 回傳 blocks：[{t:'p', s}] 或 [{t:'tb', nr, nc, cells:[{r,c,rs,cs,s}]}]，依由上到下排序
+      function layoutBlocks(cv, words, fallbackText) {
+        const tables = words.length ? detectTables(cv) : [];
+        const outside = [];
+        words.forEach(w => {
+          const cx = (w.x0 + w.x1) / 2, cy = (w.y0 + w.y1) / 2;
+          const t = tables.find(t => cx >= t.x0 - 4 && cx <= t.x1 + 4 && cy >= t.y0 - 4 && cy <= t.y1 + 4);
+          const cell = t && t.cells.find(c => cx >= c.x0 && cx <= c.x1 && cy >= c.y0 && cy <= c.y1);
+          (cell ? cell.ws : outside).push(w);
+        });
+        if (!tables.length) {
+          const txt = (fallbackText || '').split('\n').map(cleanCjk).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+          return txt ? [{ t: 'p', s: txt }] : [];
+        }
+        const items = wordsToLines(outside).map(l => ({ y: l.y, line: l.s }));
+        tables.forEach(t => {
+          t.cells.forEach(c => { c.s = wordsToLines(c.ws).map(l => l.s).join(' '); c.s = cleanCjk(c.s); });
+          items.push({ y: t.y0, tb: { t: 'tb', nr: t.nr, nc: t.nc, cells: t.cells.map(c => ({ r: c.r, c: c.c, rs: c.rs, cs: c.cs, s: c.s })) } });
+        });
+        items.sort((a, b) => a.y - b.y);
+        const blocks = [];
+        items.forEach(it => {
+          if (it.tb) return blocks.push(it.tb);
+          const last = blocks[blocks.length - 1];
+          if (last && last.t === 'p') last.s += '\n' + it.line; else blocks.push({ t: 'p', s: it.line });
+        });
+        return blocks;
+      }
+      function tbGrid(b) {
+        const g = Array.from({ length: b.nr }, () => Array(b.nc).fill(''));
+        b.cells.forEach(c => (g[c.r][c.c] = c.s));
+        return g;
+      }
+      function blocksToText(blocks) {
+        return blocks.map(b => (b.t === 'p' ? b.s : tbGrid(b).map(row => row.join(' | ')).join('\n'))).join('\n\n');
+      }
+      function blocksToMd(blocks, render) {
+        return blocks.map(b => {
+          if (b.t === 'p') return render(b.s);
+          const g = tbGrid(b).map(row => row.map(s => s.replace(/\|/g, '\\|')));
+          const line = row => '| ' + row.join(' | ') + ' |';
+          return [line(g[0]), line(g[0].map(() => '---')), ...g.slice(1).map(line)].join('\n');
+        }).join('\n\n');
+      }
+      function blocksToHtml(blocks) {
+        return blocks.map(b => {
+          if (b.t === 'p') return `<pre>${escapeHtml(b.s)}</pre>`;
+          const rows = Array.from({ length: b.nr }, (_, r) => b.cells.filter(c => c.r === r).sort((x, y) => x.c - y.c)
+            .map(c => `<td${c.rs > 1 ? ` rowspan="${c.rs}"` : ''}${c.cs > 1 ? ` colspan="${c.cs}"` : ''}>${escapeHtml(c.s)}</td>`).join(''));
+          return `<table>${rows.map(r => `<tr>${r}</tr>`).join('')}</table>`;
+        }).join('');
+      }
+      // 與 preprocessImage 相同，但回傳 canvas（版面分析需要像素）
+      async function preprocessCanvas(blob, scale, grayscale, maxSourceDim) {
+        const img = await loadImageEl(blob);
+        const longest = Math.max(img.width, img.height);
+        const f = (maxSourceDim && longest > maxSourceDim ? maxSourceDim / longest : 1) * scale;
+        const cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * f); cv.height = Math.round(img.height * f);
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        if (grayscale) {
+          const id = ctx.getImageData(0, 0, cv.width, cv.height), d = id.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const v = Math.max(0, Math.min(255, (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2] - 128) * 1.35 + 128));
+            d[i] = d[i + 1] = d[i + 2] = v;
+          }
+          ctx.putImageData(id, 0, 0);
+        }
+        return cv;
+      }
+
       function blobToDataURL(blob) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -1021,7 +1188,7 @@
       async function buildHtmlReport(results) {
         let textSections = '';
         results.forEach((r, idx) => {
-          textSections += `<section><h2>文字 ${idx + 1}：${escapeHtml(r.name)}</h2><pre>${escapeHtml(r.text)}</pre></section>`;
+          textSections += `<section><h2>文字 ${idx + 1}：${escapeHtml(r.name)}</h2>${r.blocks ? blocksToHtml(r.blocks) + (r.transText ? `<pre>${escapeHtml(r.transText)}</pre>` : '') : `<pre>${escapeHtml(r.text)}</pre>`}</section>`;
         });
 
         let imageSections = '';
@@ -1044,7 +1211,7 @@
   pre{white-space:pre-wrap;word-break:break-word;background:#f6f7f9;border:1px solid #d0d7de;padding:14px;font-size:13px;}
   .meta{color:#6b7280;font-size:13px;}
 </style></head><body>
-<h1>OCR 辨識報告</h1>
+<style>table{border-collapse:collapse;margin:8px 0}td{border:1px solid #999;padding:4px 10px;vertical-align:middle}</style><h1>OCR 辨識報告</h1>
 <p class="meta">產生時間：${new Date().toLocaleString('zh-TW')}</p>
 <h2 class="group-title">文字內容</h2>
 ${textSections}
@@ -1093,7 +1260,7 @@ ${imageSections}
             return;
           }
           const t = (r.ocrText || '').trim();
-          md += t ? render(t) + '\n' : '_（此項沒有辨識到文字）_\n';
+          md += t ? (r.blocks ? blocksToMd(r.blocks, render) : render(t)) + '\n' : '_（此項沒有辨識到文字）_\n';
           if (r.transText) {
             md += `\n**翻譯（${r.tgtLabel}）**\n\n`;
             md += style === 'code' ? mdCode(r.transText) + '\n' : mdText(r.transText).split('\n').map(l => '> ' + l).join('\n') + '\n';
@@ -1228,9 +1395,11 @@ ${imageSections}
               setItemLabel(i, f.name + '：辨識中...');
               setItemProgress(i, 5);
               try {
-                const procBlob = await preprocessImage(f.blob, scale, grayscale, maxSourceDim);
+                const cv = await preprocessCanvas(f.blob, scale, grayscale, maxSourceDim);
+                const procBlob = await new Promise(r => cv.toBlob(r, 'image/png'));
                 const res = await slot.worker.recognize(procBlob);
-                itemOutcome[i] = { text: res.data.text, error: null };
+                const blocks = layoutBlocks(cv, getWords(res.data), res.data.text);
+                itemOutcome[i] = { text: blocks.length ? blocksToText(blocks) : res.data.text, blocks, error: null };
                 setItemProgress(i, 100);
               } catch (err) {
                 itemOutcome[i] = { text: '', error: err.message };
@@ -1272,7 +1441,7 @@ ${imageSections}
             }
           }
           setItemLabel(i, f.name + '：完成');
-          results.push({ name: f.name, text: finalText, ocrText: outcome.text, transText, transErr, tgtLabel, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
+          results.push({ name: f.name, text: finalText, ocrText: outcome.text, blocks: outcome.blocks, transText, transErr, tgtLabel, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
         }
 
         if (mode === 'merged') {
