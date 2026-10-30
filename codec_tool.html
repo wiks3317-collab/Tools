@@ -99,6 +99,107 @@
       .err {
         font-size: 13px;
       }
+      /* ---- 檔案雜湊／檔案檢查 ---- */
+      .mono,
+      pre.hex {
+        font:
+          12.5px/1.6 ui-monospace,
+          Menlo,
+          Consolas,
+          'Noto Sans TC',
+          monospace;
+      }
+      .fres {
+        border: 1px solid var(--bd);
+        border-radius: var(--r-s);
+        padding: 10px 14px;
+        margin: 12px 0 0;
+      }
+      .fres h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 500;
+        word-break: break-all;
+      }
+      .fres h3 small {
+        color: var(--mut);
+        font-weight: 400;
+        margin-left: 8px;
+      }
+      .fres table,
+      .kv table {
+        width: 100%;
+      }
+      .fres td {
+        padding: 5px 6px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+      }
+      .fres tr:last-child td {
+        border-bottom: 0;
+      }
+      .fres td.a {
+        white-space: nowrap;
+        color: var(--mut);
+        font-size: 13px;
+        width: 6.5em;
+      }
+      .fres td.h {
+        word-break: break-all;
+      }
+      .fres td.c {
+        width: 1%;
+        white-space: nowrap;
+        text-align: right;
+      }
+      .fres tr.ok td {
+        background: var(--add);
+      }
+      .fres button {
+        padding: 2px 10px;
+        font-size: 12px;
+      }
+      .verdict {
+        margin: 8px 0;
+        padding: 8px 12px;
+        border-radius: var(--r-s);
+        font-size: 13px;
+        background: var(--add);
+      }
+      .kv th {
+        width: 9em;
+        text-align: left;
+        vertical-align: top;
+        padding: 7px 12px 7px 0;
+        font-weight: 500;
+        color: var(--mut);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .kv td {
+        padding: 7px 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 13.5px;
+        word-break: break-all;
+      }
+      .kv th {
+        border-bottom: 1px solid var(--line);
+      }
+      .kv tr:last-child th,
+      .kv tr:last-child td {
+        border-bottom: 0;
+      }
+      pre.hex {
+        margin: 0;
+        padding: 10px 14px;
+        background: var(--gut);
+        border-radius: var(--r-s);
+        overflow-x: auto;
+        color: var(--fg);
+      }
+      #iprev {
+        min-height: 180px;
+      }
     </style>
   </head>
   <body>
@@ -107,11 +208,13 @@
         <div>
           <a class="back" href="index.html">← 返回小工具集首頁</a>
           <h1>編碼／解碼工具</h1>
-          <p class="tagline">Base64 檔案轉換與常用文字編碼。所有處理都在你的瀏覽器內完成，內容不會上傳。</p>
+          <p class="tagline">Base64 檔案轉換、常用文字編碼、檔案雜湊（MD5／SHA）與檔案類型／編碼檢查。所有處理都在你的瀏覽器內完成，內容不會上傳。</p>
         </div>
         <div class="themes" id="themes">主題：</div>
       </header>
-      <div class="tabs" id="tabs"><button data-p="pt" class="on">編碼／解碼</button><button data-p="pf">檔案 → Base64</button></div>
+      <div class="tabs" id="tabs"><button data-p="pt" class="on">編碼／解碼</button><button data-p="pf">檔案 → Base64</button
+        ><button data-p="ph">檔案雜湊（MD5／SHA）</button><button data-p="pi">檔案類型／編碼檢查</button>
+      </div>
 
       <div class="panel on" id="pt">
         <section>
@@ -159,6 +262,47 @@
           </div>
           <textarea id="fout" spellcheck="false" readonly style="display: none"></textarea>
           <p class="tip" id="fnote"></p>
+        </section>
+      </div>
+
+      <div class="panel" id="ph">
+        <section>
+          <label class="drop" id="hdrop"
+            ><input type="file" id="hfile" multiple />點擊或拖曳一個或多個檔案到這裡，計算 MD5、SHA-1、SHA-256、SHA-384、SHA-512、CRC32、Adler-32</label
+          >
+          <span class="lbl">比對官方提供的雜湊值（選填）：貼上下載頁面的 MD5／SHA 值或整份 checksum 清單，會自動標示是否相符</span>
+          <textarea id="hcmp" spellcheck="false" style="min-height: 70px" placeholder="例如：d41d8cd98f00b204e9800998ecf8427e  filename.zip"></textarea>
+          <div class="row">
+            <button id="hall">複製全部結果</button><button id="hsave">下載為 .txt</button><button id="hclr">清除</button
+            ><label><input type="checkbox" id="hup" /> 以大寫顯示</label>
+          </div>
+          <div id="hres"></div>
+          <p class="tip">
+            檔案只在瀏覽器內讀取與計算，不會上傳。MD5、SHA-1 與 CRC32 適合用來確認檔案下載是否完整，不建議用在安全性要求高的場合。超過 512 MB 的檔案只計算
+            MD5、CRC32、Adler-32。
+          </p>
+        </section>
+      </div>
+
+      <div class="panel" id="pi">
+        <section>
+          <label class="drop" id="idrop"
+            ><input type="file" id="ifile" />點擊或拖曳檔案到這裡，檢查真實檔案類型、文字編碼（UTF-8／Big5／GBK…）、換行格式與檔頭</label
+          >
+          <div id="ires" hidden>
+            <div class="kv"><table id="ikv"></table></div>
+            <div id="iwarn"></div>
+            <div id="ienc" hidden>
+              <span class="lbl">文字內容預覽（切換編碼可檢查亂碼，沒有 BOM 的舊式編碼只能推測）</span>
+              <div class="row">
+                <select id="isel"></select><label><input type="checkbox" id="ibom" /> 加上 BOM</label
+                ><button class="pri" id="icv">以此編碼轉存為 UTF-8</button><span class="err" id="ierr"></span>
+              </div>
+              <textarea id="iprev" spellcheck="false" readonly></textarea>
+            </div>
+            <span class="lbl">檔頭十六進位（前 256 位元組）</span>
+            <pre class="hex" id="ihex"></pre>
+          </div>
         </section>
       </div>
     </div>
@@ -578,6 +722,426 @@
         } catch (e) {}
         return { e: 'bin', m: 'application/octet-stream', n: '未知二進位資料' };
       }
+
+      /* ---------- 純運算（雜湊、編碼判斷） ---------- */
+      /*PURE-START*/
+      function MD5() {
+        const K = new Int32Array(64),
+          S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21],
+          h = [0x67452301, 0xefcdab89 | 0, 0x98badcfe | 0, 0x10325476],
+          buf = new Uint8Array(64),
+          w = new Int32Array(16);
+        let bl = 0,
+          total = 0;
+        for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) | 0;
+        function block(b, o) {
+          for (let i = 0; i < 16; i++) w[i] = b[o + i * 4] | (b[o + i * 4 + 1] << 8) | (b[o + i * 4 + 2] << 16) | (b[o + i * 4 + 3] << 24);
+          let a = h[0],
+            bb = h[1],
+            c = h[2],
+            d = h[3];
+          for (let i = 0; i < 64; i++) {
+            let f, g;
+            if (i < 16) {
+              f = (bb & c) | (~bb & d);
+              g = i;
+            } else if (i < 32) {
+              f = (d & bb) | (~d & c);
+              g = (5 * i + 1) & 15;
+            } else if (i < 48) {
+              f = bb ^ c ^ d;
+              g = (3 * i + 5) & 15;
+            } else {
+              f = c ^ (bb | ~d);
+              g = (7 * i) & 15;
+            }
+            const s = S[(i >> 4) * 4 + (i & 3)],
+              t = (a + f + K[i] + w[g]) | 0;
+            a = d;
+            d = c;
+            c = bb;
+            bb = (bb + ((t << s) | (t >>> (32 - s)))) | 0;
+          }
+          h[0] = (h[0] + a) | 0;
+          h[1] = (h[1] + bb) | 0;
+          h[2] = (h[2] + c) | 0;
+          h[3] = (h[3] + d) | 0;
+        }
+        return {
+          update(u) {
+            total += u.length;
+            let i = 0;
+            if (bl) {
+              while (bl < 64 && i < u.length) buf[bl++] = u[i++];
+              if (bl < 64) return;
+              block(buf, 0);
+              bl = 0;
+            }
+            for (; i + 64 <= u.length; i += 64) block(u, i);
+            while (i < u.length) buf[bl++] = u[i++];
+          },
+          hex() {
+            const len = total,
+              pad = new Uint8Array(9 + ((55 - (len % 64) + 64) % 64));
+            pad[0] = 0x80;
+            const bits = len * 8,
+              lo = bits % 4294967296,
+              hi = Math.floor(bits / 4294967296),
+              n = pad.length;
+            for (let k = 0; k < 4; k++) {
+              pad[n - 8 + k] = (lo >>> (8 * k)) & 255;
+              pad[n - 4 + k] = (hi >>> (8 * k)) & 255;
+            }
+            this.update(pad);
+            return h.map(x => [0, 8, 16, 24].map(s => ((x >>> s) & 255).toString(16).padStart(2, '0')).join('')).join('');
+          },
+        };
+      }
+      const CRC_T = (() => {
+        const t = new Uint32Array(256);
+        for (let n = 0; n < 256; n++) {
+          let c = n;
+          for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+          t[n] = c >>> 0;
+        }
+        return t;
+      })();
+      const h32 = n => (n >>> 0).toString(16).padStart(8, '0');
+      function detectText(u) {
+        const n = Math.min(u.length, 65536);
+        if (u[0] === 0xef && u[1] === 0xbb && u[2] === 0xbf) return { bom: 'UTF-8（含 BOM）', best: 'utf-8', cands: ['utf-8'] };
+        if (u[0] === 0xff && u[1] === 0xfe)
+          return u[2] === 0 && u[3] === 0
+            ? { bom: 'UTF-32 LE（含 BOM，瀏覽器無法預覽）', best: null, cands: [] }
+            : { bom: 'UTF-16 LE（含 BOM）', best: 'utf-16le', cands: ['utf-16le'] };
+        if (u[0] === 0xfe && u[1] === 0xff) return { bom: 'UTF-16 BE（含 BOM）', best: 'utf-16be', cands: ['utf-16be'] };
+        if (u[0] === 0 && u[1] === 0 && u[2] === 0xfe && u[3] === 0xff) return { bom: 'UTF-32 BE（含 BOM，瀏覽器無法預覽）', best: null, cands: [] };
+        let ze = 0,
+          zo = 0,
+          ctl = 0;
+        for (let i = 0; i < n; i++) {
+          const c = u[i];
+          if (c === 0) i % 2 ? zo++ : ze++;
+          else if (c < 9 || (c > 13 && c < 32 && c !== 27)) ctl++;
+        }
+        if (ze + zo) {
+          if (zo > n * 0.2 && ze < n * 0.02) return { best: 'utf-16le', cands: ['utf-16le'], guess: 'UTF-16 LE（無 BOM，推測）' };
+          if (ze > n * 0.2 && zo < n * 0.02) return { best: 'utf-16be', cands: ['utf-16be'], guess: 'UTF-16 BE（無 BOM，推測）' };
+          return null;
+        }
+        if (ctl > n * 0.02) return null;
+        let ascii = true;
+        for (let i = 0; i < u.length; i++)
+          if (u[i] > 127) {
+            ascii = false;
+            break;
+          }
+        if (ascii) return { best: 'utf-8', ascii: true, cands: ['utf-8'], guess: 'ASCII（純英數符號，與 UTF-8 相容）' };
+        const ok = [];
+        for (const l of ['utf-8', 'big5', 'gbk', 'shift_jis', 'euc-jp', 'euc-kr', 'windows-1252']) {
+          try {
+            const s = new TextDecoder(l, { fatal: true }).decode(u, { stream: true });
+            if (l === 'utf-8') return { best: 'utf-8', cands: ['utf-8'], guess: 'UTF-8（無 BOM）' };
+            const na = (s.match(/[^\x00-\x7f]/g) || []).length || 1,
+              good = (s.match(/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af\u3000-\u303f\uff00-\uff60]/g) || []).length,
+              bad = (s.match(/[\ue000-\uf8ff\ufffd\uff61-\uff9f]/g) || []).length;
+            ok.push({ l, sc: l === 'windows-1252' ? -1 : (good - 3 * bad) / na });
+          } catch (e) {}
+        }
+        ok.sort((a, b) => b.sc - a.sc);
+        return { best: ok[0].l, cands: ok.map(x => x.l), guess: ENC_NAME[ok[0].l] + '（推測）' };
+      }
+      const ENC_NAME = {
+        'utf-8': 'UTF-8',
+        'utf-16le': 'UTF-16 LE',
+        'utf-16be': 'UTF-16 BE',
+        big5: 'Big5（繁體中文）',
+        gbk: 'GBK／GB18030（簡體中文）',
+        shift_jis: 'Shift_JIS（日文）',
+        'euc-jp': 'EUC-JP（日文）',
+        'euc-kr': 'EUC-KR（韓文）',
+        'windows-1252': 'Windows-1252（西歐）',
+      };
+      const ZIPF = ['zip', 'docx', 'xlsx', 'pptx', 'jar', 'apk', 'epub', 'odt', 'ods', 'odp', 'xpi', 'war', 'vsix', 'nupkg', 'ipa', 'aab', 'whl', 'kmz'];
+      const EXT_OK = {
+        jpg: ['jpg', 'jpeg', 'jfif'],
+        mp4: ['mp4', 'mov', 'm4v', '3gp', '3g2', 'f4v'],
+        heic: ['heic', 'heif', 'avif'],
+        ogg: ['ogg', 'oga', 'ogv', 'opus'],
+        webm: ['webm', 'mkv', 'mka'],
+        zip: ZIPF,
+        docx: ['docx', 'dotx', 'docm'],
+        xlsx: ['xlsx', 'xlsm', 'xltx'],
+        pptx: ['pptx', 'pptm', 'potx', 'ppsx'],
+        doc: ['doc', 'xls', 'ppt', 'dot', 'xlt', 'pps', 'msi', 'msg'],
+        exe: ['exe', 'dll', 'sys', 'scr', 'ocx', 'efi', 'cpl', 'drv'],
+        gz: ['gz', 'tgz', 'svgz'],
+        html: ['html', 'htm', 'xhtml'],
+        json: ['json', 'geojson', 'map'],
+        ico: ['ico', 'cur'],
+        bmp: ['bmp', 'dib'],
+        mp3: ['mp3', 'mp2'],
+      };
+      function extCheck(ext, t) {
+        if (!ext) return 'none';
+        if (['bin', 'txt', 'elf', 'macho'].includes(t.e))
+          return ['png', 'jpg', 'jpeg', 'gif', 'pdf', 'zip', 'exe', 'dll', 'mp3', 'mp4', 'docx', 'xlsx', 'pptx', 'rar', '7z', 'gz', 'webp', 'bmp', 'wav', 'avi', 'mov'].includes(ext)
+            ? 'bad'
+            : 'ok';
+        let ok = EXT_OK[t.e] || [t.e];
+        if (ZIPF.includes(t.e)) ok = ok.concat('zip');
+        return ok.includes(ext) ? 'ok' : 'bad';
+      }
+      /*PURE-END*/
+
+      /* ---------- 共用：拖曳區 ---------- */
+      function wireDrop(zone, input, fn) {
+        ['dragenter', 'dragover'].forEach(v =>
+          zone.addEventListener(v, e => {
+            e.preventDefault();
+            zone.classList.add('over');
+          })
+        );
+        ['dragleave', 'drop'].forEach(v =>
+          zone.addEventListener(v, e => {
+            e.preventDefault();
+            zone.classList.remove('over');
+          })
+        );
+        zone.addEventListener('drop', e => fn([...e.dataTransfer.files]));
+        input.onchange = e => {
+          const fs = [...e.target.files];
+          e.target.value = '';
+          fn(fs);
+        };
+      }
+      const esc = s => String(s).replace(/[&<>"']/g, c => '&#' + c.charCodeAt(0) + ';');
+
+      /* ---------- 檔案雜湊 ---------- */
+      const ALG = ['MD5', 'SHA-1', 'SHA-256', 'SHA-384', 'SHA-512', 'CRC32', 'Adler-32'];
+      const SHA_LIM = 512 * 1048576;
+      let HR = [];
+      async function hashFile(f, onp) {
+        const md5 = MD5(),
+          CH = 4 * 1048576,
+          out = {};
+        let crc = 0xffffffff,
+          a = 1,
+          b = 0,
+          buf = null;
+        if (f.size <= SHA_LIM)
+          try {
+            buf = await f.arrayBuffer();
+          } catch (e) {}
+        for (let o = 0; o < f.size; o += CH) {
+          const u = buf ? new Uint8Array(buf, o, Math.min(CH, f.size - o)) : new Uint8Array(await f.slice(o, o + CH).arrayBuffer());
+          md5.update(u);
+          for (let i = 0; i < u.length; i++) crc = CRC_T[(crc ^ u[i]) & 255] ^ (crc >>> 8);
+          for (let i = 0; i < u.length; ) {
+            const e = Math.min(i + 5552, u.length);
+            for (; i < e; i++) {
+              a += u[i];
+              b += a;
+            }
+            a %= 65521;
+            b %= 65521;
+          }
+          onp(Math.min(1, (o + CH) / f.size));
+          await new Promise(r => setTimeout(r));
+        }
+        out['MD5'] = md5.hex();
+        out['CRC32'] = h32(crc ^ 0xffffffff);
+        out['Adler-32'] = h32(((b << 16) | a) >>> 0);
+        for (const n of ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512']) {
+          out[n] = null;
+          if (buf && window.crypto && crypto.subtle)
+            try {
+              out[n] = hx(new Uint8Array(await crypto.subtle.digest(n, buf))).join('');
+            } catch (e) {}
+        }
+        return out;
+      }
+      const hcase = s => ($('hup').checked ? s.toUpperCase() : s);
+      const hTokens = () =>
+        ($('hcmp').value.match(/[0-9a-f]+/gi) || []).filter(s => [8, 32, 40, 64, 96, 128].includes(s.length)).map(s => s.toLowerCase());
+      function renderH() {
+        const tk = hTokens();
+        $('hres').innerHTML = HR.map((r, i) => {
+          const head = `<h3>${esc(r.file.name)}<small>${size(r.file.size)}</small></h3>`;
+          if (r.err) return `<div class="fres">${head}<div class="err">計算失敗：${esc(r.err)}</div></div>`;
+          if (!r.res)
+            return `<div class="fres">${head}<div class="progress-bar-bg"><div class="progress-bar-fill" id="hp${i}" style="width:${r.pct || 0}%"></div></div><p class="tip">計算中…</p></div>`;
+          const hits = ALG.filter(n => r.res[n] && tk.includes(r.res[n]));
+          const verdict = !tk.length
+            ? ''
+            : hits.length
+              ? `<div class="verdict">✓ 與貼上的雜湊值相符（${hits.join('、')}）</div>`
+              : '<div class="warn">✗ 沒有任何一項與貼上的雜湊值相符，檔案可能不完整、已被修改，或貼上的不是這個檔案的值。</div>';
+          const rows = ALG.map(n => {
+            const v = r.res[n],
+              m = hits.includes(n);
+            return `<tr class="${m ? 'ok' : ''}"><td class="a">${n}</td><td class="h mono">${
+              v ? esc(hcase(v)) : '<span class="tip">已略過（檔案過大或瀏覽器不支援）</span>'
+            }${m ? ' ✓' : ''}</td><td class="c">${v ? `<button class="cp" data-i="${i}" data-n="${n}">複製</button>` : ''}</td></tr>`;
+          }).join('');
+          return `<div class="fres">${head}${verdict}<table>${rows}</table></div>`;
+        }).join('');
+      }
+      async function doHash(files) {
+        for (const f of files) {
+          const e = { file: f, res: null, pct: 0 };
+          HR.push(e);
+          renderH();
+          try {
+            e.res = await hashFile(f, p => {
+              e.pct = Math.round(p * 100);
+              const el = $('hp' + HR.indexOf(e));
+              if (el) el.style.width = e.pct + '%';
+            });
+          } catch (err) {
+            e.err = err.message || '無法讀取檔案';
+          }
+          renderH();
+        }
+      }
+      const hText = () =>
+        HR.filter(r => r.res)
+          .map(r => `${r.file.name}（${size(r.file.size)}）\n` + ALG.filter(n => r.res[n]).map(n => `${n.padEnd(8)} ${hcase(r.res[n])}`).join('\n'))
+          .join('\n\n');
+      wireDrop($('hdrop'), $('hfile'), doHash);
+      $('hres').onclick = e => {
+        const b = e.target.closest('.cp');
+        if (b) copy(hcase(HR[b.dataset.i].res[b.dataset.n]), b);
+      };
+      $('hcmp').oninput = $('hup').onchange = renderH;
+      $('hall').onclick = e => HR.some(r => r.res) && copy(hText(), e.target);
+      $('hsave').onclick = () => HR.some(r => r.res) && dl(new Blob([hText()], { type: 'text/plain;charset=utf-8' }), 'checksums.txt');
+      $('hclr').onclick = () => {
+        HR = [];
+        $('hcmp').value = '';
+        renderH();
+      };
+
+      /* ---------- 檔案類型／編碼檢查 ---------- */
+      let IF = null;
+      const lineEnds = u => {
+        let crlf = 0,
+          lf = 0,
+          cr = 0;
+        for (let i = 0; i < u.length; i++) {
+          if (u[i] === 13) u[i + 1] === 10 ? (crlf++, i++) : cr++;
+          else if (u[i] === 10) lf++;
+        }
+        const p = [];
+        if (crlf) p.push(`Windows（CRLF）${crlf.toLocaleString()} 行`);
+        if (lf) p.push(`Unix／macOS（LF）${lf.toLocaleString()} 行`);
+        if (cr) p.push(`舊版 Mac（CR）${cr.toLocaleString()} 行`);
+        return p.length ? p.join('｜') + (p.length > 1 ? '　<b>（混用）</b>' : '') : '沒有換行';
+      };
+      const entropy = u => {
+        const c = new Uint32Array(256);
+        for (let i = 0; i < u.length; i++) c[u[i]]++;
+        let e = 0;
+        for (const x of c) if (x) e -= (x / u.length) * Math.log2(x / u.length);
+        return e;
+      };
+      function hexDump(u) {
+        const L = [];
+        for (let i = 0; i < u.length; i += 16) {
+          const r = u.subarray(i, i + 16);
+          L.push(
+            i.toString(16).padStart(6, '0') +
+              '  ' +
+              hx(r).join(' ').padEnd(47) +
+              '  ' +
+              [...r].map(c => (c > 31 && c < 127 ? String.fromCharCode(c) : '.')).join('')
+          );
+        }
+        return L.join('\n');
+      }
+      const dec = (l, u) => new TextDecoder(l).decode(u.subarray(0, 40000), { stream: true });
+      function showPrev() {
+        const s = dec($('isel').value, IF.head);
+        $('iprev').value = s.length > 4000 ? s.slice(0, 4000) + '\n…（只顯示前 4000 字元）' : s;
+      }
+      async function doInspect(files) {
+        const f = files[0];
+        if (!f) return;
+        $('ierr').textContent = '';
+        const head = new Uint8Array(await f.slice(0, 1048576).arrayBuffer());
+        let probe = head;
+        if (f.size > 1048576 && head[0] === 0x50 && head[1] === 0x4b) {
+          const tail = new Uint8Array(await f.slice(f.size - 524288).arrayBuffer()),
+            m = new Uint8Array(524288 + tail.length);
+          m.set(head.subarray(0, 524288));
+          m.set(tail, 524288);
+          probe = m;
+        }
+        let t = sniff(probe);
+        const tx = detectText(head);
+        if (t.e === 'bin' && tx) t = { e: 'txt', m: 'text/plain', n: '文字檔' };
+        else if (t.e === 'txt' && tx && tx.bom) t = { e: 'txt', m: 'text/plain', n: '文字檔' };
+        const ext = (f.name.match(/\.([^.\\/]+)$/) || [, ''])[1].toLowerCase(),
+          chk = extCheck(ext, t),
+          isExe = ['exe', 'elf', 'macho', 'class', 'wasm'].includes(t.e),
+          part = f.size > 1048576 ? '（取樣前 1 MB）' : '',
+          en = entropy(head),
+          kv = [
+            ['檔名', esc(f.name)],
+            ['大小', `${size(f.size)}（${f.size.toLocaleString()} 位元組）`],
+            ['最後修改', f.lastModified ? new Date(f.lastModified).toLocaleString() : '未知'],
+            ['瀏覽器回報類型', esc(f.type || '（無）')],
+            ['副檔名', ext ? '.' + esc(ext) : '（無）'],
+            ['依內容判斷', `<b>${esc(t.n)}</b>｜MIME：${esc(t.m)}`],
+            [
+              '副檔名檢查',
+              chk === 'ok'
+                ? '✓ 副檔名與內容相符'
+                : chk === 'none'
+                  ? '檔案沒有副檔名'
+                  : `<span class="err">⚠ 副檔名 .${esc(ext)} 與內容（${esc(t.n)}）不一致</span>`,
+            ],
+            ['檔頭簽章', `<span class="mono">${hx(head.subarray(0, 8)).join(' ').toUpperCase()}</span>`],
+            ['資訊熵' + part, `${en.toFixed(2)} ／ 8　${en > 7.5 ? '（很高，通常是已壓縮或加密的資料）' : en < 5 ? '（偏低，內容有大量重複，多為文字或未壓縮資料）' : ''}`],
+          ];
+        if (tx) {
+          kv.push(['文字編碼' + part, esc(tx.bom || tx.guess) + (tx.cands.length > 1 ? `<br><span class="tip">也能成功解碼的編碼：${tx.cands.map(c => ENC_NAME[c]).join('、')}。無 BOM 的舊式編碼無法完全確定，請用下方預覽比對。</span>` : '')]);
+          if (!/utf-16/.test(tx.best || '')) kv.push(['換行格式' + part, lineEnds(head)]);
+        } else kv.push(['文字編碼', '不是文字檔（含有二進位資料）']);
+        IF = { file: f, head, tx };
+        $('ikv').innerHTML = kv.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+        $('iwarn').innerHTML = isExe && chk === 'bad'
+          ? '<div class="warn">這個檔案實際上是<b>可執行檔</b>，但副檔名看起來不像。請確認來源可信，並先用防毒軟體掃描，不要直接執行。</div>'
+          : isExe
+            ? '<div class="warn">這是可執行檔。請確認來源可信，並先用防毒軟體掃描，再決定是否執行。</div>'
+            : chk === 'bad'
+              ? '<div class="warn">副檔名與實際內容不一致，可能是改過副檔名或下載錯誤；開啟前請先確認來源。</div>'
+              : '';
+        $('ihex').textContent = hexDump(head.subarray(0, 256));
+        $('ienc').hidden = !(tx && tx.best);
+        if (tx && tx.best) {
+          $('isel').innerHTML = Object.entries(ENC_NAME)
+            .map(([k, v]) => `<option value="${k}">${v}</option>`)
+            .join('');
+          $('isel').value = tx.best;
+          showPrev();
+        }
+        $('ires').hidden = false;
+      }
+      wireDrop($('idrop'), $('ifile'), doInspect);
+      $('isel').onchange = showPrev;
+      $('icv').onclick = async () => {
+        if (!IF) return;
+        $('ierr').textContent = '';
+        if (IF.file.size > 200 * 1048576) {
+          $('ierr').textContent = '檔案超過 200 MB，無法轉存';
+          return;
+        }
+        const s = new TextDecoder($('isel').value).decode(await IF.file.arrayBuffer()),
+          n = IF.file.name,
+          i = n.lastIndexOf('.');
+        dl(new Blob([$('ibom').checked ? '\uFEFF' : '', s], { type: 'text/plain;charset=utf-8' }), i > 0 ? n.slice(0, i) + '.utf8' + n.slice(i) : n + '.utf8.txt');
+      };
     </script>
   </body>
 </html>
