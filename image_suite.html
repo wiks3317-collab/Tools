@@ -206,6 +206,19 @@
 @media (max-width:860px){:where(#pane-edit) #ed{
           grid-template-columns: 1fr;
         }}
+
+:where(#pane-crop) .cr-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+@media (max-width:860px){:where(#pane-crop) .cr-grid{grid-template-columns:1fr}}
+:where(#pane-crop) #cr_cv{max-width:100%;display:block;cursor:crosshair;touch-action:none;border:1px solid var(--bd);border-radius:6px}
+:where(#pane-crop) .cr-fld{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+:where(#pane-crop) .cr-fld label{display:flex;align-items:center;gap:6px;cursor:default}
+:where(#pane-crop) input[type='number']{width:82px}
+:where(#pane-crop) #cr_list{max-height:320px;overflow:auto;font-size:13px}
+:where(#pane-crop) .cr-it{padding:5px 8px;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;color:var(--fg)}
+:where(#pane-crop) .cr-it:hover{background:var(--gut)}
+:where(#pane-crop) .cr-it.sel{background:var(--pri);color:var(--prifg)}
+:where(#pane-crop) .cr-it span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:where(#pane-crop) .cr-it span:last-child{opacity:.75;white-space:nowrap}
 </style>
   </head>
   <body>
@@ -214,13 +227,14 @@
         <div>
           <a class="back" href="index.html">← 返回小工具集首頁</a>
           <h1>圖片處理與編輯</h1>
-          <p class="tagline">批次轉檔、壓縮、旋轉與縮放，或進一步編輯、去背、裁切、調色及加上浮水印。</p>
+          <p class="tagline">批次轉檔、壓縮、旋轉與縮放，批次固定範圍裁切，或進一步編輯、去背、調色及加上浮水印。</p>
         </div>
         <div class="themes" id="themes">主題：</div>
       </header>
       <nav class="tabs" role="tablist" aria-label="圖片工具選擇">
         <button class="on" type="button" role="tab" aria-selected="true" data-pane="batch">批次處理／轉檔</button
-        ><button type="button" role="tab" aria-selected="false" data-pane="edit">圖片編輯／去背</button>
+        ><button type="button" role="tab" aria-selected="false" data-pane="edit">圖片編輯／去背</button
+        ><button type="button" role="tab" aria-selected="false" data-pane="crop">批次裁切</button>
       </nav>
       <div class="pane on" id="pane-batch">
 <p class="privacy">圖片只在你的瀏覽器本機處理，不會上傳。處理後的圖片不含原始 EXIF（拍攝時間、GPS 位置等）。</p>
@@ -427,6 +441,60 @@
           </section>
         </div>
       
+      </div>
+      <div class="pane" id="pane-crop">
+        <p class="privacy">圖片只在你的瀏覽器本機處理，不會上傳。裁切不縮放、不重新取樣，並保留原檔 PPI。</p>
+        <section>
+          <h2><span class="num">1</span>加入圖片</h2>
+          <div class="drop-zone" id="cr_drop">
+            拖曳圖片到這裡，或點擊選擇（PNG、JPG、WebP、BMP、GIF，可多選）<input type="file" id="cr_fi" multiple accept="image/*" />
+          </div>
+        </section>
+        <div class="cr-grid">
+          <section>
+            <h2><span class="num">2</span>拉出裁切範圍</h2>
+            <canvas id="cr_cv" width="10" height="10"></canvas>
+            <p class="hint" id="cr_hint">在圖上拖曳拉出裁切方框；右側清單可切換預覽其他張。</p>
+          </section>
+          <div>
+            <section>
+              <h2>裁切設定</h2>
+              <div class="cr-fld">
+                <label>X<input id="cr_x" type="number" min="0" /></label>
+                <label>Y<input id="cr_y" type="number" min="0" /></label>
+                <label>寬<input id="cr_w" type="number" min="1" /></label>
+                <label>高<input id="cr_h" type="number" min="1" /></label>
+              </div>
+              <div class="cr-fld">
+                <label>套用方式
+                  <select id="cr_mode">
+                    <option value="px">固定像素（每張同座標）</option>
+                    <option value="pct">依比例（解析度不同時用）</option>
+                  </select></label>
+              </div>
+              <div class="cr-fld">
+                <label>輸出格式
+                  <select id="cr_fmt">
+                    <option value="keep">保持原格式</option>
+                    <option value="png">全部輸出 PNG（無損）</option>
+                  </select></label>
+              </div>
+              <div class="cr-fld">
+                <label>JPG 品質 <input id="cr_q" type="number" min="50" max="100" value="100" style="width:64px" /></label>
+              </div>
+              <p class="hint">JPG 在瀏覽器裁切必須重新編碼，品質 100 幾乎無差異；要完全無損請選「全部輸出 PNG」。</p>
+            </section>
+            <section>
+              <h2><span class="num">3</span>匯出</h2>
+              <div id="cr_list">尚未載入圖片</div>
+              <div class="row" style="margin-top:10px">
+                <button class="pri" id="cr_go" disabled>裁切並下載 ZIP</button>
+                <button id="cr_clr" disabled>清除全部</button>
+              </div>
+              <p class="msg" id="cr_st"></p>
+            </section>
+          </div>
+        </div>
       </div>
       <p class="note">圖片處理主要在瀏覽器本機執行。AI 去背、HEIC 轉檔（heic2any）及字型資源需連線下載第三方元件；批次打包使用 JSZip。</p>
     </div>
@@ -1361,6 +1429,158 @@ const $ = id => document.getElementById(id);
           save();
         };
       })();
+})();
+    </script>
+    <script>
+(function(){
+const $=id=>document.getElementById('cr_'+id);
+let imgs=[],cur=0,R={x:0,y:0,w:0,h:0},ratio=null;
+const cv=$('cv'),ctx=cv.getContext('2d');
+
+// CRC32
+const CT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc=u=>{let c=0xFFFFFFFF;for(const b of u)c=CT[(c^b)&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+
+// 讀 PPI
+function readPPI(buf,type){
+  const d=new DataView(buf);
+  try{
+    if(d.getUint32(0)===0x89504E47){
+      let p=8;
+      while(p<d.byteLength-12){
+        const len=d.getUint32(p),nm=d.getUint32(p+4);
+        if(nm===0x70485973){ if(d.getUint8(p+16)===1)return[d.getUint32(p+8)*0.0254,d.getUint32(p+12)*0.0254]; return null}
+        if(nm===0x49444154)return null;
+        p+=12+len;
+      }
+    }else if(d.getUint16(0)===0xFFD8){
+      let p=2;
+      while(p<d.byteLength-4){
+        const m=d.getUint16(p),len=d.getUint16(p+2);
+        if(m===0xFFE0&&d.getUint32(p+4)===0x4A464946){
+          const u=d.getUint8(p+11),xd=d.getUint16(p+12),yd=d.getUint16(p+14);
+          if(u===1)return[xd,yd]; if(u===2)return[xd*2.54,yd*2.54]; return null;
+        }
+        if(m===0xFFDA)break; p+=2+len;
+      }
+    }
+  }catch(e){}
+  return null;
+}
+// 寫 PPI
+function setPNG(u8,ppi){
+  const ppm=Math.round(ppi[0]/0.0254),ppmy=Math.round(ppi[1]/0.0254);
+  const c=new Uint8Array(21),dv=new DataView(c.buffer);
+  dv.setUint32(0,9);c.set([0x70,0x48,0x59,0x73],4);dv.setUint32(8,ppm);dv.setUint32(12,ppmy);c[16]=1;
+  dv.setUint32(17,crc(c.subarray(4,17)));
+  const out=new Uint8Array(u8.length+21);
+  out.set(u8.subarray(0,33));out.set(c,33);out.set(u8.subarray(33),54);return out;
+}
+function setJPG(u8,ppi){
+  if(u8[2]===0xFF&&u8[3]===0xE0&&u8[6]===0x4A){
+    const x=Math.round(ppi[0]),y=Math.round(ppi[1]);
+    u8[13]=1;u8[14]=x>>8;u8[15]=x&255;u8[16]=y>>8;u8[17]=y&255;
+  }
+  return u8;
+}
+
+async function load(files){
+  $('st').textContent='載入中…';
+  for(const f of files){
+    if(!f.type.startsWith('image/'))continue;
+    try{
+      const buf=await f.arrayBuffer();
+      const bmp=await createImageBitmap(new Blob([buf],{type:f.type}));
+      imgs.push({name:f.name,type:f.type,bmp,w:bmp.width,h:bmp.height,ppi:readPPI(buf,f.type)});
+    }catch(e){console.error(e)}
+  }
+  $('st').textContent='';
+  if(!imgs.length)return;
+  if(!ratio){cur=0;const i=imgs[0];R={x:Math.round(i.w*.1),y:Math.round(i.h*.1),w:Math.round(i.w*.8),h:Math.round(i.h*.8)};sync(true)}
+  $('go').disabled=false;render();
+}
+function sync(fromPx){
+  const i=imgs[cur];
+  if(fromPx&&i)ratio={x:R.x/i.w,y:R.y/i.h,w:R.w/i.w,h:R.h/i.h};
+  $('x').value=R.x;$('y').value=R.y;$('w').value=R.w;$('h').value=R.h;
+}
+function rectFor(i){
+  let r;
+  if($('mode').value==='pct')r={x:Math.round(ratio.x*i.w),y:Math.round(ratio.y*i.h),w:Math.round(ratio.w*i.w),h:Math.round(ratio.h*i.h)};
+  else r={...R};
+  r.x=Math.max(0,Math.min(i.w-1,r.x));r.y=Math.max(0,Math.min(i.h-1,r.y));
+  r.w=Math.max(1,Math.min(i.w-r.x,r.w));r.h=Math.max(1,Math.min(i.h-r.y,r.h));
+  return r;
+}
+function render(){
+  const i=imgs[cur];if(!i){cv.width=10;cv.height=10;cv.style.width='10px';$('list').textContent='尚未載入圖片';$('go').disabled=true;$('clr').disabled=true;return}$('clr').disabled=false;
+  const pw=cv.parentElement.clientWidth;if(pw<=0)return;const maxW=Math.min(pw-30,760),s=Math.min(1,maxW/i.w);
+  cv.width=i.w;cv.height=i.h;cv.style.width=i.w*s+'px';
+  ctx.drawImage(i.bmp,0,0);
+  const r=rectFor(i);
+  ctx.fillStyle='rgba(0,0,0,.5)';
+  ctx.fillRect(0,0,i.w,r.y);ctx.fillRect(0,r.y+r.h,i.w,i.h-r.y-r.h);
+  ctx.fillRect(0,r.y,r.x,r.h);ctx.fillRect(r.x+r.w,r.y,i.w-r.x-r.w,r.h);
+  ctx.strokeStyle='#ff3b30';ctx.lineWidth=Math.max(2,2/s);ctx.strokeRect(r.x,r.y,r.w,r.h);
+  const L=$('list');L.innerHTML='';
+  imgs.forEach((m,k)=>{
+    const q=rectFor(m),d=document.createElement('div');
+    d.className='cr-it'+(k===cur?' sel':'');
+    d.innerHTML='<span></span><span>'+q.w+'×'+q.h+'</span>';
+    d.firstChild.textContent=m.name;
+    const x=document.createElement('span');x.textContent='✕';x.title='刪除這張';x.style.cssText='cursor:pointer;margin-left:8px;padding:0 4px';x.onclick=ev=>{ev.stopPropagation();del(k)};d.lastChild.appendChild(x);
+    d.onclick=()=>{cur=k;render()};L.appendChild(d);
+  });
+}
+// 拖曳
+function del(k){imgs[k].bmp.close();imgs.splice(k,1);if(cur>k)cur--;else if(cur>=imgs.length)cur=Math.max(0,imgs.length-1);render()}
+$('clr').onclick=()=>{if(!confirm('確定清除全部 '+imgs.length+' 張圖片？'))return;imgs.forEach(m=>m.bmp.close());imgs=[];cur=0;$('st').textContent='';render()};
+let ds=null;
+const pos=e=>{const b=cv.getBoundingClientRect(),i=imgs[cur];
+  return{x:Math.max(0,Math.min(i.w,Math.round((e.clientX-b.left)*i.w/b.width))),y:Math.max(0,Math.min(i.h,Math.round((e.clientY-b.top)*i.h/b.height)))}};
+cv.onpointerdown=e=>{if(!imgs.length)return;cv.setPointerCapture(e.pointerId);ds=pos(e)};
+cv.onpointermove=e=>{if(!ds)return;const p=pos(e);
+  R={x:Math.min(ds.x,p.x),y:Math.min(ds.y,p.y),w:Math.max(1,Math.abs(p.x-ds.x)),h:Math.max(1,Math.abs(p.y-ds.y))};
+  sync(true);render()};
+cv.onpointerup=cv.onpointercancel=()=>{ds=null};
+['x','y','w','h'].forEach(k=>$(k).oninput=()=>{
+  R[k]=Math.max(k==='w'||k==='h'?1:0,parseInt($(k).value)||0);
+  if($('mode').value==='pct'){/* 比例以目前預覽圖換算 */}
+  sync(true);render()});
+$('mode').onchange=()=>{ if($('mode').value==='px'&&imgs[cur]){const r=rectFor(imgs[cur]);R=r;sync(true)} render()};
+// 選檔
+const drop=$('drop');
+drop.onclick=e=>{if(e.target!==$('fi'))$('fi').click()};
+$('fi').onchange=e=>{load([...e.target.files]);e.target.value=''};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('on')};
+drop.ondragleave=()=>drop.classList.remove('on');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');load([...e.dataTransfer.files])};
+window.addEventListener('resize',render);
+
+// 匯出
+$('go').onclick=async()=>{
+  $('go').disabled=true;
+  const zip=new JSZip(),used={},q=Math.min(100,Math.max(50,+$('q').value||100))/100;
+  for(let k=0;k<imgs.length;k++){
+    const i=imgs[k],r=rectFor(i);
+    $('st').textContent='處理中 '+(k+1)+'/'+imgs.length;
+    const c=document.createElement('canvas');c.width=r.w;c.height=r.h;
+    c.getContext('2d').drawImage(i.bmp,r.x,r.y,r.w,r.h,0,0,r.w,r.h);
+    const jpg=$('fmt').value==='keep'&&i.type==='image/jpeg';
+    const blob=await new Promise(res=>c.toBlob(res,jpg?'image/jpeg':'image/png',q));
+    let u8=new Uint8Array(await blob.arrayBuffer());
+    if(i.ppi)u8=jpg?setJPG(u8,i.ppi):setPNG(u8,i.ppi);
+    let base=i.name.replace(/\.[^.]+$/,'')+'_crop',n=base+(jpg?'.jpg':'.png');
+    if(used[n]){n=base+'_'+(++used[n])+(jpg?'.jpg':'.png')}else used[n]=1;
+    zip.file(n,u8);
+  }
+  $('st').textContent='打包中…';
+  const z=await zip.generateAsync({type:'blob',compression:'STORE'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(z);a.download='cropped.zip';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  $('st').textContent='完成，共 '+imgs.length+' 張';$('go').disabled=false;
+};
+
 })();
     </script>
     <script>
