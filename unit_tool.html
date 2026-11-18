@@ -450,11 +450,13 @@
           <div id="costres"></div>
           <div class="inl" style="margin-top: 10px">
             <button type="button" id="ccopy">複製摘要</button>
+            <button type="button" id="cxlsx" class="pri">匯出 Excel（.xlsx）</button>
+            <button type="button" id="ccsv">匯出 CSV</button>
             <button type="button" id="creset">清空並還原預設項目</button>
           </div>
           <p class="tip">
-            每個項目可自選「計算方式」：金額、數量×單價（如工時×時薪）、時數×時薪×倍率（加班）、營收％（如佣金）。印花稅預設為承攬契據千分之一，按未稅契約金額計算，不足 1 元的尾數免貼；買賣動產契據為每件 4 元，請改選「印花稅（買賣動產）」。
-            加班倍數僅供參考（平日前 2 小時 1.34、之後 1.67；休息日前 2 小時 1.34、第 3～8 小時 1.67、第 9 小時起 2.67），實際請依勞基法與公司規定。月薪換時薪可用月薪 ÷ 240。資料只存在這個瀏覽器。
+            每個項目可自選「計算方式」：金額、數量×單價（如工時×時薪）、時數×時薪×倍率（加班）、營收％、廠商ICT報價％（如廠商印花稅）。業主印花稅預設按未稅營收的千分之一、廠商印花稅按廠商ICT報價合計的千分之一計算（承攬契據稅率），不足 1 元的尾數免貼；買賣動產契據每件 4 元，請用「金額」自行輸入。
+            加班倍數僅供參考（平日前 2 小時 1.34、之後 1.67；休息日前 2 小時 1.34、第 3～8 小時 1.67、第 9 小時起 2.67），實際請依勞基法與公司規定。月薪換時薪可用月薪 ÷ 240。匯出的 Excel 內，小計與損益結果都是公式，改數字會自動重算；CSV 則只含目前的數值。資料只存在這個瀏覽器。
           </p>
           <datalist id="otList"><option value="1.34"></option><option value="1.67"></option><option value="2"></option><option value="2.67"></option></datalist>
         </section>
@@ -1387,40 +1389,37 @@
     <script>
       /* ===== 成本／營收／獲利率 ===== */
       /*PURE2-START*/
-      // mode: amt 金額｜qty 數量×單價｜ot 時數×時薪×倍率｜pct 營收％
+      // mode: amt 金額｜qty 數量×單價｜ot 時數×時薪×倍率｜pct 營收％｜pctv 廠商ICT報價％
       const CATS = {
         wage: { n: '常日工時費', g: 'in', mode: 'qty', la: '工時（小時）', lb: '時薪' },
         ot: { n: '加班費', g: 'in', mode: 'ot', c: '1.34' },
-        ins: { n: '勞健保／勞退（雇主負擔）', g: 'in', mode: 'amt' },
-        dep: { n: '設備／軟體折舊', g: 'in', mode: 'amt' },
-        ovh: { n: '管理費／間接費用', g: 'in', mode: 'amt' },
-        inOther: { n: '其他內部成本', g: 'in', mode: 'amt' },
-        outsrc: { n: '外包／委外費', g: 'ex', mode: 'amt' },
-        material: { n: '材料／採購費', g: 'ex', mode: 'amt' },
-        travel: { n: '差旅費（交通、住宿、膳雜）', g: 'ex', mode: 'amt' },
-        stamp: { n: '印花稅（承攬契據 千分之一）', g: 'ex', mode: 'pct', a: '0.1', floor: true },
-        stamp4: { n: '印花稅（買賣動產 每件 4 元）', g: 'ex', mode: 'qty', la: '件數', lb: '每件稅額', b: '4' },
-        ship: { n: '運費／物流', g: 'ex', mode: 'amt' },
-        fee: { n: '佣金／手續費', g: 'ex', mode: 'pct' },
-        rent: { n: '場地／租賃費', g: 'ex', mode: 'amt' },
-        insur: { n: '保險／規費', g: 'ex', mode: 'amt' },
-        exOther: { n: '其他外部成本', g: 'ex', mode: 'amt' },
+        ownerStamp: { n: '業主印花稅', g: 'in', mode: 'pct', a: '0.1', floor: true },
+        trip: { n: '出差費', g: 'in', mode: 'amt' },
+        venue: { n: '場地租金', g: 'in', mode: 'amt' },
+        ct: { n: '內部CT報價', g: 'in', mode: 'amt' },
+        ict: { n: '內部ICT報價', g: 'in', mode: 'amt' },
+        pm: { n: '專案管理費', g: 'in', mode: 'amt' },
+        risk: { n: '風險儲備金', g: 'in', mode: 'amt' },
+        vendorICT: { n: '廠商ICT報價', g: 'ex', mode: 'amt' },
+        insur: { n: '保險', g: 'ex', mode: 'amt' },
+        vendorStamp: { n: '廠商印花稅', g: 'ex', mode: 'pctv', a: '0.1', floor: true },
       };
       const n0 = v => {
         const x = parseFloat(String(v == null ? '' : v).replace(/,/g, ''));
         return isFinite(x) ? x : 0;
       };
-      // 單列小計；rev 為未稅營收
-      function rowAmount(r, rev) {
+      // 單列小計；rev 為未稅營收；rows 用來取得廠商ICT報價合計
+      function rowAmount(r, rev, rows) {
         const a = n0(r.a),
-          b = n0(r.b);
+          b = n0(r.b),
+          fl = CATS[r.cat] && CATS[r.cat].floor;
+        let v;
         if (r.mode === 'qty') return a * b;
         if (r.mode === 'ot') return a * b * (String(r.c).trim() === '' ? 1 : n0(r.c));
-        if (r.mode === 'pct') {
-          const v = (rev * a) / 100;
-          return r.cat === 'stamp' || (CATS[r.cat] && CATS[r.cat].floor) ? Math.floor(v + 1e-9) : v;
-        }
-        return a;
+        if (r.mode === 'pct') v = (rev * a) / 100;
+        else if (r.mode === 'pctv') v = ((rows || []).filter(x => x.cat === 'vendorICT').reduce((t, x) => t + n0(x.a) * (x.mode === 'qty' ? n0(x.b) : 1), 0) * a) / 100;
+        else return a;
+        return fl ? Math.floor(v + 1e-9) : v;
       }
       function summarize(rows, rev) {
         let inn = 0,
@@ -1428,7 +1427,7 @@
           fixed = 0,
           pct = 0;
         rows.forEach(r => {
-          const v = rowAmount(r, rev);
+          const v = rowAmount(r, rev, rows);
           if (r.g === 'in') inn += v;
           else ext += v;
           if (r.mode === 'pct') pct += n0(r.a) / 100;
@@ -1446,15 +1445,21 @@
       const defaultRows = () => [
         { g: 'in', cat: 'wage', mode: 'qty', note: '', a: '', b: '', c: '' },
         { g: 'in', cat: 'ot', mode: 'ot', note: '', a: '', b: '', c: '1.34' },
-        { g: 'ex', cat: 'outsrc', mode: 'amt', note: '', a: '', b: '', c: '' },
-        { g: 'ex', cat: 'travel', mode: 'amt', note: '', a: '', b: '', c: '' },
-        { g: 'ex', cat: 'stamp', mode: 'pct', note: '', a: '0.1', b: '', c: '' },
+        { g: 'in', cat: 'ownerStamp', mode: 'pct', note: '', a: '0.1', b: '', c: '' },
+        { g: 'in', cat: 'trip', mode: 'amt', note: '', a: '', b: '', c: '' },
+        { g: 'ex', cat: 'vendorICT', mode: 'amt', note: '', a: '', b: '', c: '' },
+        { g: 'ex', cat: 'vendorStamp', mode: 'pctv', note: '', a: '0.1', b: '', c: '' },
       ];
+      // 舊版類別對應到新類別（沒有對應的舊項目會被略過）
+      const LEGACY = { stamp: 'ownerStamp', travel: 'trip', outsrc: 'vendorICT', rent: 'venue', ovh: 'pm' };
       let cRows = defaultRows();
       try {
         const sv = JSON.parse(localStorage.getItem(CKEY) || 'null');
         if (sv && Array.isArray(sv.rows)) {
-          cRows = sv.rows.filter(r => r && CATS[r.cat] && (r.g === 'in' || r.g === 'ex'));
+          cRows = sv.rows
+            .filter(r => r && (r.g === 'in' || r.g === 'ex'))
+            .map(r => ({ ...r, cat: LEGACY[r.cat] || r.cat }))
+            .filter(r => CATS[r.cat]);
           $('crev').value = sv.rev || '';
           $('ctgt').value = sv.tgt || '20';
           $('ctax').checked = !!sv.tax;
@@ -1465,6 +1470,7 @@
         ['qty', '數量 × 單價'],
         ['ot', '時數 × 時薪 × 倍率'],
         ['pct', '營收 ％'],
+        ['pctv', '廠商ICT報價 ％'],
       ];
       const fm = v => (isFinite(v) ? v.toLocaleString('en', { maximumFractionDigits: 2 }) : '—');
       const pc = v => (isFinite(v) ? (v * 100).toLocaleString('en', { maximumFractionDigits: 2 }) + '%' : '—');
@@ -1473,7 +1479,7 @@
         ['in', 'ex']
           .map(
             g =>
-              `<optgroup label="${g === 'in' ? '內部常用' : '外部常用'}">` +
+              `<optgroup label="${g === 'in' ? '內部成本類' : '外部成本類'}">` +
               Object.entries(CATS)
                 .filter(([, c]) => c.g === g)
                 .map(([k, c]) => `<option value="${k}"${k === sel ? ' selected' : ''}>${c.n}</option>`)
@@ -1481,13 +1487,14 @@
               '</optgroup>'
           )
           .join('');
-      function fieldsHtml(r, i) {
+      function fieldsHtml(r) {
         const c = CATS[r.cat] || {};
         const mini = (k, label, ph, extra = '') =>
           `<label class="mini">${label}<input data-k="${k}" type="text" inputmode="decimal" autocomplete="off" value="${esc(r[k] || '')}" placeholder="${ph}" ${extra} /></label>`;
         if (r.mode === 'qty') return mini('a', c.la || '數量', '0') + mini('b', c.lb || '單價', '0');
         if (r.mode === 'ot') return mini('a', '加班時數', '0') + mini('b', '時薪', '0') + mini('c', '倍率', '1.34', 'list="otList"');
         if (r.mode === 'pct') return mini('a', '占營收 %', '0');
+        if (r.mode === 'pctv') return mini('a', '占廠商ICT報價 %', '0');
         return mini('a', '金額', '0');
       }
       const revNet = () => {
@@ -1498,7 +1505,7 @@
         ['in', 'ex'].forEach(g => {
           $('list-' + g).innerHTML =
             cRows
-              .map((r, i) => (r.g !== g ? '' : `<div class="crow" data-i="${i}"><label class="mini wide">類別<select data-k="cat">${catOpts(r.cat)}</select></label><label class="mini">計算方式<select data-k="mode">${MODES.map(([v, n]) => `<option value="${v}"${v === r.mode ? ' selected' : ''}>${n}</option>`).join('')}</select></label>${fieldsHtml(r, i)}<label class="mini wide">備註（選填）<input data-k="note" type="text" value="${esc(r.note || '')}" autocomplete="off" /></label><span class="csub" data-sub>0</span><button type="button" class="cdel" title="刪除這一列" aria-label="刪除">✕</button></div>`)
+              .map((r, i) => (r.g !== g ? '' : `<div class="crow" data-i="${i}"><label class="mini wide">類別<select data-k="cat">${catOpts(r.cat)}</select></label><label class="mini">計算方式<select data-k="mode">${MODES.map(([v, n]) => `<option value="${v}"${v === r.mode ? ' selected' : ''}>${n}</option>`).join('')}</select></label>${fieldsHtml(r)}<label class="mini wide">備註（選填）<input data-k="note" type="text" value="${esc(r.note || '')}" autocomplete="off" /></label><span class="csub" data-sub>0</span><button type="button" class="cdel" title="刪除這一列" aria-label="刪除">✕</button></div>`)
               )
               .join('') || '<p class="tip">尚無項目，按下方按鈕新增。</p>';
         });
@@ -1508,7 +1515,7 @@
         const rev = revNet();
         cRows.forEach((r, i) => {
           const el = document.querySelector(`.crow[data-i="${i}"] [data-sub]`);
-          if (el) el.textContent = fm(rowAmount(r, rev));
+          if (el) el.textContent = fm(rowAmount(r, rev, cRows));
         });
         const s = summarize(cRows, rev);
         $('sub-in').textContent = '內部小計　' + fm(s.inn);
@@ -1520,17 +1527,16 @@
           const tgt = n0($('ctgt').value) / 100,
             q = quoteFor(s, tgt),
             be = quoteFor(s, 0);
-          const prof = fm(s.profit);
           $('costres').innerHTML = kv([
             ['營收（未稅）', fm(rev) + ($('ctax').checked ? `　<small>含稅 ${fm(n0($('crev').value))}</small>` : ''), true],
             ['內部成本', `${fm(s.inn)}　<small>${s.cost ? pc(s.inn / s.cost) : '—'}</small>`],
             ['外部成本', `${fm(s.ext)}　<small>${s.cost ? pc(s.ext / s.cost) : '—'}</small>`],
             ['總成本', fm(s.cost), true],
-            ['獲利（營收 − 總成本）', `<span ${neg(s.profit)}>${prof}</span>`, true],
+            ['獲利（營收 − 總成本）', `<span ${neg(s.profit)}>${fm(s.profit)}</span>`, true],
             ['獲利率（獲利 ÷ 營收）', `<span ${neg(s.profit)}>${pc(s.margin)}</span>`, true],
             ['成本率（總成本 ÷ 營收）', pc(s.costRate)],
             ['加成率（獲利 ÷ 總成本）', pc(s.markup)],
-            ['損益兩平營收（未稅）', fm(Math.ceil(be))],
+            ['損益兩平營收（未稅）', isFinite(be) ? fm(Math.ceil(be)) : '無法計算'],
             [`達成 ${fm(tgt * 100)}% 獲利率的建議報價（未稅）`, isFinite(q) ? fm(Math.ceil(q)) : '無法達成（成本占比已超過 100%）'],
             [`　同上含稅（5%）`, isFinite(q) ? fm(Math.round(Math.ceil(q) * 1.05)) : '—'],
           ]);
@@ -1579,7 +1585,9 @@
       document.querySelectorAll('.cadd').forEach(b =>
         b.addEventListener('click', () => {
           const g = b.dataset.g;
-          cRows.push({ g, cat: g === 'in' ? 'inOther' : 'exOther', mode: 'amt', note: '', a: '', b: '', c: '' });
+          const cat = Object.keys(CATS).find(k => CATS[k].g === g);
+          const c = CATS[cat];
+          cRows.push({ g, cat, mode: c.mode, note: '', a: c.a || '', b: c.b || '', c: c.c || '' });
           renderRows();
           const last = [...document.querySelectorAll(`#list-${g} .crow`)].pop();
           if (last) last.querySelector('select').focus();
@@ -1598,7 +1606,7 @@
       $('ccopy').onclick = () => {
         const rev = revNet(),
           s = summarize(cRows, rev);
-        const line = r => `  ${CATS[r.cat].n}${r.note ? '（' + r.note + '）' : ''}：${fm(rowAmount(r, rev))}`;
+        const line = r => `  ${CATS[r.cat].n}${r.note ? '（' + r.note + '）' : ''}：${fm(rowAmount(r, rev, cRows))}`;
         const txt = [
           `營收（未稅）：${fm(rev)}`,
           `內部成本：${fm(s.inn)}`,
@@ -1614,8 +1622,215 @@
           toast('已複製摘要');
         } catch (e) {}
       };
-      renderRows();
 
+      /*EXPORT-START*/
+      // ---- 匯出：先組出表格（含公式），再輸出成 xlsx 或 csv ----
+      // cell：{ v: 值, f: 公式（不含 =）, k: 'n' 數字｜'p' 百分比｜'s' 文字｜'b' 粗體文字｜'h' 表頭 }
+      const Cx = (v, k, f) => ({ v, k: k || (typeof v === 'number' ? 'n' : 's'), f });
+      function buildSheet(rows, revNetV, tgtPct, stamp) {
+        const sorted = [...rows.filter(r => r.g === 'in'), ...rows.filter(r => r.g === 'ex')];
+        const FIRST = 8,
+          LAST = FIRST + sorted.length - 1;
+        const g = [];
+        const put = (r, c, cell) => ((g[r - 1] = g[r - 1] || [])[c] = cell);
+        const rev = revNetV;
+        put(1, 0, Cx('成本／獲利試算表', 'b'));
+        put(2, 0, Cx('匯出時間'));
+        put(2, 1, Cx(stamp));
+        put(3, 0, Cx('營收（未稅）'));
+        put(3, 1, Cx(rev, 'n'));
+        put(4, 0, Cx('含稅金額（5%）'));
+        put(4, 1, Cx(Math.round(rev * 1.05), 'n', 'ROUND(B3*1.05,0)'));
+        put(5, 0, Cx('目標獲利率'));
+        put(5, 1, Cx(tgtPct / 100, 'p'));
+        ['群組', '類別', '計算方式', '備註', '數量／時數／金額／％', '單價／時薪', '倍率', '小計'].forEach((h, i) => put(7, i, Cx(h, 'h')));
+        const vendorCells = [];
+        sorted.forEach((r, i) => r.cat === 'vendorICT' && vendorCells.push(`H${FIRST + i}`));
+        const revPctRows = [];
+        sorted.forEach((r, i) => {
+          const n = FIRST + i;
+          const num = x => (String(x).trim() === '' ? null : n0(x));
+          put(n, 0, Cx(r.g === 'in' ? '內部成本' : '外部成本'));
+          put(n, 1, Cx(CATS[r.cat].n));
+          put(n, 2, Cx(MODES.find(m => m[0] === r.mode)[1]));
+          put(n, 3, Cx(r.note || ''));
+          const a = num(r.a),
+            b = num(r.b);
+          if (a !== null) put(n, 4, Cx(a, 'n'));
+          if (r.mode === 'qty' && b !== null) put(n, 5, Cx(b, 'n'));
+          if (r.mode === 'ot') {
+            if (b !== null) put(n, 5, Cx(b, 'n'));
+            put(n, 6, Cx(String(r.c).trim() === '' ? 1 : n0(r.c), 'n'));
+          }
+          const fl = CATS[r.cat].floor;
+          let f;
+          if (r.mode === 'qty') f = `E${n}*F${n}`;
+          else if (r.mode === 'ot') f = `E${n}*F${n}*G${n}`;
+          else if (r.mode === 'pct') {
+            f = fl ? `ROUNDDOWN($B$3*E${n}/100,0)` : `$B$3*E${n}/100`;
+            revPctRows.push(n);
+          } else if (r.mode === 'pctv') {
+            f = `(${vendorCells.join('+') || '0'})*E${n}/100`;
+            if (fl) f = `ROUNDDOWN(${f},0)`;
+          } else f = `E${n}`;
+          put(n, 7, Cx(rowAmount(r, rev, rows), 'n', f));
+        });
+        // 損益結果
+        const s = summarize(rows, rev),
+          tgt = tgtPct / 100;
+        const rng = col => `$${col}$${FIRST}:$${col}$${LAST}`;
+        let r0 = LAST + 2;
+        const R = {};
+        const line = (key, label, cell) => {
+          R[key] = r0;
+          put(r0, 0, Cx(label, key === 'title' ? 'b' : 's'));
+          if (cell) put(r0, 1, cell);
+          r0++;
+        };
+        line('title', '損益結果');
+        line('inn', '內部成本', Cx(s.inn, 'n', `SUMIF(${rng('A')},"內部成本",${rng('H')})`));
+        line('ext', '外部成本', Cx(s.ext, 'n', `SUMIF(${rng('A')},"外部成本",${rng('H')})`));
+        line('cost', '總成本', Cx(s.cost, 'n', `B${R.inn}+B${R.ext}`));
+        line('profit', '獲利（營收 − 總成本）', Cx(s.profit, 'n', `B3-B${R.cost}`));
+        const blank = (x, f) => (isFinite(x) ? Cx(x, 'p', f) : Cx('', 's', f));
+        line('margin', '獲利率（獲利 ÷ 營收）', blank(s.margin, `IF(B3=0,"",B${R.profit}/B3)`));
+        line('crate', '成本率（總成本 ÷ 營收）', blank(s.costRate, `IF(B3=0,"",B${R.cost}/B3)`));
+        line('mk', '加成率（獲利 ÷ 總成本）', blank(s.markup, `IF(B${R.cost}=0,"",B${R.profit}/B${R.cost})`));
+        const pctAmt = revPctRows.map(n => `H${n}`).join('+') || '0',
+          pctRate = revPctRows.length ? `(${revPctRows.map(n => `E${n}`).join('+')})/100` : '0';
+        const be = quoteFor(s, 0),
+          q = quoteFor(s, tgt);
+        const numOrText = (x, f) => (isFinite(x) ? Cx(Math.ceil(x), 'n', f) : Cx('無法達成', 's', f));
+        line('be', '損益兩平營收（未稅）', numOrText(be, `IF(1-${pctRate}<=0,"無法達成",ROUNDUP((B${R.cost}-(${pctAmt}))/(1-${pctRate}),0))`));
+        line('q', `建議報價（未稅，依目標獲利率 B5）`, numOrText(q, `IF(1-B5-${pctRate}<=0,"無法達成",ROUNDUP((B${R.cost}-(${pctAmt}))/(1-B5-${pctRate}),0))`));
+        line('qt', '建議報價（含稅 5%）', isFinite(q) ? Cx(Math.round(Math.ceil(q) * 1.05), 'n', `IF(ISNUMBER(B${R.q}),ROUND(B${R.q}*1.05,0),"")`) : Cx('', 's', `IF(ISNUMBER(B${R.q}),ROUND(B${R.q}*1.05,0),"")`));
+        r0++;
+        put(r0, 0, Cx('說明：「小計」與「損益結果」都是公式，修改 B3（營收）、B5（目標獲利率）或各列數值，Excel 會自動重算。'));
+        return g;
+      }
+      const colName = i => String.fromCharCode(65 + i);
+      const xe = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '');
+      function sheetXml(g) {
+        const ST = { s: 0, n: 2, p: 3, b: 1, h: 4 };
+        let out = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="24" customWidth="1"/><col min="2" max="2" width="22" customWidth="1"/><col min="3" max="3" width="20" customWidth="1"/><col min="4" max="4" width="22" customWidth="1"/><col min="5" max="5" width="22" customWidth="1"/><col min="6" max="7" width="12" customWidth="1"/><col min="8" max="8" width="16" customWidth="1"/></cols><sheetData>';
+        g.forEach((row, ri) => {
+          if (!row) return;
+          out += `<row r="${ri + 1}">`;
+          row.forEach((c, ci) => {
+            if (!c) return;
+            const ref = colName(ci) + (ri + 1),
+              s = ST[c.k];
+            const isNum = typeof c.v === 'number' && isFinite(c.v);
+            if (c.f) {
+              out += isNum ? `<c r="${ref}" s="${s}"><f>${xe(c.f)}</f><v>${c.v}</v></c>` : `<c r="${ref}" s="${s}" t="str"><f>${xe(c.f)}</f><v>${xe(c.v)}</v></c>`;
+            } else if (isNum) out += `<c r="${ref}" s="${s}"><v>${c.v}</v></c>`;
+            else if (c.v !== '') out += `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xe(c.v)}</t></is></c>`;
+          });
+          out += '</row>';
+        });
+        return out + '</sheetData></worksheet>';
+      }
+      const STYLES =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE5E9F0"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+      function makeXlsx(g) {
+        const enc = new TextEncoder();
+        const files = [
+          ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+          ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+          ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="成本獲利試算" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>'],
+          ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+          ['xl/styles.xml', STYLES],
+          ['xl/worksheets/sheet1.xml', sheetXml(g)],
+        ].map(([n, t]) => [enc.encode(n), enc.encode(t)]);
+        let table = null;
+        const crc32 = u8 => {
+          if (!table) {
+            table = new Uint32Array(256);
+            for (let i = 0; i < 256; i++) {
+              let c = i;
+              for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+              table[i] = c >>> 0;
+            }
+          }
+          let c = 0xffffffff;
+          for (let i = 0; i < u8.length; i++) c = table[(c ^ u8[i]) & 255] ^ (c >>> 8);
+          return (c ^ 0xffffffff) >>> 0;
+        };
+        const parts = [],
+          central = [];
+        let off = 0;
+        files.forEach(([name, data]) => {
+          const crc = crc32(data);
+          const lh = new DataView(new ArrayBuffer(30));
+          lh.setUint32(0, 0x04034b50, true);
+          lh.setUint16(4, 20, true);
+          lh.setUint16(6, 0x0800, true);
+          lh.setUint16(8, 0, true);
+          lh.setUint16(10, 0, true);
+          lh.setUint16(12, 0x21, true);
+          lh.setUint32(14, crc, true);
+          lh.setUint32(18, data.length, true);
+          lh.setUint32(22, data.length, true);
+          lh.setUint16(26, name.length, true);
+          lh.setUint16(28, 0, true);
+          parts.push(new Uint8Array(lh.buffer), name, data);
+          const ch = new DataView(new ArrayBuffer(46));
+          ch.setUint32(0, 0x02014b50, true);
+          ch.setUint16(4, 20, true);
+          ch.setUint16(6, 20, true);
+          ch.setUint16(8, 0x0800, true);
+          ch.setUint16(12, 0, true);
+          ch.setUint16(14, 0x21, true);
+          ch.setUint32(16, crc, true);
+          ch.setUint32(20, data.length, true);
+          ch.setUint32(24, data.length, true);
+          ch.setUint16(28, name.length, true);
+          ch.setUint32(42, off, true);
+          central.push(new Uint8Array(ch.buffer), name);
+          off += 30 + name.length + data.length;
+        });
+        const cdSize = central.reduce((t, u) => t + u.length, 0);
+        const end = new DataView(new ArrayBuffer(22));
+        end.setUint32(0, 0x06054b50, true);
+        end.setUint16(8, files.length, true);
+        end.setUint16(10, files.length, true);
+        end.setUint32(12, cdSize, true);
+        end.setUint32(16, off, true);
+        return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      }
+      function makeCsv(g) {
+        const cell = c => {
+          if (!c) return '';
+          let v = c.v;
+          if (typeof v === 'number') v = c.k === 'p' ? (v * 100).toFixed(2) + '%' : String(Math.round(v * 1e6) / 1e6);
+          else if (/^[=+\-@]/.test(v)) v = "'" + v;
+          return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+        };
+        const rows = Array.from(g);
+        const w = Math.max(...rows.map(r => (r ? r.length : 0)));
+        return '\ufeff' + rows.map(r => Array.from({ length: w }, (_, i) => cell(r && r[i])).join(',')).join('\r\n');
+      }
+      /*EXPORT-END*/
+      const saveBlob = (blob, name) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      };
+      const exportSheet = kind => {
+        const d = new Date(),
+          ymd = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+        const g = buildSheet(cRows, revNet(), n0($('ctgt').value), `${dstr(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+        if (kind === 'csv') saveBlob(new Blob([makeCsv(g)], { type: 'text/csv;charset=utf-8' }), `成本獲利試算_${ymd}.csv`);
+        else saveBlob(makeXlsx(g), `成本獲利試算_${ymd}.xlsx`);
+        toast('已匯出 ' + kind.toUpperCase());
+      };
+      $('cxlsx').onclick = () => exportSheet('xlsx');
+      $('ccsv').onclick = () => exportSheet('csv');
+      renderRows();
     </script>
   </body>
 </html>
