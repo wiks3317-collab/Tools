@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>單位換算</title>
+    <title>換算與計算工具箱</title>
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
     <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet" />
     <meta name="referrer" content="no-referrer" />
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8F%3C/text%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AE%3C/text%3E%3C/svg%3E"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -99,6 +99,80 @@
           justify-self: start;
         }
       }
+
+      input[type='checkbox'],
+      input[type='radio'] {
+        width: auto;
+        padding: 0;
+        margin-right: 6px;
+      }
+      textarea {
+        font: inherit;
+        font-size: 14px;
+      }
+      .g {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        margin: 8px 0;
+        align-items: end;
+      }
+      .g .f {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 0;
+        min-width: 0;
+      }
+      .g .f label,
+      .lbl {
+        font-size: 12px;
+        color: var(--mut);
+      }
+      .inl {
+        display: flex;
+        gap: 6px;
+      }
+      .inl button {
+        white-space: nowrap;
+      }
+      .ck {
+        display: block;
+        font-size: 13px;
+        color: var(--mut);
+        margin: 4px 0;
+      }
+      section > b {
+        display: block;
+        margin-bottom: 4px;
+      }
+      table.kv {
+        margin-top: 8px;
+      }
+      td.v {
+        cursor: pointer;
+      }
+      td.v.big {
+        font-weight: 700;
+      }
+      .bad {
+        color: #bf616a;
+        font-size: 13px;
+        margin: 8px 0 0;
+      }
+      .big-out {
+        font-size: 17px;
+        font-weight: 700;
+        padding: 8px 10px;
+        background: var(--gut);
+        border-radius: 8px;
+        margin-top: 8px;
+        word-break: break-all;
+        cursor: pointer;
+      }
+      #mainTabs {
+        margin-bottom: 14px;
+      }
     </style>
   </head>
   <body>
@@ -106,11 +180,19 @@
       <header>
         <div>
           <a class="back" href="index.html">← 返回小工具集首頁</a>
-          <h1>單位換算</h1>
-          <p class="tagline">工程與生活常用單位換算，另含即時匯率。所有計算都在你的瀏覽器內完成。</p>
+          <h1>換算與計算工具箱</h1>
+          <p class="tagline">單位換算（含即時匯率）、日期與時間加減、時區與時間戳、營業稅／折扣／百分比與中文大寫金額。所有計算都在你的瀏覽器內完成。</p>
         </div>
         <div class="themes" id="themes">主題：</div>
       </header>
+      <div class="tabs" id="mainTabs" role="tablist">
+        <button data-pane="unit" class="on" aria-selected="true">單位換算</button>
+        <button data-pane="date" aria-selected="false">日期計算</button>
+        <button data-pane="time" aria-selected="false">時間計算</button>
+        <button data-pane="zone" aria-selected="false">時區／時間戳／民國年</button>
+        <button data-pane="money" aria-selected="false">金額／百分比</button>
+      </div>
+      <div class="pane on" id="pane-unit">
       <div class="tabs" id="tabs"></div>
       <section>
         <div class="conv">
@@ -127,7 +209,175 @@
         <table id="all"></table>
         <p class="tip">點選任一列可設為目標單位；點右側數值可複製。</p>
       </section>
+      </div>
+      <!-- ===== 日期計算 ===== -->
+      <div class="pane" id="pane-date">
+        <section id="sDate">
+          <b>日期加減</b>
+          <div class="g">
+            <div class="f">
+              <label>起始日期</label>
+              <div class="inl"><input type="date" id="d0" min="1000-01-01" max="9999-12-31" /><button type="button" id="d0t">今天</button></div>
+            </div>
+            <div class="f">
+              <label>運算</label>
+              <select id="dop">
+                <option value="1">加（往後）</option>
+                <option value="-1">減（往前）</option>
+              </select>
+            </div>
+            <div class="f"><label>年</label><input id="dy" type="number" value="0" min="0" step="1" /></div>
+            <div class="f"><label>月</label><input id="dm" type="number" value="0" min="0" step="1" /></div>
+            <div class="f"><label>週</label><input id="dw" type="number" value="0" min="0" step="1" /></div>
+            <div class="f"><label>日</label><input id="dd" type="number" value="30" min="0" step="1" /></div>
+          </div>
+          <label class="ck"><input type="checkbox" id="dwork" />「週」「日」改以工作日計（週一至週五，1 週＝5 個工作日；未排除國定假日）</label>
+          <div id="dres"></div>
+          <p class="tip">先加減年、月，再加減週、日；月底日期會自動對齊，例如 1/31 加 1 個月＝2/28（閏年 2/29）。</p>
+        </section>
+        <section id="sDiff">
+          <b>兩個日期相差</b>
+          <div class="g">
+            <div class="f">
+              <label>開始日期</label>
+              <div class="inl"><input type="date" id="e0" min="1000-01-01" max="9999-12-31" /><button type="button" id="e0t">今天</button></div>
+            </div>
+            <div class="f">
+              <label>結束日期</label>
+              <div class="inl"><input type="date" id="e1" min="1000-01-01" max="9999-12-31" /><button type="button" id="e1t">今天</button></div>
+            </div>
+          </div>
+          <label class="ck"><input type="checkbox" id="eend" />計入結束當天（天數與工作日數各多算一天）</label>
+          <div id="eres"></div>
+          <p class="tip">可用來算年齡、年資、倒數天數、專案工期。結束日早於開始日時，會以相反方向計算。</p>
+        </section>
+      </div>
+
+      <!-- ===== 時間計算 ===== -->
+      <div class="pane" id="pane-time">
+        <section id="sTime">
+          <b>時間加減</b>
+          <div class="g">
+            <div class="f"><label>起始時間</label><input type="time" id="t0" step="1" value="09:00:00" /></div>
+            <div class="f">
+              <label>運算</label>
+              <select id="top">
+                <option value="1">加</option>
+                <option value="-1">減</option>
+              </select>
+            </div>
+            <div class="f"><label>時</label><input id="th" type="number" value="8" min="0" step="1" /></div>
+            <div class="f"><label>分</label><input id="tm" type="number" value="30" min="0" step="1" /></div>
+            <div class="f"><label>秒</label><input id="ts" type="number" value="0" min="0" step="1" /></div>
+          </div>
+          <div id="tres"></div>
+        </section>
+        <section id="sWork">
+          <b>工時／時間差</b>
+          <div class="g">
+            <div class="f"><label>開始</label><input type="time" id="w0" step="1" value="09:00:00" /></div>
+            <div class="f"><label>結束</label><input type="time" id="w1" step="1" value="18:30:00" /></div>
+            <div class="f"><label>休息（分鐘）</label><input id="wb" type="number" value="60" min="0" step="1" /></div>
+            <div class="f"><label>標準工時（小時，算加班用）</label><input id="wstd" type="number" value="8" min="0" step="0.5" /></div>
+          </div>
+          <div id="wres"></div>
+          <p class="tip">結束時間早於開始時間時，視為跨日（隔天）。</p>
+        </section>
+        <section id="sSum">
+          <b>時間長度加總</b>
+          <textarea id="tl" rows="6" placeholder="一行一筆，例如：&#10;1:30&#10;2h15m&#10;45分&#10;-0:20（前面加負號代表扣掉）"></textarea>
+          <div id="lres"></div>
+          <p class="tip">
+            支援 <code>時:分</code>、<code>時:分:秒</code>、<code>2h30m</code>、<code>1天2小時</code>、<code>90m</code>、<code>45秒</code>；純數字視為分鐘；行首加 <code>-</code> 為扣除。
+          </p>
+        </section>
+      </div>
+
+      <!-- ===== 時區／時間戳／民國年 ===== -->
+      <div class="pane" id="pane-zone">
+        <section id="sZone">
+          <b>時區換算</b>
+          <div class="g">
+            <div class="f">
+              <label>日期時間</label>
+              <div class="inl"><input type="datetime-local" id="z0" step="60" /><button type="button" id="z0t">現在</button></div>
+            </div>
+            <div class="f"><label>這個時間是哪個時區的</label><select id="zsrc"></select></div>
+          </div>
+          <div id="zres"></div>
+        </section>
+        <section id="sStamp">
+          <b>Unix 時間戳</b>
+          <div class="g">
+            <div class="f">
+              <label>時間戳（秒或毫秒，自動判斷）</label>
+              <div class="inl"><input type="text" id="us" inputmode="numeric" autocomplete="off" /><button type="button" id="ust">現在</button></div>
+            </div>
+          </div>
+          <div id="ures"></div>
+        </section>
+        <section id="sRoc">
+          <b>民國年／西元年／干支</b>
+          <div class="g">
+            <div class="f"><label>西元年</label><input id="ry" type="number" step="1" /></div>
+            <div class="f"><label>民國年（民國前請輸入負數）</label><input id="rr" type="number" step="1" /></div>
+          </div>
+          <div id="rres"></div>
+          <p class="tip">民國元年＝西元 1912 年；西元 1911 年為民國前 1 年。</p>
+        </section>
+      </div>
+
+      <!-- ===== 金額／百分比 ===== -->
+      <div class="pane" id="pane-money">
+        <section id="sPct">
+          <b>百分比計算</b>
+          <div class="g">
+            <div class="f">
+              <label>要算什麼</label>
+              <select id="pm">
+                <option value="1">A 是 B 的百分之幾</option>
+                <option value="2">A 的 B% 是多少</option>
+                <option value="3">A 增加 B% 之後</option>
+                <option value="4">A 減少 B% 之後</option>
+                <option value="5">A 變成 B，變動了幾 %</option>
+              </select>
+            </div>
+            <div class="f"><label>A</label><input id="pa" type="text" inputmode="decimal" value="50" autocomplete="off" /></div>
+            <div class="f"><label>B</label><input id="pb" type="text" inputmode="decimal" value="200" autocomplete="off" /></div>
+          </div>
+          <div id="pres"></div>
+        </section>
+        <section id="sTax">
+          <b>營業稅（未稅／含稅）</b>
+          <div class="g">
+            <div class="f"><label>金額</label><input id="xa" type="text" inputmode="decimal" value="1000" autocomplete="off" /></div>
+            <div class="f"><label>稅率（%）</label><input id="xr" type="text" inputmode="decimal" value="5" autocomplete="off" /></div>
+          </div>
+          <label class="ck"><input type="radio" name="xm" value="net" checked />輸入的是未稅金額</label>
+          <label class="ck"><input type="radio" name="xm" value="gross" />輸入的是含稅金額</label>
+          <div id="xres"></div>
+          <p class="tip">稅額以四捨五入取整數；實際開立發票請以憑證金額為準。</p>
+        </section>
+        <section id="sDisc">
+          <b>折扣</b>
+          <div class="g">
+            <div class="f"><label>原價</label><input id="ga" type="text" inputmode="decimal" value="1000" autocomplete="off" /></div>
+            <div class="f"><label>折數（8.5 或 85 都是 85 折）</label><input id="gd" type="text" inputmode="decimal" value="8.5" autocomplete="off" /></div>
+            <div class="f"><label>售價（可反推折數）</label><input id="gs" type="text" inputmode="decimal" autocomplete="off" /></div>
+          </div>
+          <div id="gres"></div>
+        </section>
+        <section id="sCn">
+          <b>金額轉中文大寫</b>
+          <div class="g">
+            <div class="f"><label>金額（到分，最多 16 位整數）</label><input id="cn" type="text" inputmode="decimal" value="12345.6" autocomplete="off" /></div>
+          </div>
+          <div id="cnres"></div>
+        </section>
+      </div>
+
     </div>
+    <div id="toast"></div>
     <script>
       const $ = id => document.getElementById(id);
       // 單位：[代碼, 顯示名稱, 換算到基準單位的係數]
@@ -423,6 +673,7 @@
       const copy = t => {
         try {
           navigator.clipboard.writeText(t.replace(/,/g, ''));
+          window.toast && toast('已複製');
         } catch (e) {}
       };
       $('out').onclick = () => {
@@ -473,6 +724,582 @@
       loadFx().then(() => {
         if (cat === 'fx') setCat('fx');
       });
+    </script>
+    <script>
+      /* ===== 新增工具：日期／時間／時區／金額 ===== */
+      /*PURE-START*/
+      const pad = (n, w = 2) => String(Math.abs(n)).padStart(w, '0');
+      const WD = ['日', '一', '二', '三', '四', '五', '六'];
+      const mkDate = (y, m, d) => {
+        const t = new Date(2000, 0, 1);
+        t.setFullYear(y, m, d);
+        return t;
+      };
+      const dstr = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const pdate = s => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+        return m ? mkDate(+m[1], +m[2] - 1, +m[3]) : null;
+      };
+      const dim = (y, m) => mkDate(y, m + 1, 0).getDate();
+      const addMonths = (d, n) => {
+        const t = mkDate(d.getFullYear(), d.getMonth() + n, 1);
+        t.setDate(Math.min(d.getDate(), dim(t.getFullYear(), t.getMonth())));
+        return t;
+      };
+      const addDays = (d, n) => mkDate(d.getFullYear(), d.getMonth(), d.getDate() + n);
+      const addWork = (d, n) => {
+        const step = n < 0 ? -1 : 1;
+        let left = Math.abs(n),
+          t = d;
+        while (left > 0) {
+          t = addDays(t, step);
+          const w = t.getDay();
+          if (w !== 0 && w !== 6) left--;
+        }
+        return t;
+      };
+      const dayDiff = (a, b) =>
+        Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5);
+      // 從 a（含）到 b（不含）之間的工作日數，a <= b
+      const workdaysBetween = (a, b) => {
+        const n = dayDiff(a, b);
+        let c = Math.floor(n / 7) * 5;
+        for (let i = 0, w = a.getDay(); i < n % 7; i++, w = (w + 1) % 7) if (w !== 0 && w !== 6) c++;
+        return c;
+      };
+      const ymd = (a, b) => {
+        let tm = (b.getFullYear() - a.getFullYear()) * 12 + b.getMonth() - a.getMonth();
+        if (addMonths(a, tm) > b) tm--;
+        return [Math.floor(tm / 12), tm % 12, dayDiff(addMonths(a, tm), b)];
+      };
+      const rocStr = d => {
+        const r = d.getFullYear() - 1911;
+        return `${r > 0 ? '民國 ' + r : '民國前 ' + (1 - r)} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+      };
+      const isoWeek = d => {
+        const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        const n = t.getUTCDay() || 7;
+        t.setUTCDate(t.getUTCDate() + 4 - n);
+        const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+        return [t.getUTCFullYear(), Math.ceil(((t - y0) / 864e5 + 1) / 7)];
+      };
+      const dayOfYear = d => dayDiff(mkDate(d.getFullYear(), 0, 1), d) + 1;
+
+      // 時間長度
+      const fmtHMS = sec => {
+        const neg = sec < 0,
+          a = Math.round(Math.abs(sec));
+        return `${neg ? '-' : ''}${Math.floor(a / 3600)}:${pad(Math.floor((a % 3600) / 60))}:${pad(a % 60)}`;
+      };
+      const fmtZh = sec => {
+        const neg = sec < 0,
+          a = Math.round(Math.abs(sec));
+        const d = Math.floor(a / 86400),
+          h = Math.floor((a % 86400) / 3600),
+          m = Math.floor((a % 3600) / 60),
+          s = a % 60;
+        const parts = [d && d + ' 天', h && h + ' 小時', m && m + ' 分', s && s + ' 秒'].filter(Boolean);
+        return (neg ? '-' : '') + (parts.join(' ') || '0 秒');
+      };
+      function parseDur(line) {
+        let s = line.trim().replace(/[−–—]/g, '-');
+        if (!s) return null;
+        let sign = 1;
+        if (s[0] === '-') {
+          sign = -1;
+          s = s.slice(1).trim();
+        } else if (s[0] === '+') s = s.slice(1).trim();
+        let m = /^(\d+):(\d{1,2})(?::(\d{1,2}(?:\.\d+)?))?$/.exec(s);
+        if (m) return sign * (+m[1] * 3600 + +m[2] * 60 + +(m[3] || 0));
+        if (/^\d+(\.\d+)?$/.test(s)) return sign * parseFloat(s) * 60;
+        const re = /(\d+(?:\.\d+)?)\s*(days?|d|天|hours?|hrs?|h|小時|時|minutes?|mins?|m|分鐘|分|seconds?|secs?|s|秒)/gi;
+        const U = { d: 86400, 天: 86400, h: 3600, 時: 3600, 小時: 3600, m: 60, 分: 60, 分鐘: 60, s: 1, 秒: 1 };
+        let tot = 0,
+          rest = s,
+          hit = false;
+        rest = rest.replace(re, (_, n, u) => {
+          hit = true;
+          const k = u.toLowerCase();
+          const key = k.startsWith('d') ? 'd' : k.startsWith('h') ? 'h' : k.startsWith('mi') || k === 'm' ? 'm' : k.startsWith('s') ? 's' : u;
+          tot += parseFloat(n) * U[key];
+          return '';
+        });
+        if (!hit || rest.replace(/[\s,，、和及]/g, '') !== '') return NaN;
+        return sign * tot;
+      }
+
+      // 時區
+      const zoneFmtCache = {};
+      function zparts(zone, ms) {
+        const f =
+          zoneFmtCache[zone] ||
+          (zoneFmtCache[zone] = new Intl.DateTimeFormat('en-US', {
+            timeZone: zone,
+            hourCycle: 'h23',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }));
+        const o = {};
+        f.formatToParts(new Date(ms)).forEach(p => (o[p.type] = p.value));
+        return { y: +o.year, mo: +o.month, d: +o.day, h: +o.hour % 24, mi: +o.minute, s: +o.second };
+      }
+      function zoneOffsetMs(zone, ms) {
+        const p = zparts(zone, ms);
+        return Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi, p.s) - Math.floor(ms / 1000) * 1000;
+      }
+      function zonedToUtc(zone, y, mo, d, h, mi, s) {
+        const guess = Date.UTC(y, mo - 1, d, h, mi, s || 0);
+        const o1 = zoneOffsetMs(zone, guess);
+        let t = guess - o1;
+        const o2 = zoneOffsetMs(zone, t);
+        if (o2 !== o1) t = guess - o2;
+        return t;
+      }
+      const offLabel = ms => {
+        const m = Math.round(ms / 6e4),
+          a = Math.abs(m);
+        return `UTC${m < 0 ? '-' : '+'}${pad(Math.floor(a / 60))}:${pad(a % 60)}`;
+      };
+
+      // 金額
+      const CN_D = '零壹貳參肆伍陸柒捌玖',
+        CN_U = ['', '拾', '佰', '仟'],
+        CN_B = ['', '萬', '億', '兆'];
+      function cnGroup(g) {
+        let s = '',
+          z = false;
+        for (let k = 0; k < g.length; k++) {
+          const d = +g[k],
+            p = g.length - 1 - k;
+          if (d === 0) z = true;
+          else {
+            if (z && s) s += '零';
+            z = false;
+            s += CN_D[d] + CN_U[p];
+          }
+        }
+        return s;
+      }
+      function cnMoney(str) {
+        let s = String(str).replace(/[,\s，]/g, '');
+        let neg = false;
+        if (s[0] === '-') {
+          neg = true;
+          s = s.slice(1);
+        }
+        if (!/^\d+(\.\d+)?$/.test(s)) return null;
+        let [ip, fp = ''] = s.split('.');
+        ip = ip.replace(/^0+(?=\d)/, '');
+        if (ip.length > 16) return null;
+        if (fp.length > 2) {
+          const cents = BigInt(ip + fp.slice(0, 2)) + (fp[2] >= '5' ? 1n : 0n);
+          ip = String(cents / 100n);
+          fp = String(cents % 100n).padStart(2, '0');
+        }
+        fp = (fp + '00').slice(0, 2);
+        const groups = [];
+        for (let i = ip.length; i > 0; i -= 4) groups.unshift(ip.slice(Math.max(0, i - 4), i));
+        let out = '',
+          pending = false;
+        groups.forEach((g, i) => {
+          const idx = groups.length - 1 - i;
+          if (+g === 0) {
+            if (out) pending = true;
+            return;
+          }
+          const padded = i === 0 ? g : g.padStart(4, '0');
+          if (out && (pending || padded[0] === '0')) out += '零';
+          pending = false;
+          out += cnGroup(padded) + CN_B[idx];
+        });
+        const j = +fp[0],
+          f = +fp[1],
+          iz = +ip === 0;
+        let res = iz ? '' : out + '元';
+        if (j === 0 && f === 0) res = (iz ? '零元' : res) + '整';
+        else {
+          if (j) res += CN_D[j] + '角';
+          else if (!iz) res += '零';
+          if (f) res += CN_D[f] + '分';
+          else res += '整';
+        }
+        return (neg ? '負' : '') + res;
+      }
+      /*PURE-END*/
+
+      // ===== 介面 =====
+      const toast = m => {
+        const t = $('toast');
+        t.textContent = m;
+        t.classList.add('on');
+        clearTimeout(toast.h);
+        toast.h = setTimeout(() => t.classList.remove('on'), 1100);
+      };
+      const kv = rows =>
+        '<table class="kv">' +
+        rows.map(([k, v, big]) => `<tr><td class="unit">${k}</td><td class="v${big ? ' big' : ''}" data-cp>${v}</td></tr>`).join('') +
+        '</table>';
+      const bad = m => `<p class="bad">${m}</p>`;
+      const num = id => {
+        const v = $(id).value.replace(/,/g, '').trim();
+        return v === '' ? NaN : Number(v);
+      };
+      const int0 = id => {
+        const v = Math.floor(Number($(id).value));
+        return isFinite(v) && v > 0 ? v : 0;
+      };
+      const bind = (ids, fn) => {
+        ids.forEach(id => {
+          $(id).addEventListener('input', fn);
+          $(id).addEventListener('change', fn);
+        });
+        fn();
+      };
+      const today = () => dstr(new Date());
+      const nowLocal = () => {
+        const n = new Date();
+        return `${dstr(n)}T${pad(n.getHours())}:${pad(n.getMinutes())}`;
+      };
+      document.addEventListener('click', e => {
+        const c = e.target.closest('[data-cp]');
+        if (!c) return;
+        const t = c.textContent.trim();
+        try {
+          navigator.clipboard.writeText(t);
+          toast('已複製：' + (t.length > 30 ? t.slice(0, 30) + '…' : t));
+        } catch (err) {}
+      });
+
+      // --- 日期加減 ---
+      $('d0').value = today();
+      $('d0t').onclick = () => {
+        $('d0').value = today();
+        runDate();
+      };
+      function runDate() {
+        const a = pdate($('d0').value);
+        if (!a) return ($('dres').innerHTML = '');
+        const sg = Number($('dop').value),
+          work = $('dwork').checked;
+        let r = addMonths(a, sg * (int0('dy') * 12 + int0('dm')));
+        r = work ? addWork(r, sg * (int0('dw') * 5 + int0('dd'))) : addDays(r, sg * (int0('dw') * 7 + int0('dd')));
+        const diff = dayDiff(new Date(new Date().setHours(0, 0, 0, 0)), r);
+        const [wy, wk] = isoWeek(r);
+        $('dres').innerHTML = kv([
+          ['結果日期', dstr(r), true],
+          ['星期', '星期' + WD[r.getDay()]],
+          ['民國', rocStr(r)],
+          ['該年第幾天', `第 ${dayOfYear(r)} 天`],
+          ['ISO 週別', `${wy} 年第 ${wk} 週`],
+          ['距今天', diff === 0 ? '就是今天' : diff > 0 ? `${diff} 天後` : `${-diff} 天前`],
+        ]);
+      }
+      bind(['d0', 'dop', 'dy', 'dm', 'dw', 'dd', 'dwork'], runDate);
+
+      // --- 日期差 ---
+      $('e0').value = today();
+      $('e1').value = dstr(addDays(new Date(), 30));
+      $('e0t').onclick = () => {
+        $('e0').value = today();
+        runDiff();
+      };
+      $('e1t').onclick = () => {
+        $('e1').value = today();
+        runDiff();
+      };
+      function runDiff() {
+        let a = pdate($('e0').value),
+          b = pdate($('e1').value);
+        if (!a || !b) return ($('eres').innerHTML = '');
+        const rev = a > b;
+        if (rev) [a, b] = [b, a];
+        const inc = $('eend').checked ? 1 : 0;
+        const n = dayDiff(a, b) + inc;
+        const wd = workdaysBetween(a, b) + (inc && b.getDay() !== 0 && b.getDay() !== 6 ? 1 : 0);
+        const [y, m, d] = ymd(a, b);
+        $('eres').innerHTML =
+          (rev ? '<p class="tip">結束日早於開始日，已改為由早到晚計算。</p>' : '') +
+          kv([
+            ['相差天數', `${n.toLocaleString('en')} 天`, true],
+            ['換成週', `${Math.floor(n / 7)} 週 ${n % 7} 天`],
+            ['年月日', `${y} 年 ${m} 月 ${d} 天`],
+            ['工作日數（週一至五）', `${wd.toLocaleString('en')} 天`],
+            ['換成小時', `${(n * 24).toLocaleString('en')} 小時`],
+          ]);
+      }
+      bind(['e0', 'e1', 'eend'], runDiff);
+
+      // --- 時間加減 ---
+      function parseT(v) {
+        const m = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(v || '');
+        return m ? +m[1] * 3600 + +m[2] * 60 + +(m[3] || 0) : null;
+      }
+      bind(['t0', 'top', 'th', 'tm', 'ts'], () => {
+        const b = parseT($('t0').value);
+        if (b === null) return ($('tres').innerHTML = '');
+        const tot = b + Number($('top').value) * (int0('th') * 3600 + int0('tm') * 60 + int0('ts'));
+        const day = Math.floor(tot / 86400),
+          t = ((tot % 86400) + 86400) % 86400;
+        $('tres').innerHTML = kv([
+          ['結果時間', fmtHMS(t).replace(/^(\d):/, '0$1:'), true],
+          ['日期變化', day === 0 ? '同一天' : day > 0 ? `隔 ${day} 天（+${day}）` : `前 ${-day} 天（${day}）`],
+        ]);
+      });
+
+      // --- 工時 ---
+      bind(['w0', 'w1', 'wb', 'wstd'], () => {
+        const a = parseT($('w0').value),
+          b = parseT($('w1').value);
+        if (a === null || b === null) return ($('wres').innerHTML = '');
+        let span = b - a,
+          over = false;
+        if (span < 0) {
+          span += 86400;
+          over = true;
+        }
+        const brk = int0('wb') * 60,
+          net = span - brk,
+          std = (Number($('wstd').value) || 0) * 3600;
+        if (net < 0) return ($('wres').innerHTML = bad('休息時間比總時段還長。'));
+        $('wres').innerHTML = kv([
+          ['總時段' + (over ? '（跨日）' : ''), fmtHMS(span)],
+          ['扣除休息後工時', fmtHMS(net), true],
+          ['以小時表示', (net / 3600).toFixed(2) + ' 小時'],
+          ['以分鐘表示', Math.round(net / 60).toLocaleString('en') + ' 分鐘'],
+          ['超過標準工時（加班）', net > std ? fmtHMS(net - std) : '無'],
+        ]);
+      });
+
+      // --- 時間長度加總 ---
+      bind(['tl'], () => {
+        const lines = $('tl').value.split('\n').filter(l => l.trim());
+        if (!lines.length) return ($('lres').innerHTML = '');
+        let tot = 0,
+          errs = [];
+        lines.forEach((l, i) => {
+          const v = parseDur(l);
+          if (v === null) return;
+          if (Number.isNaN(v)) errs.push(i + 1);
+          else tot += v;
+        });
+        $('lres').innerHTML =
+          (errs.length ? bad(`第 ${errs.join('、')} 行無法辨識，已略過。`) : '') +
+          kv([
+            ['合計', fmtHMS(tot), true],
+            ['文字表示', fmtZh(tot)],
+            ['以小時表示', (tot / 3600).toFixed(2) + ' 小時'],
+            ['以分鐘表示', (Math.round(tot) / 60).toLocaleString('en', { maximumFractionDigits: 2 }) + ' 分鐘'],
+            ['有效筆數', lines.length - errs.length + ' 筆'],
+          ]);
+      });
+
+      // --- 時區換算 ---
+      const ZONES = [
+        ['Asia/Taipei', '台北'],
+        ['Asia/Tokyo', '東京'],
+        ['Asia/Seoul', '首爾'],
+        ['Asia/Shanghai', '上海／北京'],
+        ['Asia/Hong_Kong', '香港'],
+        ['Asia/Singapore', '新加坡'],
+        ['Asia/Bangkok', '曼谷'],
+        ['Asia/Kolkata', '印度'],
+        ['Asia/Dubai', '杜拜'],
+        ['Europe/London', '倫敦'],
+        ['Europe/Paris', '巴黎／柏林'],
+        ['UTC', 'UTC'],
+        ['America/New_York', '紐約'],
+        ['America/Chicago', '芝加哥'],
+        ['America/Los_Angeles', '洛杉磯'],
+        ['Australia/Sydney', '雪梨'],
+        ['Pacific/Auckland', '奧克蘭'],
+      ];
+      $('zsrc').innerHTML = ZONES.map(([z, n]) => `<option value="${z}">${n}（${z}）</option>`).join('');
+      const zstr = (zone, ms) => {
+        const p = zparts(zone, ms);
+        const wd = WD[new Date(Date.UTC(p.y, p.mo - 1, p.d)).getUTCDay()];
+        return `${p.y}-${pad(p.mo)}-${pad(p.d)}（${wd}）${pad(p.h)}:${pad(p.mi)}`;
+      };
+      $('z0').value = nowLocal();
+      $('z0t').onclick = () => {
+        const p = zparts($('zsrc').value, Date.now());
+        $('z0').value = `${p.y}-${pad(p.mo)}-${pad(p.d)}T${pad(p.h)}:${pad(p.mi)}`;
+        runZone();
+      };
+      function runZone() {
+        const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec($('z0').value);
+        if (!m) return ($('zres').innerHTML = '');
+        const src = $('zsrc').value;
+        let ms;
+        try {
+          ms = zonedToUtc(src, +m[1], +m[2], +m[3], +m[4], +m[5], 0);
+        } catch (e) {
+          return ($('zres').innerHTML = bad('此瀏覽器不支援時區運算。'));
+        }
+        const rows = ZONES.map(([z, n]) => [`${z === src ? '▶ ' : ''}${n}　<small>${offLabel(zoneOffsetMs(z, ms))}</small>`, zstr(z, ms), z === src]);
+        rows.push(['Unix 時間戳（秒）', Math.floor(ms / 1000)]);
+        $('zres').innerHTML = kv(rows);
+      }
+      bind(['z0', 'zsrc'], runZone);
+
+      // --- Unix 時間戳 ---
+      $('ust').onclick = () => {
+        $('us').value = Math.floor(Date.now() / 1000);
+        runStamp();
+      };
+      function runStamp() {
+        const raw = $('us').value.trim();
+        if (!raw) return ($('ures').innerHTML = '');
+        if (!/^-?\d+(\.\d+)?$/.test(raw)) return ($('ures').innerHTML = bad('請輸入數字。'));
+        let n = Number(raw);
+        const isMs = Math.abs(n) >= 1e11;
+        const ms = isMs ? n : n * 1000;
+        const d = new Date(ms);
+        if (isNaN(d.getTime())) return ($('ures').innerHTML = bad('超出可表示的日期範圍。'));
+        $('ures').innerHTML = kv([
+          ['判斷為', isMs ? '毫秒' : '秒'],
+          ['台北時間', zstr('Asia/Taipei', ms) + ':' + pad(zparts('Asia/Taipei', ms).s), true],
+          ['UTC（ISO 8601）', d.toISOString()],
+          ['秒', Math.floor(ms / 1000)],
+          ['毫秒', Math.floor(ms)],
+        ]);
+      }
+      bind(['us'], runStamp);
+
+      // --- 民國／西元／干支 ---
+      const STEM = '甲乙丙丁戊己庚辛壬癸',
+        BRANCH = '子丑寅卯辰巳午未申酉戌亥',
+        ZOD = '鼠牛虎兔龍蛇馬羊猴雞狗豬';
+      let rocLock = false;
+      const mod = (a, n) => ((a % n) + n) % n;
+      function showRoc(y) {
+        if (!Number.isFinite(y)) return ($('rres').innerHTML = '');
+        const r = y - 1911;
+        $('rres').innerHTML = kv([
+          ['西元', `${y} 年`],
+          ['民國', r > 0 ? `民國 ${r} 年` : `民國前 ${1 - r} 年`],
+          ['干支', `${STEM[mod(y - 4, 10)]}${BRANCH[mod(y - 4, 12)]}年`],
+          ['生肖', ZOD[mod(y - 4, 12)]],
+          ['是否閏年', (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? '閏年' : '平年'],
+        ]);
+      }
+      $('ry').value = new Date().getFullYear();
+      $('rr').value = new Date().getFullYear() - 1911;
+      showRoc(Number($('ry').value));
+      $('ry').addEventListener('input', () => {
+        const y = Math.floor(Number($('ry').value));
+        $('rr').value = $('ry').value === '' || !isFinite(y) ? '' : y >= 1912 ? y - 1911 : y - 1912;
+        showRoc($('ry').value === '' ? NaN : y);
+      });
+      $('rr').addEventListener('input', () => {
+        const r = Math.floor(Number($('rr').value));
+        if ($('rr').value === '' || !isFinite(r) || r === 0) {
+          $('ry').value = '';
+          return showRoc(NaN);
+        }
+        // 輸入負數代表民國前 N 年：民國前 1 年＝西元 1911
+        const y = r > 0 ? r + 1911 : 1912 + r;
+        $('ry').value = y;
+        showRoc(y);
+      });
+
+      // --- 百分比 ---
+      const PH = {
+        1: ['A（部分）', 'B（整體）'],
+        2: ['A（基數）', 'B（百分比 %）'],
+        3: ['A（原值）', 'B（增加 %）'],
+        4: ['A（原值）', 'B（減少 %）'],
+        5: ['A（原值）', 'B（新值）'],
+      };
+      bind(['pm', 'pa', 'pb'], () => {
+        const m = $('pm').value,
+          a = num('pa'),
+          b = num('pb');
+        $('pa').previousElementSibling.textContent = PH[m][0];
+        $('pb').previousElementSibling.textContent = PH[m][1];
+        if (isNaN(a) || isNaN(b)) return ($('pres').innerHTML = '');
+        let r, u;
+        if (m === '1') [r, u] = b === 0 ? [NaN, ''] : [(a / b) * 100, '%'];
+        else if (m === '2') [r, u] = [(a * b) / 100, ''];
+        else if (m === '3') [r, u] = [a * (1 + b / 100), ''];
+        else if (m === '4') [r, u] = [a * (1 - b / 100), ''];
+        else [r, u] = a === 0 ? [NaN, ''] : [((b - a) / Math.abs(a)) * 100, '%'];
+        $('pres').innerHTML = isFinite(r) ? `<div class="big-out" data-cp>${fmt(r)}${u}</div>` : bad('B 不可為 0（或 A 不可為 0）。');
+      });
+
+      // --- 營業稅 ---
+      bind(['xa', 'xr'], runTax);
+      document.querySelectorAll('input[name="xm"]').forEach(r => r.addEventListener('change', runTax));
+      function runTax() {
+        const a = num('xa'),
+          r = num('xr');
+        if (isNaN(a) || isNaN(r)) return ($('xres').innerHTML = '');
+        const gross = document.querySelector('input[name="xm"]:checked').value === 'gross';
+        const net = gross ? Math.round(a / (1 + r / 100)) : a;
+        const tax = gross ? a - net : Math.round((a * r) / 100);
+        $('xres').innerHTML = kv([
+          ['未稅金額', fmt(net), true],
+          ['稅額（' + r + '%）', fmt(tax)],
+          ['含稅金額', fmt(net + tax), true],
+        ]);
+      }
+      runTax();
+
+      // --- 折扣 ---
+      const foldRate = d => (d <= 10 ? d / 10 : d / 100);
+      function runDisc(from) {
+        const a = num('ga');
+        if (isNaN(a)) return ($('gres').innerHTML = '');
+        if (from === 'gs') {
+          const s = num('gs');
+          if (!isNaN(s) && a !== 0) $('gd').value = parseFloat(((s / a) * 10).toPrecision(6));
+        } else {
+          const d = num('gd');
+          if (!isNaN(d)) $('gs').value = parseFloat((a * foldRate(d)).toFixed(4));
+        }
+        const s = num('gs');
+        if (isNaN(s)) return ($('gres').innerHTML = '');
+        const off = a - s;
+        $('gres').innerHTML = kv([
+          ['售價', fmt(s), true],
+          ['省下', fmt(off)],
+          ['折數', a === 0 ? '—' : fmt((s / a) * 10) + ' 折'],
+          ['折扣幅度', a === 0 ? '—' : fmt((off / a) * 100) + '% off'],
+        ]);
+      }
+      $('ga').addEventListener('input', () => runDisc('gd'));
+      $('gd').addEventListener('input', () => runDisc('gd'));
+      $('gs').addEventListener('input', () => runDisc('gs'));
+      runDisc('gd');
+
+      // --- 中文大寫 ---
+      bind(['cn'], () => {
+        const v = $('cn').value.trim();
+        if (!v) return ($('cnres').innerHTML = '');
+        const r = cnMoney(v);
+        $('cnres').innerHTML = r ? `<div class="big-out" data-cp>${r}</div>` : bad('請輸入數字（最多 16 位整數）。');
+      });
+
+      // --- 記住上次的分頁 ---
+      (function () {
+        const K = 'unit-pane';
+        document.querySelectorAll('#mainTabs [data-pane]').forEach(b =>
+          b.addEventListener('click', () => {
+            try {
+              localStorage.setItem(K, b.dataset.pane);
+            } catch (e) {}
+          })
+        );
+        try {
+          const p = localStorage.getItem(K);
+          const b = p && document.querySelector(`#mainTabs [data-pane="${p}"]`);
+          if (b) document.addEventListener('DOMContentLoaded', () => b.click());
+        } catch (e) {}
+      })();
+
     </script>
   </body>
 </html>
