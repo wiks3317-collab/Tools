@@ -173,6 +173,54 @@
       #mainTabs {
         margin-bottom: 14px;
       }
+      .clist {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 6px 0;
+      }
+      .crow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: flex-end;
+        padding: 10px;
+        border: 1px solid var(--bd);
+        border-radius: 8px;
+      }
+      .mini {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 12px;
+        color: var(--mut);
+        flex: 1 1 100px;
+        min-width: 90px;
+      }
+      .mini.wide {
+        flex: 2 1 160px;
+      }
+      .csub {
+        flex: 0 0 auto;
+        min-width: 90px;
+        text-align: right;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        padding-bottom: 8px;
+      }
+      .cdel {
+        flex: 0 0 auto;
+        padding: 6px 10px;
+      }
+      .cfoot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--mut);
+      }
     </style>
   </head>
   <body>
@@ -181,7 +229,7 @@
         <div>
           <a class="back" href="index.html">← 返回小工具集首頁</a>
           <h1>換算與計算工具箱</h1>
-          <p class="tagline">單位換算（含即時匯率）、日期與時間加減、時區與時間戳、營業稅／折扣／百分比與中文大寫金額。所有計算都在你的瀏覽器內完成。</p>
+          <p class="tagline">單位換算（含即時匯率）、日期與時間加減、時區與時間戳、營業稅／折扣／百分比、中文大寫金額與成本獲利試算。所有計算都在你的瀏覽器內完成。</p>
         </div>
         <div class="themes" id="themes">主題：</div>
       </header>
@@ -191,6 +239,7 @@
         <button data-pane="time" aria-selected="false">時間計算</button>
         <button data-pane="zone" aria-selected="false">時區／時間戳／民國年</button>
         <button data-pane="money" aria-selected="false">金額／百分比</button>
+        <button data-pane="cost" aria-selected="false">成本／獲利</button>
       </div>
       <div class="pane on" id="pane-unit">
       <div class="tabs" id="tabs"></div>
@@ -376,6 +425,40 @@
         </section>
       </div>
 
+      <!-- ===== 成本／獲利 ===== -->
+      <div class="pane" id="pane-cost">
+        <section id="sRev">
+          <b>營收</b>
+          <div class="g">
+            <div class="f"><label>營收／報價金額</label><input id="crev" type="text" inputmode="decimal" autocomplete="off" placeholder="例如 500000" /></div>
+            <div class="f"><label>目標獲利率（%，算建議報價用）</label><input id="ctgt" type="text" inputmode="decimal" value="20" autocomplete="off" /></div>
+          </div>
+          <label class="ck"><input type="checkbox" id="ctax" />上面填的是含稅金額（營業稅 5%，自動換算成未稅再計算）</label>
+        </section>
+        <section id="sIn">
+          <b>內部成本</b>
+          <div class="clist" id="list-in"></div>
+          <div class="cfoot"><button type="button" class="cadd" data-g="in">＋ 新增內部成本項目</button><span id="sub-in"></span></div>
+        </section>
+        <section id="sEx">
+          <b>外部成本</b>
+          <div class="clist" id="list-ex"></div>
+          <div class="cfoot"><button type="button" class="cadd" data-g="ex">＋ 新增外部成本項目</button><span id="sub-ex"></span></div>
+        </section>
+        <section id="sCostRes">
+          <b>損益結果</b>
+          <div id="costres"></div>
+          <div class="inl" style="margin-top: 10px">
+            <button type="button" id="ccopy">複製摘要</button>
+            <button type="button" id="creset">清空並還原預設項目</button>
+          </div>
+          <p class="tip">
+            每個項目可自選「計算方式」：金額、數量×單價（如工時×時薪）、時數×時薪×倍率（加班）、營收％（如佣金）。印花稅預設為承攬契據千分之一，按未稅契約金額計算，不足 1 元的尾數免貼；買賣動產契據為每件 4 元，請改選「印花稅（買賣動產）」。
+            加班倍數僅供參考（平日前 2 小時 1.34、之後 1.67；休息日前 2 小時 1.34、第 3～8 小時 1.67、第 9 小時起 2.67），實際請依勞基法與公司規定。月薪換時薪可用月薪 ÷ 240。資料只存在這個瀏覽器。
+          </p>
+          <datalist id="otList"><option value="1.34"></option><option value="1.67"></option><option value="2"></option><option value="2.67"></option></datalist>
+        </section>
+      </div>
     </div>
     <div id="toast"></div>
     <script>
@@ -1299,6 +1382,239 @@
           if (b) document.addEventListener('DOMContentLoaded', () => b.click());
         } catch (e) {}
       })();
+
+    </script>
+    <script>
+      /* ===== 成本／營收／獲利率 ===== */
+      /*PURE2-START*/
+      // mode: amt 金額｜qty 數量×單價｜ot 時數×時薪×倍率｜pct 營收％
+      const CATS = {
+        wage: { n: '常日工時費', g: 'in', mode: 'qty', la: '工時（小時）', lb: '時薪' },
+        ot: { n: '加班費', g: 'in', mode: 'ot', c: '1.34' },
+        ins: { n: '勞健保／勞退（雇主負擔）', g: 'in', mode: 'amt' },
+        dep: { n: '設備／軟體折舊', g: 'in', mode: 'amt' },
+        ovh: { n: '管理費／間接費用', g: 'in', mode: 'amt' },
+        inOther: { n: '其他內部成本', g: 'in', mode: 'amt' },
+        outsrc: { n: '外包／委外費', g: 'ex', mode: 'amt' },
+        material: { n: '材料／採購費', g: 'ex', mode: 'amt' },
+        travel: { n: '差旅費（交通、住宿、膳雜）', g: 'ex', mode: 'amt' },
+        stamp: { n: '印花稅（承攬契據 千分之一）', g: 'ex', mode: 'pct', a: '0.1', floor: true },
+        stamp4: { n: '印花稅（買賣動產 每件 4 元）', g: 'ex', mode: 'qty', la: '件數', lb: '每件稅額', b: '4' },
+        ship: { n: '運費／物流', g: 'ex', mode: 'amt' },
+        fee: { n: '佣金／手續費', g: 'ex', mode: 'pct' },
+        rent: { n: '場地／租賃費', g: 'ex', mode: 'amt' },
+        insur: { n: '保險／規費', g: 'ex', mode: 'amt' },
+        exOther: { n: '其他外部成本', g: 'ex', mode: 'amt' },
+      };
+      const n0 = v => {
+        const x = parseFloat(String(v == null ? '' : v).replace(/,/g, ''));
+        return isFinite(x) ? x : 0;
+      };
+      // 單列小計；rev 為未稅營收
+      function rowAmount(r, rev) {
+        const a = n0(r.a),
+          b = n0(r.b);
+        if (r.mode === 'qty') return a * b;
+        if (r.mode === 'ot') return a * b * (String(r.c).trim() === '' ? 1 : n0(r.c));
+        if (r.mode === 'pct') {
+          const v = (rev * a) / 100;
+          return r.cat === 'stamp' || (CATS[r.cat] && CATS[r.cat].floor) ? Math.floor(v + 1e-9) : v;
+        }
+        return a;
+      }
+      function summarize(rows, rev) {
+        let inn = 0,
+          ext = 0,
+          fixed = 0,
+          pct = 0;
+        rows.forEach(r => {
+          const v = rowAmount(r, rev);
+          if (r.g === 'in') inn += v;
+          else ext += v;
+          if (r.mode === 'pct') pct += n0(r.a) / 100;
+          else fixed += v;
+        });
+        const cost = inn + ext,
+          profit = rev - cost;
+        return { inn, ext, cost, profit, margin: rev ? profit / rev : NaN, costRate: rev ? cost / rev : NaN, markup: cost ? profit / cost : NaN, fixed, pct };
+      }
+      // 以固定成本與「營收％」成本反推：報價 = 固定成本 /（1 − 目標獲利率 − 營收％合計）
+      const quoteFor = (s, target) => (1 - target - s.pct > 1e-9 ? s.fixed / (1 - target - s.pct) : NaN);
+      /*PURE2-END*/
+
+      const CKEY = 'cost-calc-v1';
+      const defaultRows = () => [
+        { g: 'in', cat: 'wage', mode: 'qty', note: '', a: '', b: '', c: '' },
+        { g: 'in', cat: 'ot', mode: 'ot', note: '', a: '', b: '', c: '1.34' },
+        { g: 'ex', cat: 'outsrc', mode: 'amt', note: '', a: '', b: '', c: '' },
+        { g: 'ex', cat: 'travel', mode: 'amt', note: '', a: '', b: '', c: '' },
+        { g: 'ex', cat: 'stamp', mode: 'pct', note: '', a: '0.1', b: '', c: '' },
+      ];
+      let cRows = defaultRows();
+      try {
+        const sv = JSON.parse(localStorage.getItem(CKEY) || 'null');
+        if (sv && Array.isArray(sv.rows)) {
+          cRows = sv.rows.filter(r => r && CATS[r.cat] && (r.g === 'in' || r.g === 'ex'));
+          $('crev').value = sv.rev || '';
+          $('ctgt').value = sv.tgt || '20';
+          $('ctax').checked = !!sv.tax;
+        }
+      } catch (e) {}
+      const MODES = [
+        ['amt', '金額'],
+        ['qty', '數量 × 單價'],
+        ['ot', '時數 × 時薪 × 倍率'],
+        ['pct', '營收 ％'],
+      ];
+      const fm = v => (isFinite(v) ? v.toLocaleString('en', { maximumFractionDigits: 2 }) : '—');
+      const pc = v => (isFinite(v) ? (v * 100).toLocaleString('en', { maximumFractionDigits: 2 }) + '%' : '—');
+      const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      const catOpts = sel =>
+        ['in', 'ex']
+          .map(
+            g =>
+              `<optgroup label="${g === 'in' ? '內部常用' : '外部常用'}">` +
+              Object.entries(CATS)
+                .filter(([, c]) => c.g === g)
+                .map(([k, c]) => `<option value="${k}"${k === sel ? ' selected' : ''}>${c.n}</option>`)
+                .join('') +
+              '</optgroup>'
+          )
+          .join('');
+      function fieldsHtml(r, i) {
+        const c = CATS[r.cat] || {};
+        const mini = (k, label, ph, extra = '') =>
+          `<label class="mini">${label}<input data-k="${k}" type="text" inputmode="decimal" autocomplete="off" value="${esc(r[k] || '')}" placeholder="${ph}" ${extra} /></label>`;
+        if (r.mode === 'qty') return mini('a', c.la || '數量', '0') + mini('b', c.lb || '單價', '0');
+        if (r.mode === 'ot') return mini('a', '加班時數', '0') + mini('b', '時薪', '0') + mini('c', '倍率', '1.34', 'list="otList"');
+        if (r.mode === 'pct') return mini('a', '占營收 %', '0');
+        return mini('a', '金額', '0');
+      }
+      const revNet = () => {
+        const v = n0($('crev').value);
+        return $('ctax').checked ? Math.round(v / 1.05) : v;
+      };
+      function renderRows() {
+        ['in', 'ex'].forEach(g => {
+          $('list-' + g).innerHTML =
+            cRows
+              .map((r, i) => (r.g !== g ? '' : `<div class="crow" data-i="${i}"><label class="mini wide">類別<select data-k="cat">${catOpts(r.cat)}</select></label><label class="mini">計算方式<select data-k="mode">${MODES.map(([v, n]) => `<option value="${v}"${v === r.mode ? ' selected' : ''}>${n}</option>`).join('')}</select></label>${fieldsHtml(r, i)}<label class="mini wide">備註（選填）<input data-k="note" type="text" value="${esc(r.note || '')}" autocomplete="off" /></label><span class="csub" data-sub>0</span><button type="button" class="cdel" title="刪除這一列" aria-label="刪除">✕</button></div>`)
+              )
+              .join('') || '<p class="tip">尚無項目，按下方按鈕新增。</p>';
+        });
+        refresh();
+      }
+      function refresh() {
+        const rev = revNet();
+        cRows.forEach((r, i) => {
+          const el = document.querySelector(`.crow[data-i="${i}"] [data-sub]`);
+          if (el) el.textContent = fm(rowAmount(r, rev));
+        });
+        const s = summarize(cRows, rev);
+        $('sub-in').textContent = '內部小計　' + fm(s.inn);
+        $('sub-ex').textContent = '外部小計　' + fm(s.ext);
+        const neg = v => (isFinite(v) && v < 0 ? 'style="color:#bf616a"' : '');
+        if (!rev) {
+          $('costres').innerHTML = '<p class="tip">請先在上方輸入營收（報價）金額。</p>' + kv([['內部成本', fm(s.inn)], ['外部成本', fm(s.ext)], ['總成本', fm(s.cost), true]]);
+        } else {
+          const tgt = n0($('ctgt').value) / 100,
+            q = quoteFor(s, tgt),
+            be = quoteFor(s, 0);
+          const prof = fm(s.profit);
+          $('costres').innerHTML = kv([
+            ['營收（未稅）', fm(rev) + ($('ctax').checked ? `　<small>含稅 ${fm(n0($('crev').value))}</small>` : ''), true],
+            ['內部成本', `${fm(s.inn)}　<small>${s.cost ? pc(s.inn / s.cost) : '—'}</small>`],
+            ['外部成本', `${fm(s.ext)}　<small>${s.cost ? pc(s.ext / s.cost) : '—'}</small>`],
+            ['總成本', fm(s.cost), true],
+            ['獲利（營收 − 總成本）', `<span ${neg(s.profit)}>${prof}</span>`, true],
+            ['獲利率（獲利 ÷ 營收）', `<span ${neg(s.profit)}>${pc(s.margin)}</span>`, true],
+            ['成本率（總成本 ÷ 營收）', pc(s.costRate)],
+            ['加成率（獲利 ÷ 總成本）', pc(s.markup)],
+            ['損益兩平營收（未稅）', fm(Math.ceil(be))],
+            [`達成 ${fm(tgt * 100)}% 獲利率的建議報價（未稅）`, isFinite(q) ? fm(Math.ceil(q)) : '無法達成（成本占比已超過 100%）'],
+            [`　同上含稅（5%）`, isFinite(q) ? fm(Math.round(Math.ceil(q) * 1.05)) : '—'],
+          ]);
+        }
+        try {
+          localStorage.setItem(CKEY, JSON.stringify({ rev: $('crev').value, tgt: $('ctgt').value, tax: $('ctax').checked, rows: cRows }));
+        } catch (e) {}
+      }
+      const rowOf = el => {
+        const d = el.closest('.crow');
+        return d ? cRows[+d.dataset.i] : null;
+      };
+      ['list-in', 'list-ex'].forEach(id => {
+        const box = $(id);
+        box.addEventListener('input', e => {
+          const r = rowOf(e.target),
+            k = e.target.dataset.k;
+          if (!r || !k || e.target.tagName === 'SELECT') return;
+          r[k] = e.target.value;
+          refresh();
+        });
+        box.addEventListener('change', e => {
+          const r = rowOf(e.target),
+            k = e.target.dataset.k;
+          if (!r || e.target.tagName !== 'SELECT') return;
+          if (k === 'cat') {
+            const c = CATS[e.target.value];
+            r.cat = e.target.value;
+            r.mode = c.mode;
+            if (c.a !== undefined) r.a = c.a;
+            if (c.b !== undefined) r.b = c.b;
+            if (c.c !== undefined && !String(r.c).trim()) r.c = c.c;
+          } else if (k === 'mode') {
+            r.mode = e.target.value;
+            if (r.mode === 'ot' && !String(r.c).trim()) r.c = '1.34';
+          }
+          renderRows();
+        });
+        box.addEventListener('click', e => {
+          if (!e.target.closest('.cdel')) return;
+          const r = rowOf(e.target);
+          cRows.splice(cRows.indexOf(r), 1);
+          renderRows();
+        });
+      });
+      document.querySelectorAll('.cadd').forEach(b =>
+        b.addEventListener('click', () => {
+          const g = b.dataset.g;
+          cRows.push({ g, cat: g === 'in' ? 'inOther' : 'exOther', mode: 'amt', note: '', a: '', b: '', c: '' });
+          renderRows();
+          const last = [...document.querySelectorAll(`#list-${g} .crow`)].pop();
+          if (last) last.querySelector('select').focus();
+        })
+      );
+      ['crev', 'ctgt'].forEach(id => $(id).addEventListener('input', refresh));
+      $('ctax').addEventListener('change', renderRows);
+      $('creset').onclick = () => {
+        if (!confirm('要清空營收並還原成預設的項目嗎？')) return;
+        cRows = defaultRows();
+        $('crev').value = '';
+        $('ctgt').value = '20';
+        $('ctax').checked = false;
+        renderRows();
+      };
+      $('ccopy').onclick = () => {
+        const rev = revNet(),
+          s = summarize(cRows, rev);
+        const line = r => `  ${CATS[r.cat].n}${r.note ? '（' + r.note + '）' : ''}：${fm(rowAmount(r, rev))}`;
+        const txt = [
+          `營收（未稅）：${fm(rev)}`,
+          `內部成本：${fm(s.inn)}`,
+          ...cRows.filter(r => r.g === 'in').map(line),
+          `外部成本：${fm(s.ext)}`,
+          ...cRows.filter(r => r.g === 'ex').map(line),
+          `總成本：${fm(s.cost)}`,
+          `獲利：${fm(s.profit)}`,
+          `獲利率：${pc(s.margin)}`,
+        ].join('\n');
+        try {
+          navigator.clipboard.writeText(txt);
+          toast('已複製摘要');
+        } catch (e) {}
+      };
+      renderRows();
 
     </script>
   </body>
