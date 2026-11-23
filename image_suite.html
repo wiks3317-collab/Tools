@@ -219,6 +219,11 @@
 :where(#pane-crop) .cr-it.sel{background:var(--pri);color:var(--prifg)}
 :where(#pane-crop) .cr-it span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 :where(#pane-crop) .cr-it span:last-child{opacity:.75;white-space:nowrap}
+:where(#pane-crop) .cr-chips{display:flex;flex-wrap:wrap;gap:6px}
+#pane-crop .cr-chip{cursor:pointer;line-height:1.5}
+#pane-crop .cr-chip.on,#pane-crop .cr-chip.on:hover:not(:disabled){background:var(--pri);border-color:var(--pri);color:var(--prifg)}
+#pane-crop .cr-chip .x{margin-left:6px;opacity:.65;padding:0 2px}
+#pane-crop .cr-chip .x:hover{opacity:1}
 </style>
   </head>
   <body>
@@ -458,6 +463,24 @@
             <p class="hint" id="cr_hint">在圖上拖曳拉出裁切方框；右側清單可切換預覽其他張。</p>
           </section>
           <div>
+            <section>
+              <h2>裁切比例</h2>
+              <div class="cr-chips" id="cr_presets"></div>
+              <p class="hint" style="margin:12px 0 6px">我的比例（儲存在這個瀏覽器）</p>
+              <div class="cr-chips" id="cr_mine"></div>
+              <div class="cr-fld" style="margin-top:10px">
+                <input id="cr_rw" type="number" min="0.01" step="any" placeholder="寬" style="width:64px" />
+                <span>:</span>
+                <input id="cr_rh" type="number" min="0.01" step="any" placeholder="高" style="width:64px" />
+                <button type="button" id="cr_rsave">儲存</button>
+              </div>
+              <div class="cr-fld">
+                <button type="button" id="cr_rswap" disabled>⇄ 對調橫直</button>
+                <button type="button" id="cr_rcur">取自目前框</button>
+              </div>
+              <p class="hint" id="cr_lockinfo">自由比例</p>
+              <p class="msg" id="cr_rmsg"></p>
+            </section>
             <section>
               <h2>裁切設定</h2>
               <div class="cr-fld">
@@ -1435,7 +1458,8 @@ const $ = id => document.getElementById(id);
     <script>
 (function(){
 const $=id=>document.getElementById('cr_'+id);
-let imgs=[],cur=0,R={x:0,y:0,w:0,h:0},ratio=null;
+let imgs=[],cur=0,R={x:0,y:0,w:0,h:0},ratio=null,lock=null;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const cv=$('cv'),ctx=cv.getContext('2d');
 
 // CRC32
@@ -1497,7 +1521,7 @@ async function load(files){
   }
   $('st').textContent='';
   if(!imgs.length)return;
-  if(!ratio){cur=0;const i=imgs[0];R={x:Math.round(i.w*.1),y:Math.round(i.h*.1),w:Math.round(i.w*.8),h:Math.round(i.h*.8)};sync(true)}
+  if(!ratio){cur=0;const i=imgs[0];R={x:Math.round(i.w*.1),y:Math.round(i.h*.1),w:Math.round(i.w*.8),h:Math.round(i.h*.8)};sync(true);if(lock)fitLockR()}
   $('go').disabled=false;render();
 }
 function sync(fromPx){
@@ -1507,8 +1531,24 @@ function sync(fromPx){
 }
 function rectFor(i){
   let r;
-  if($('mode').value==='pct')r={x:Math.round(ratio.x*i.w),y:Math.round(ratio.y*i.h),w:Math.round(ratio.w*i.w),h:Math.round(ratio.h*i.h)};
-  else r={...R};
+  if($('mode').value==='pct'){
+    if(lock){
+      // 鎖定比例：每張以相同寬度比例與中心位置取框，高度依比例算，確保每張都是精確比例
+      let w=Math.round(ratio.w*i.w),h=Math.round(w/lock.r);
+      const cx=(ratio.x+ratio.w/2)*i.w,cy=(ratio.y+ratio.h/2)*i.h;
+      if(h>i.h){h=i.h;w=Math.round(h*lock.r)}
+      if(w>i.w){w=i.w;h=Math.round(w/lock.r)}
+      w=Math.max(1,w);h=Math.max(1,h);
+      r={x:clamp(Math.round(cx-w/2),0,Math.max(0,i.w-w)),y:clamp(Math.round(cy-h/2),0,Math.max(0,i.h-h)),w,h};
+    }else r={x:Math.round(ratio.x*i.w),y:Math.round(ratio.y*i.h),w:Math.round(ratio.w*i.w),h:Math.round(ratio.h*i.h)};
+  }else{
+    r={...R};
+    if(lock){
+      r.x=clamp(r.x,0,i.w-1);r.y=clamp(r.y,0,i.h-1);
+      if(r.x+r.w>i.w){r.w=i.w-r.x;r.h=Math.max(1,Math.round(r.w/lock.r))}
+      if(r.y+r.h>i.h){r.h=i.h-r.y;r.w=Math.max(1,Math.round(r.h*lock.r))}
+    }
+  }
   r.x=Math.max(0,Math.min(i.w-1,r.x));r.y=Math.max(0,Math.min(i.h-1,r.y));
   r.w=Math.max(1,Math.min(i.w-r.x,r.w));r.h=Math.max(1,Math.min(i.h-r.y,r.h));
   return r;
@@ -1541,14 +1581,34 @@ const pos=e=>{const b=cv.getBoundingClientRect(),i=imgs[cur];
   return{x:Math.max(0,Math.min(i.w,Math.round((e.clientX-b.left)*i.w/b.width))),y:Math.max(0,Math.min(i.h,Math.round((e.clientY-b.top)*i.h/b.height)))}};
 cv.onpointerdown=e=>{if(!imgs.length)return;cv.setPointerCapture(e.pointerId);ds=pos(e)};
 cv.onpointermove=e=>{if(!ds)return;const p=pos(e);
-  R={x:Math.min(ds.x,p.x),y:Math.min(ds.y,p.y),w:Math.max(1,Math.abs(p.x-ds.x)),h:Math.max(1,Math.abs(p.y-ds.y))};
+  if(lock){
+    const i=imgs[cur],sx=p.x>=ds.x?1:-1,sy=p.y>=ds.y?1:-1;
+    const mw=sx>0?i.w-ds.x:ds.x,mh=sy>0?i.h-ds.y:ds.y;
+    let w=Math.abs(p.x-ds.x),h=Math.abs(p.y-ds.y);
+    if(w>h*lock.r)h=w/lock.r;else w=h*lock.r;
+    const k=Math.min(1,mw/Math.max(w,1e-9),mh/Math.max(h,1e-9));
+    w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(w/lock.r));
+    if(h>mh){h=Math.max(1,Math.floor(mh));w=Math.max(1,Math.round(h*lock.r))}
+    if(w>mw){w=Math.max(1,Math.floor(mw));h=Math.max(1,Math.round(w/lock.r))}
+    const x2=ds.x+sx*w,y2=ds.y+sy*h;
+    R={x:Math.min(ds.x,x2),y:Math.min(ds.y,y2),w,h};
+  }else R={x:Math.min(ds.x,p.x),y:Math.min(ds.y,p.y),w:Math.max(1,Math.abs(p.x-ds.x)),h:Math.max(1,Math.abs(p.y-ds.y))};
   sync(true);render()};
 cv.onpointerup=cv.onpointercancel=()=>{ds=null};
 ['x','y','w','h'].forEach(k=>$(k).oninput=()=>{
   R[k]=Math.max(k==='w'||k==='h'?1:0,parseInt($(k).value)||0);
-  if($('mode').value==='pct'){/* 比例以目前預覽圖換算 */}
+  if(lock){
+    if(k==='w')R.h=Math.max(1,Math.round(R.w/lock.r));
+    else if(k==='h')R.w=Math.max(1,Math.round(R.h*lock.r));
+    const i=imgs[cur];
+    if(i){
+      R.x=Math.min(R.x,i.w-1);R.y=Math.min(R.y,i.h-1);
+      if(R.x+R.w>i.w){R.w=i.w-R.x;R.h=Math.max(1,Math.round(R.w/lock.r))}
+      if(R.y+R.h>i.h){R.h=i.h-R.y;R.w=Math.max(1,Math.round(R.h*lock.r))}
+    }
+  }
   sync(true);render()});
-$('mode').onchange=()=>{ if($('mode').value==='px'&&imgs[cur]){const r=rectFor(imgs[cur]);R=r;sync(true)} render()};
+$('mode').onchange=()=>{ if($('mode').value==='px'&&imgs[cur]){const r=rectFor(imgs[cur]);R=r;sync(true)} lockUI(); render()};
 // 選檔
 const drop=$('drop');
 drop.onclick=e=>{if(e.target!==$('fi'))$('fi').click()};
@@ -1557,6 +1617,80 @@ drop.ondragover=e=>{e.preventDefault();drop.classList.add('on')};
 drop.ondragleave=()=>drop.classList.remove('on');
 drop.ondrop=e=>{e.preventDefault();drop.classList.remove('on');load([...e.dataTransfer.files])};
 window.addEventListener('resize',render);
+
+// ===== 常用裁切比例 =====
+const RKEY='tools-crop-ratios',RMAX=12;
+const PRESETS=[[1,1],[4,3],[3,4],[3,2],[2,3],[16,9],[9,16],[4,5],[21,9]];
+const fmtN=n=>String(parseFloat(n.toFixed(2)));
+const rkey=(w,h)=>fmtN(w)+':'+fmtN(h);
+let mine=[];
+try{
+  const a=JSON.parse(localStorage.getItem(RKEY)||'[]');
+  if(Array.isArray(a))mine=a.filter(v=>Array.isArray(v)&&Number.isFinite(+v[0])&&Number.isFinite(+v[1])&&+v[0]>0&&+v[1]>0&&+v[0]<=9999&&+v[1]<=9999).slice(0,RMAX).map(v=>[+v[0],+v[1]]);
+}catch(e){}
+const saveMine=()=>{try{localStorage.setItem(RKEY,JSON.stringify(mine))}catch(e){}};
+const rmsg=t=>{$('rmsg').textContent=t||''};
+
+function setLock(w,h){
+  lock=w?{w,h,r:w/h,key:rkey(w,h)}:null;
+  lockUI();
+  if(lock&&imgs.length){fitLockR();render()}
+}
+// 以目前框面積為準，改成鎖定比例（中心不變），避免來回切換越縮越小
+function fitLockR(){
+  const i=imgs[cur];if(!i||!lock)return;
+  const cx=R.x+R.w/2,cy=R.y+R.h/2;
+  let w=Math.round(Math.sqrt(Math.max(1,R.w*R.h)*lock.r)),h=Math.round(w/lock.r);
+  if(w>i.w){w=i.w;h=Math.round(w/lock.r)}
+  if(h>i.h){h=i.h;w=Math.round(h*lock.r)}
+  w=Math.max(1,w);h=Math.max(1,h);
+  R={x:clamp(Math.round(cx-w/2),0,i.w-w),y:clamp(Math.round(cy-h/2),0,i.h-h),w,h};
+  sync(true);
+}
+function chip(label,on,onclick,onremove){
+  const b=document.createElement('button');
+  b.type='button';b.className='chip-btn cr-chip'+(on?' on':'');
+  b.appendChild(document.createTextNode(label));
+  b.onclick=onclick;
+  if(onremove){
+    const x=document.createElement('span');x.className='x';x.textContent='✕';x.title='刪除這個比例';
+    x.onclick=ev=>{ev.stopPropagation();onremove()};b.appendChild(x);
+  }
+  return b;
+}
+function lockUI(){
+  const P=$('presets'),M=$('mine');P.innerHTML='';M.innerHTML='';
+  P.appendChild(chip('自由',!lock,()=>{setLock(0,0);rmsg('')}));
+  PRESETS.forEach(([w,h])=>P.appendChild(chip(w+':'+h,lock&&lock.key===rkey(w,h),()=>{setLock(w,h);rmsg('')})));
+  if(!mine.length){const e=document.createElement('span');e.className='hint';e.textContent='尚未儲存，輸入寬高後按「儲存」。';M.appendChild(e)}
+  mine.forEach(([w,h],k)=>M.appendChild(chip(rkey(w,h),lock&&lock.key===rkey(w,h),()=>{setLock(w,h);rmsg('')},()=>{mine.splice(k,1);saveMine();lockUI()})));
+  $('rswap').disabled=!lock;
+  $('lockinfo').textContent=lock
+    ?'已鎖定 '+lock.key+'：拖曳或輸入寬／高時自動維持比例（像素取整數，誤差最多 1 px）。'+($('mode').value==='pct'?'依比例模式下，每張圖以相同的寬度比例與中心位置取框，高度再依鎖定比例計算，所以解析度或長寬比不同的圖也會得到同樣的比例。':'')
+    :'自由比例：可任意拖曳框選。';
+}
+$('rsave').onclick=()=>{
+  const w=+$('rw').value,h=+$('rh').value;
+  if(!(w>0&&h>0&&w<=9999&&h<=9999)){rmsg('請輸入 0.01～9999 之間的寬與高');return}
+  const W=+fmtN(w),H=+fmtN(h);
+  if(!(W>0&&H>0)){rmsg('比例太小，請調整數值');return}
+  const key=rkey(W,H);
+  if(!PRESETS.some(p=>rkey(p[0],p[1])===key)&&!mine.some(p=>rkey(p[0],p[1])===key)){
+    if(mine.length>=RMAX){rmsg('最多儲存 '+RMAX+' 組，請先刪除一組');return}
+    mine.push([W,H]);saveMine();rmsg('已儲存 '+key);
+  }else rmsg(key+' 已存在，已直接套用');
+  setLock(W,H);
+};
+['rw','rh'].forEach(k=>$(k).onkeydown=e=>{if(e.key==='Enter')$('rsave').click()});
+$('rswap').onclick=()=>{if(lock)setLock(lock.h,lock.w)};
+$('rcur').onclick=()=>{
+  if(!imgs.length){rmsg('請先載入圖片');return}
+  const gcd=(a,b)=>b?gcd(b,a%b):a,a=Math.max(1,R.w),b=Math.max(1,R.h),g=gcd(a,b);
+  let w=a/g,h=b/g;
+  if(w>99||h>99){w=+(a/b).toFixed(2);h=1}
+  $('rw').value=w;$('rh').value=h;rmsg('已填入 '+rkey(w,h)+'，可按「儲存」');
+};
+lockUI();
 
 // 匯出
 $('go').onclick=async()=>{
