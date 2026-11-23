@@ -468,7 +468,22 @@
           <section>
             <h2><span class="num">2</span>拉出裁切範圍</h2>
             <canvas id="cr_cv" width="10" height="10"></canvas>
-            <p class="hint" id="cr_hint">在圖上拖曳拉出裁切方框；右側清單可切換預覽其他張。</p>
+            <p class="hint" id="cr_hint">在圖上拖曳拉出裁切方框；拖曳框內可移動位置；右側清單可切換預覽其他張。</p>
+            <div class="cr-fld" style="margin-top:10px">
+              <span>水平</span>
+              <button type="button" class="chip-btn cr-chip" data-ax="l">靠左</button>
+              <button type="button" class="chip-btn cr-chip" data-ax="c">置中</button>
+              <button type="button" class="chip-btn cr-chip" data-ax="r">靠右</button>
+              <span style="margin-left:8px">垂直</span>
+              <button type="button" class="chip-btn cr-chip" data-ay="t">靠上</button>
+              <button type="button" class="chip-btn cr-chip" data-ay="m">置中</button>
+              <button type="button" class="chip-btn cr-chip" data-ay="b">靠下</button>
+              <button type="button" class="chip-btn cr-chip" id="cr_actr">正中央</button>
+            </div>
+            <div class="cr-fld">
+              <label><input type="checkbox" id="cr_mvchk" checked /> 框內拖曳＝移動框（取消則一律重新框選）</label>
+            </div>
+            <p class="hint">對齊會套用到每一張圖（尺寸不同也各自靠邊／置中）；手動拖曳或改 X／Y 會解除對齊。再按一次同一顆按鈕也可解除。</p>
           </section>
           <div id="cr_side">
             <section>
@@ -1478,6 +1493,7 @@ const $ = id => document.getElementById(id);
 (function(){
 const $=id=>document.getElementById('cr_'+id);
 let imgs=[],cur=0,R={x:0,y:0,w:0,h:0},ratio=null,lock=null;
+const anc={x:null,y:null};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const cv=$('cv'),ctx=cv.getContext('2d');
 
@@ -1572,6 +1588,11 @@ function rectFor(i){
       r.x=clamp(r.x,0,Math.max(0,i.w-r.w));r.y=clamp(r.y,0,Math.max(0,i.h-r.h));
     }
   }
+  if(anc.x||anc.y){
+    r.w=Math.max(1,Math.min(i.w,r.w));r.h=Math.max(1,Math.min(i.h,r.h));
+    if(anc.x==='l')r.x=0;else if(anc.x==='c')r.x=Math.round((i.w-r.w)/2);else if(anc.x==='r')r.x=i.w-r.w;
+    if(anc.y==='t')r.y=0;else if(anc.y==='m')r.y=Math.round((i.h-r.h)/2);else if(anc.y==='b')r.y=i.h-r.h;
+  }
   r.x=Math.max(0,Math.min(i.w-1,r.x));r.y=Math.max(0,Math.min(i.h-1,r.y));
   r.w=Math.max(1,Math.min(i.w-r.x,r.w));r.h=Math.max(1,Math.min(i.h-r.y,r.h));
   return r;
@@ -1582,6 +1603,7 @@ function render(){
   cv.width=i.w;cv.height=i.h;cv.style.width=i.w*s+'px';
   ctx.drawImage(i.bmp,0,0);
   const r=rectFor(i);
+  if((anc.x||anc.y)&&(R.x!==r.x||R.y!==r.y)){R.x=r.x;R.y=r.y;sync(true)}
   ctx.fillStyle='rgba(0,0,0,.5)';
   ctx.fillRect(0,0,i.w,r.y);ctx.fillRect(0,r.y+r.h,i.w,i.h-r.y-r.h);
   ctx.fillRect(0,r.y,r.x,r.h);ctx.fillRect(r.x+r.w,r.y,i.w-r.x-r.w,r.h);
@@ -1602,8 +1624,31 @@ $('clr').onclick=()=>{if(!confirm('確定清除全部 '+imgs.length+' 張圖片�
 let ds=null;
 const pos=e=>{const b=cv.getBoundingClientRect(),i=imgs[cur];
   return{x:Math.max(0,Math.min(i.w,Math.round((e.clientX-b.left)*i.w/b.width))),y:Math.max(0,Math.min(i.h,Math.round((e.clientY-b.top)*i.h/b.height)))}};
-cv.onpointerdown=e=>{if(!imgs.length)return;cv.setPointerCapture(e.pointerId);ds=pos(e)};
-cv.onpointermove=e=>{if(!ds)return;const p=pos(e);
+let mv=null;
+const inRect=(p,r)=>p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h;
+const canMove=()=>$('mvchk').checked;
+cv.onpointerdown=e=>{
+  if(!imgs.length)return;
+  cv.setPointerCapture(e.pointerId);
+  const p=pos(e),r=rectFor(imgs[cur]);
+  if(canMove()&&inRect(p,r)){
+    // 框內拖曳：移動（解除對齊，以目前實際位置為準）
+    anc.x=anc.y=null;ancUI();
+    R={...r};sync(true);
+    mv={px:p.x,py:p.y,x:r.x,y:r.y};cv.style.cursor='grabbing';
+  }else ds=p;
+};
+cv.onpointermove=e=>{
+  if(!imgs.length)return;
+  const p=pos(e);
+  if(mv){
+    const i=imgs[cur];
+    R.x=clamp(mv.x+(p.x-mv.px),0,Math.max(0,i.w-R.w));
+    R.y=clamp(mv.y+(p.y-mv.py),0,Math.max(0,i.h-R.h));
+    sync(true);render();return;
+  }
+  if(!ds){cv.style.cursor=canMove()&&inRect(p,rectFor(imgs[cur]))?'move':'crosshair';return}
+  if(anc.x||anc.y){anc.x=anc.y=null;ancUI()}
   if(lock){
     const i=imgs[cur],sx=p.x>=ds.x?1:-1,sy=p.y>=ds.y?1:-1;
     const mw=sx>0?i.w-ds.x:ds.x,mh=sy>0?i.h-ds.y:ds.y;
@@ -1616,9 +1661,26 @@ cv.onpointermove=e=>{if(!ds)return;const p=pos(e);
     const x2=ds.x+sx*w,y2=ds.y+sy*h;
     R={x:Math.min(ds.x,x2),y:Math.min(ds.y,y2),w,h};
   }else R={x:Math.min(ds.x,p.x),y:Math.min(ds.y,p.y),w:Math.max(1,Math.abs(p.x-ds.x)),h:Math.max(1,Math.abs(p.y-ds.y))};
-  sync(true);render()};
-cv.onpointerup=cv.onpointercancel=()=>{ds=null};
+  sync(true);render();
+};
+cv.onpointerup=cv.onpointercancel=()=>{ds=null;mv=null;cv.style.cursor='crosshair'};
+
+// ===== 對齊（靠左／置中／靠右、靠上／置中／靠下）=====
+function ancUI(){
+  document.querySelectorAll('#pane-crop [data-ax]').forEach(b=>b.classList.toggle('on',anc.x===b.dataset.ax));
+  document.querySelectorAll('#pane-crop [data-ay]').forEach(b=>b.classList.toggle('on',anc.y===b.dataset.ay));
+  $('actr').classList.toggle('on',anc.x==='c'&&anc.y==='m');
+}
+function applyAnc(){
+  ancUI();
+  if(imgs.length){const r=rectFor(imgs[cur]);R.x=r.x;R.y=r.y;sync(true);render()}
+}
+document.querySelectorAll('#pane-crop [data-ax]').forEach(b=>b.onclick=()=>{anc.x=anc.x===b.dataset.ax?null:b.dataset.ax;applyAnc()});
+document.querySelectorAll('#pane-crop [data-ay]').forEach(b=>b.onclick=()=>{anc.y=anc.y===b.dataset.ay?null:b.dataset.ay;applyAnc()});
+$('actr').onclick=()=>{const both=anc.x==='c'&&anc.y==='m';anc.x=both?null:'c';anc.y=both?null:'m';applyAnc()};
 ['x','y','w','h'].forEach(k=>$(k).oninput=()=>{
+  if(k==='x'&&anc.x){anc.x=null;ancUI()}
+  if(k==='y'&&anc.y){anc.y=null;ancUI()}
   R[k]=Math.max(k==='w'||k==='h'?1:0,parseInt($(k).value)||0);
   if(lock){
     if(k==='w')R.h=Math.max(1,Math.round(R.w/lock.r));
