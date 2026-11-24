@@ -11,10 +11,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
-    <script src="common.js"></script>
+<script src="common.js"></script>
     <link rel="stylesheet" href="style.css" />
     <style>
 :where(#pdfApp) .msg{
@@ -218,7 +215,7 @@
         <div class="themes" id="themes">主題：</div>
       </header>
       <p class="privacy">
-        所有 PDF 與圖片處理皆在你的瀏覽器本機完成，檔案不會上傳到任何伺服器。若另外開啟「翻譯」功能，辨識出的文字才會傳送到第三方翻譯服務。
+        PDF 與圖片檔案均在你的瀏覽器本機處理；本工具不提供雲端翻譯，也不會將文件內容傳送至第三方翻譯服務。使用 OCR 時仍需從 CDN 載入辨識引擎及語言資料。
       </p>
       <div id="pdfApp">
 <div class="tabs">
@@ -356,56 +353,7 @@
         </section>
 
         <section>
-          <h2><span class="num">3</span>翻譯設定（選用）</h2>
-          <label class="translate-toggle"> <input type="checkbox" id="translateCheck" /> 將辨識結果翻譯成其他語言 </label>
-          <div id="translateOptions" style="display: none">
-            <div class="field">
-              原文語言：
-              <select id="srcLangSelect">
-                <option value="en">英文</option>
-                <option value="zh-TW" selected>繁體中文</option>
-                <option value="zh-CN">簡體中文</option>
-                <option value="ja">日文</option>
-                <option value="ko">韓文</option>
-                <option value="vi">越南文</option>
-                <option value="th">泰文</option>
-                <option value="fr">法文</option>
-                <option value="de">德文</option>
-                <option value="es">西班牙文</option>
-                <option value="ru">俄文</option>
-                <option value="ar">阿拉伯文</option>
-                <option value="id">印尼文</option>
-                <option value="pt">葡萄牙文</option>
-              </select>
-              <span>→</span>
-              目標語言：
-              <select id="tgtLangSelect">
-                <option value="en" selected>英文</option>
-                <option value="zh-TW">繁體中文</option>
-                <option value="zh-CN">簡體中文</option>
-                <option value="ja">日文</option>
-                <option value="ko">韓文</option>
-                <option value="vi">越南文</option>
-                <option value="th">泰文</option>
-                <option value="fr">法文</option>
-                <option value="de">德文</option>
-                <option value="es">西班牙文</option>
-                <option value="ru">俄文</option>
-                <option value="ar">阿拉伯文</option>
-                <option value="id">印尼文</option>
-                <option value="pt">葡萄牙文</option>
-              </select>
-            </div>
-            <p class="warn">
-              ⚠️
-              翻譯會呼叫免費的第三方服務（MyMemory），辨識出的文字內容會傳送到該服務的伺服器進行翻譯，<strong>不再只留在本機瀏覽器</strong>。若圖片內容涉及公司機密或個資，請不要勾選這個功能。免費額度約每日
-              5000 字，超過額度翻譯會失敗（OCR 結果本身不受影響）。翻譯結果會附加在原文之後，一起輸出到 .txt 檔。
-            </p>
-          </div>
-        </section>
-
-        <section>
-          <h2><span class="num">4</span>開始辨識</h2>
+          <h2><span class="num">3</span>開始辨識</h2>
           <button class="pri" id="startBtn" disabled>開始辨識</button>
           <div id="progressArea" style="display: none">
             <div class="progress-bar-bg"><div id="progressBarFill" class="progress-bar-fill"></div></div>
@@ -912,62 +860,13 @@
         whitelistInput.value = '';
       });
 
-      const translateCheck = document.getElementById('translateCheck');
-      const translateOptions = document.getElementById('translateOptions');
-      translateCheck.addEventListener('change', () => {
-        translateOptions.style.display = translateCheck.checked ? 'block' : 'none';
-      });
-
-      // Splits text into <=450 char chunks (preferring line breaks) and translates
-      // each chunk via the free MyMemory API, then rejoins them in order.
-      async function translateText(text, srcIso, tgtIso) {
-        const trimmed = text.trim();
-        if (!trimmed) return '';
-        const chunks = [];
-        let current = '';
-        const pushLongLine = line => {
-          // Even a single source line can exceed the API limit; split it safely.
-          while (line.length > 450) {
-            let cut = line.lastIndexOf(' ', 450);
-            if (cut < 180) cut = 450;
-            const part = line.slice(0, cut);
-            if (current) {
-              chunks.push(current);
-              current = '';
-            }
-            chunks.push(part);
-            line = line.slice(cut).trimStart();
-          }
-          if (current && (current + '\n' + line).length > 450) {
-            chunks.push(current);
-            current = '';
-          }
-          current = current ? current + '\n' + line : line;
-        };
-        for (const line of trimmed.split('\n')) pushLongLine(line);
-        if (current) chunks.push(current);
-
-        const translatedChunks = [];
-        for (const chunk of chunks) {
-          const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${srcIso}|${tgtIso}`;
-          const res = await fetch(url);
-          if (!res.ok) throw new Error('翻譯服務連線失敗');
-          const json = await res.json();
-          if (!json.responseData || typeof json.responseData.translatedText !== 'string') {
-            throw new Error('翻譯服務回應異常（可能已達免費額度上限）');
-          }
-          translatedChunks.push(json.responseData.translatedText);
-          await new Promise(r => setTimeout(r, 250)); // be gentle with the free API
-        }
-        return translatedChunks.join('\n');
-      }
-
       function loadImageEl(blob) {
         return new Promise((resolve, reject) => {
           const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = URL.createObjectURL(blob);
+          const url = URL.createObjectURL(blob);
+          img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+          img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('圖片解碼失敗')); };
+          img.src = url;
         });
       }
 
@@ -1188,7 +1087,7 @@
       async function buildHtmlReport(results) {
         let textSections = '';
         results.forEach((r, idx) => {
-          textSections += `<section><h2>文字 ${idx + 1}：${escapeHtml(r.name)}</h2>${r.blocks ? blocksToHtml(r.blocks) + (r.transText ? `<pre>${escapeHtml(r.transText)}</pre>` : '') : `<pre>${escapeHtml(r.text)}</pre>`}</section>`;
+          textSections += `<section><h2>文字 ${idx + 1}：${escapeHtml(r.name)}</h2>${r.blocks ? blocksToHtml(r.blocks) : `<pre>${escapeHtml(r.text)}</pre>`}</section>`;
         });
 
         let imageSections = '';
@@ -1200,7 +1099,7 @@
           }
         }
 
-        return `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>OCR 辨識報告</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+        return `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><title>OCR 辨識報告</title>
 <style>
   body{font-family:"Noto Sans TC",-apple-system,"PingFang TC",sans-serif;max-width:900px;margin:40px auto;padding:0 20px;color:#1f2328;line-height:1.6;}
   h1{border-bottom:2px solid #1f2328;padding-bottom:10px;}
@@ -1261,11 +1160,6 @@ ${imageSections}
           }
           const t = (r.ocrText || '').trim();
           md += t ? (r.blocks ? blocksToMd(r.blocks, render) : render(t)) + '\n' : '_（此項沒有辨識到文字）_\n';
-          if (r.transText) {
-            md += `\n**翻譯（${r.tgtLabel}）**\n\n`;
-            md += style === 'code' ? mdCode(r.transText) + '\n' : mdText(r.transText).split('\n').map(l => '> ' + l).join('\n') + '\n';
-          }
-          if (r.transErr) md += `\n> ⚠️ 翻譯失敗：${r.transErr}\n`;
         });
         zip.file('ocr_result.md', md);
         const blob = await zip.generateAsync({ type: 'blob' });
@@ -1327,11 +1221,6 @@ ${imageSections}
         const maxSourceDim = document.getElementById('downscaleCheck').checked ? 2000 : null;
         const useParallel = document.getElementById('parallelCheck').checked;
 
-        const doTranslate = translateCheck.checked;
-        const srcIso = document.getElementById('srcLangSelect').value;
-        const tgtIso = document.getElementById('tgtLangSelect').value;
-        const tgtLabel = document.getElementById('tgtLangSelect').selectedOptions[0].textContent;
-
         let completedCount = 0;
         function markItemDone() {
           completedCount++;
@@ -1356,7 +1245,13 @@ ${imageSections}
         const ocrQueue = pendingFiles.map((f, i) => ({ f, i })).filter(x => !x.f.pdfText);
 
         if (ocrQueue.length) {
-          const numWorkers = useParallel ? Math.max(1, Math.min(4, navigator.hardwareConcurrency || 2, ocrQueue.length)) : 1;
+          const cpuCores = Math.max(1, Number(navigator.hardwareConcurrency) || 2);
+          // deviceMemory is an approximate GiB hint (not supported by every browser).
+          // Keep low-memory devices to one worker; never exceed four concurrent OCR engines.
+          const memoryGiB = Number(navigator.deviceMemory) || 4;
+          const memoryWorkers = memoryGiB <= 2 ? 1 : memoryGiB <= 4 ? 2 : memoryGiB <= 8 ? 3 : 4;
+          const workerLimit = Math.min(4, Math.max(1, Math.floor(cpuCores / 2)), memoryWorkers);
+          const numWorkers = useParallel ? Math.max(1, Math.min(workerLimit, ocrQueue.length)) : 1;
           progressText.textContent =
             numWorkers > 1 ? `正在載入 OCR 引擎（${numWorkers} 個平行處理緒）...` : `正在載入 OCR 引擎與語言資料（${lang}）...`;
 
@@ -1373,15 +1268,12 @@ ${imageSections}
                   }
                 },
               });
+              const slot = { worker, setCurrent: idx => { currentIdx = idx; } };
+              pool.push(slot);
               await worker.setParameters(params);
-              pool.push({
-                worker,
-                setCurrent: idx => {
-                  currentIdx = idx;
-                },
-              });
             }
           } catch (e) {
+            await Promise.allSettled(pool.map(slot => slot.worker.terminate()));
             progressText.textContent = '引擎載入失敗：' + e.message + '（請確認網路連線）';
             startBtn.disabled = false;
             return;
@@ -1409,14 +1301,15 @@ ${imageSections}
               markItemDone();
             }
           }
-          await Promise.all(pool.map(workerLoop));
-          await Promise.all(pool.map(slot => slot.worker.terminate()));
+          try {
+            await Promise.all(pool.map(workerLoop));
+          } finally {
+            await Promise.allSettled(pool.map(slot => slot.worker.terminate()));
+          }
         }
 
         progressText.textContent = '辨識完成！正在產生輸出檔案...';
 
-        // Translation is done sequentially afterward (one item at a time) to stay
-        // gentle on the free translation API, regardless of OCR parallelism above.
         const results = [];
         for (let i = 0; i < pendingFiles.length; i++) {
           const f = pendingFiles[i];
@@ -1426,22 +1319,8 @@ ${imageSections}
             results.push({ name: f.name, text: '[辨識失敗：' + outcome.error + ']', error: outcome.error, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
             continue;
           }
-          let finalText = outcome.text;
-          let transText = null,
-            transErr = null;
-          if (doTranslate) {
-            setItemLabel(i, f.name + '：翻譯中...');
-            try {
-              const translated = await translateText(outcome.text, srcIso, tgtIso);
-              finalText = outcome.text + `\n\n----- 翻譯（${tgtLabel}）-----\n` + translated;
-              transText = translated;
-            } catch (terr) {
-              finalText = outcome.text + `\n\n----- 翻譯失敗：${terr.message} -----`;
-              transErr = terr.message;
-            }
-          }
           setItemLabel(i, f.name + '：完成');
-          results.push({ name: f.name, text: finalText, ocrText: outcome.text, blocks: outcome.blocks, transText, transErr, tgtLabel, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
+          results.push({ name: f.name, text: outcome.text, ocrText: outcome.text, blocks: outcome.blocks, isPdfPage: !!f.isPdfPage, imageBlob: f.blob });
         }
 
         if (mode === 'merged') {

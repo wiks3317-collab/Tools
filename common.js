@@ -80,10 +80,17 @@
 
   function initEmbedded() {
     document.body.classList.add('embedded');
-    const sendHeight = () => window.parent.postMessage({ type: 'tools-iframe-height', height: Math.ceil(document.body.scrollHeight) }, '*');
+    let heightFrame = 0;
+    const sendHeight = () => {
+      if (heightFrame) return;
+      heightFrame = requestAnimationFrame(() => {
+        heightFrame = 0;
+        window.parent.postMessage({ type: 'tools-iframe-height', height: Math.ceil(document.body.scrollHeight) }, '*');
+      });
+    };
     if (typeof ResizeObserver === 'function') new ResizeObserver(sendHeight).observe(document.body);
-    window.addEventListener('load', sendHeight);
-    window.addEventListener('resize', sendHeight);
+    window.addEventListener('load', sendHeight, { once: true });
+    window.addEventListener('resize', sendHeight, { passive: true });
   }
 
   // 先套用主題，避免畫面閃爍

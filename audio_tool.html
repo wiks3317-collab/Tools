@@ -11,10 +11,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%99%3C/text%3E%3C/svg%3E"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
-    <script src="common.js"></script>
+<script src="common.js"></script>
     <link rel="stylesheet" href="style.css" />
     <style>
       .msg {
@@ -228,8 +225,6 @@
         } catch (err) { self.postMessage({ type: 'err', msg: String((err && err.message) || err) }); }
       };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.5/dist/index.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js"></script>
     <script>
       const $ = id => document.getElementById(id);
 
@@ -305,10 +300,6 @@
         renderSteps();
         $('progressText').textContent = msg;
         cs = -1;
-      }
-      if (!window.OpenCC) {
-        $('t2').checked = false;
-        $('t2').disabled = true;
       }
       if (!navigator.gpu) {
         $('gpu').checked = false;
@@ -444,6 +435,34 @@
         return out;
       }
       // 輸出
+      // 選用的文字後處理套件延遲載入：沒有使用簡繁轉換／中文同音校正時，不下載相關套件。
+      const optionalScripts = new Map();
+      function loadOptionalScript(src, globalName) {
+        if (window[globalName]) return Promise.resolve(true);
+        if (optionalScripts.has(src)) return optionalScripts.get(src);
+        const task = new Promise(resolve => {
+          const script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.onload = () => resolve(!!window[globalName]);
+          script.onerror = () => resolve(false);
+          document.head.appendChild(script);
+        });
+        optionalScripts.set(src, task);
+        return task;
+      }
+      async function ensureTextHelpers() {
+        if ($('t2').checked && !window.OpenCC) {
+          const ok = await loadOptionalScript('https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/cn2t.js', 'OpenCC');
+          if (!ok) { $('t2').checked = false; $('t2').disabled = true; $('glmsg').textContent = '簡繁轉換套件載入失敗，已略過此選項。'; }
+        }
+        if ($('gh').checked && /[\u3400-\u9fff]/.test($('gl').value) && !window.pinyinPro) {
+          const ok = await loadOptionalScript('https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.5/dist/index.js', 'pinyinPro');
+          if (ok) { if (typeof PY !== 'undefined') PY.clear(); if (typeof GL !== 'undefined') GL.key = null; }
+          else { $('gh').checked = false; $('gh').disabled = true; if (typeof GL !== 'undefined') GL.key = null; $('glmsg').textContent = '同音校正套件載入失敗，已略過此選項。'; }
+        }
+      }
+
       // ---- 常用詞彙校正（後處理）----
       let GL = { key: null, map: [], terms: [] },
         GLN = 0;
@@ -548,12 +567,15 @@
           localStorage.setItem('asr-glossary', $('gl').value);
         } catch (e) {}
         clearTimeout(gt);
-        gt = setTimeout(() => {
-          if (segs.length) render();
+        gt = setTimeout(async () => {
+          if (segs.length) { await ensureTextHelpers(); render(); }
         }, 300);
       };
-      $('gh').onchange = () => {
-        if (segs.length) render();
+      $('gh').onchange = async () => {
+        if (segs.length) { await ensureTextHelpers(); render(); }
+      };
+      $('t2').onchange = async () => {
+        if (segs.length) { await ensureTextHelpers(); render(); }
       };
       const cv = s => {
         if ($('t2').checked && window.OpenCC) {
@@ -814,6 +836,8 @@
           } finally {
             clearInterval(timer);
           }
+          await ensureTextHelpers();
+          render();
           const el = (Date.now() - t0) / 1000,
             elA = (Date.now() - tA) / 1000;
           if (stop) finish('stop', '已停止，保留已辨識的部分');
